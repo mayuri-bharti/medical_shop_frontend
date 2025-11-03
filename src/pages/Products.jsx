@@ -9,7 +9,7 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [sortBy, setSortBy] = useState('name')
 
-  const { data: products, isLoading, error } = useQuery(
+  const { data, isLoading, error } = useQuery(
     ['products', searchTerm, selectedCategory, sortBy],
     () => api.get('/products', {
       params: { search: searchTerm, category: selectedCategory, sort: sortBy }
@@ -18,6 +18,8 @@ const Products = () => {
       keepPreviousData: true
     }
   )
+  
+  const products = data?.products || []
 
   const categories = [
     'Prescription Medicines',
@@ -75,7 +77,7 @@ const Products = () => {
         images={productBanners}
         autoSlide={true}
         interval={4000}
-        height="h-48 md:h-64 lg:h-80"
+        height="h-32 md:h-40 lg:h-48"
       />
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -117,49 +119,48 @@ const Products = () => {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {products?.map((product) => (
-          <div key={product._id} className="card p-6 hover:shadow-lg transition-shadow duration-200">
-            <div className="aspect-square bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+          <div key={product._id} className="card p-3 hover:shadow-lg transition-shadow duration-200">
+            <div className="h-32 w-full bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
               <img
-                src={product.image || '/placeholder-medicine.jpg'}
+                src={product.images?.[0] || product.image || '/placeholder-medicine.jpg'}
                 alt={product.name}
-                className="w-full h-full object-cover rounded-lg"
+                className="h-32 w-full object-contain rounded-lg"
                 onError={(e) => {
                   e.target.src = '/placeholder-medicine.jpg'
                 }}
               />
             </div>
             
-            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
               {product.name}
             </h3>
             
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            <p className="text-xs text-gray-500 mb-2 line-clamp-2">
               {product.description}
             </p>
             
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-xs font-bold text-gray-900">
                   ₹{product.price}
                 </span>
                 {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through ml-2">
+                  <span className="text-xs text-gray-500 line-through ml-1">
                     ₹{product.originalPrice}
                   </span>
                 )}
               </div>
               {product.discount && (
-                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                <span className="bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded-full">
                   {product.discount}% OFF
                 </span>
               )}
             </div>
 
-            <button className="w-full btn-primary flex items-center justify-center space-x-2">
-              <ShoppingCart size={16} />
-              <span>Add to Cart</span>
+            <button className="w-full bg-teal-600 text-white text-xs px-2 py-1 rounded hover:bg-teal-700">
+              Add to Cart
             </button>
           </div>
         ))}

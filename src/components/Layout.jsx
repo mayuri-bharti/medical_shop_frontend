@@ -202,10 +202,79 @@ const Layout = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p>&copy; 2024 MediShop. Your trusted health partner.</p>
+      <footer className="bg-gray-50 border-t border-gray-200 mt-16 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {/* Brand Section */}
+            <div className="text-center sm:text-left">
+              <Link to="/" className="flex items-center justify-center sm:justify-start space-x-2 mb-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">M</span>
+                </div>
+                <span className="text-2xl font-bold text-medical-600">MediShop</span>
+              </Link>
+              <p className="text-sm text-gray-700">
+                Your trusted health partner. Quality medicines and healthcare products delivered to your doorstep.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Quick Links</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    Products
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/orders" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    Orders
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/prescriptions" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    Prescriptions
+                  </Link>
+                </li>
+                <li>
+                  <a href="#contact" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    Contact
+                  </a>
+                </li>
+                <li>
+                  <Link to="/admin/login" className="text-sky-500 font-bold hover:text-sky-600 hover:underline transition-colors">
+                    Admin Login
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div className="text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Contact Us</h3>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>
+                  <span className="font-medium text-gray-700">Email:</span> support@medishop.com
+                </li>
+                <li>
+                  <span className="font-medium text-gray-700">Phone:</span> +1 (555) 123-4567
+                </li>
+                <li>
+                  <span className="font-medium text-gray-700">Address:</span> 123 Health Street, Medical City, 12345
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Line Section */}
+          <div className="border-t border-gray-200 mt-8 pt-6 text-center text-sm text-gray-700">
+            © {new Date().getFullYear()} MediShop. Your trusted health partner.
           </div>
         </div>
       </footer>

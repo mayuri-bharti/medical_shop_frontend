@@ -22,6 +22,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<Login />} />
         <Route path="/verify" element={<VerifyOtp />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products-list" element={<ProductList />} />
