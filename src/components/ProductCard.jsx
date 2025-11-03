@@ -46,12 +46,21 @@ const ProductCard = ({ product }) => {
       {/* Product Info */}
       <div className="p-2">
         {/* Brand */}
-        <p className="text-xs text-gray-500 mb-0.5 line-clamp-1">{product.brand}</p>
+        {product.brand && (
+          <p className="text-xs text-gray-500 mb-0.5 line-clamp-1">{product.brand}</p>
+        )}
         
         {/* Name */}
         <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
           {product.name}
         </h3>
+        
+        {/* Description */}
+        {product.description && (
+          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+            {product.description}
+          </p>
+        )}
 
         {/* Price */}
         <div className="flex items-center space-x-1 mb-2">
@@ -98,11 +107,9 @@ const ProductCard = ({ product }) => {
 
         {/* Quick Info */}
         <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-          <span>{product.packSize}</span>
-          {product.rating?.average > 0 && (
-            <span className="flex items-center">
-              ⭐ {product.rating.average}
-            </span>
+          <span>{product.category || 'Product'}</span>
+          {product.stock > 0 && (
+            <span className="text-green-600 font-medium">In Stock</span>
           )}
         </div>
       </div>

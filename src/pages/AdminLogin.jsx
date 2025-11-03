@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { Phone, Send, Shield, CheckCircle, AlertCircle, Lock } from 'lucide-react'
 import { sendOtp, verifyOtp, setAccessToken, getUserRole } from '../lib/api'
 import toast from 'react-hot-toast'
 
-const Login = () => {
+const AdminLogin = () => {
   const [step, setStep] = useState('phone') // 'phone' or 'otp'
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
@@ -58,14 +58,17 @@ const Login = () => {
         // Get user role from token or response
         const userRole = response.data?.user?.role || getUserRole()
         
-        toast.success('Login successful!')
-        
-        // Redirect based on user role
-        if (userRole === 'ADMIN') {
-          navigate('/admin/dashboard')
-        } else {
-          navigate('/user/dashboard')
+        // Verify admin role
+        if (userRole !== 'ADMIN') {
+          toast.error('Access denied. Admin privileges required.')
+          setError('This account does not have admin privileges.')
+          return
         }
+        
+        toast.success('Admin login successful!')
+        
+        // Redirect to admin dashboard
+        navigate('/admin/dashboard')
       }
     } catch (err) {
       setError(err.message || 'Invalid OTP')
@@ -76,15 +79,19 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-50 via-blue-50 to-medical-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-medical-50 to-teal-50 px-4 py-12">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-medical-600 to-medical-700 rounded-2xl mb-4 shadow-lg">
             <Shield className="text-white" size={40} />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">MediShop</h1>
-          <p className="text-gray-600 text-lg">Your trusted health partner</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Portal</h1>
+          <p className="text-gray-600 text-lg">Medical Shop Administration</p>
+          <div className="mt-2 inline-flex items-center space-x-2 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
+            <Lock size={14} />
+            <span>Admin Access Only</span>
+          </div>
         </div>
 
         {/* Card */}
@@ -92,11 +99,11 @@ const Login = () => {
           {/* Card Header */}
           <div className="bg-gradient-to-r from-medical-600 to-medical-700 p-8 text-white">
             <h2 className="text-2xl font-bold mb-1">
-              {step === 'phone' ? 'Login with Phone' : 'Verify OTP'}
+              {step === 'phone' ? 'Admin Login' : 'Verify OTP'}
             </h2>
             <p className="text-medical-100">
               {step === 'phone' 
-                ? 'Enter your phone number to continue' 
+                ? 'Enter admin phone number to continue' 
                 : `Enter OTP sent to +91 ${phone}`}
             </p>
           </div>
@@ -108,7 +115,7 @@ const Login = () => {
                 {/* Phone Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
+                    Admin Phone Number
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -126,7 +133,7 @@ const Login = () => {
                     />
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
-                    We'll send you an OTP ~ verify your number
+                    OTP will be sent to verify admin access
                   </p>
                 </div>
 
@@ -202,7 +209,7 @@ const Login = () => {
                   ) : (
                     <>
                       <CheckCircle size={20} />
-                      <span>Verify & Continue</span>
+                      <span>Verify & Login</span>
                     </>
                   )}
                 </button>
@@ -210,7 +217,11 @@ const Login = () => {
                 {/* Change Number Button */}
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={() => {
+                    setStep('phone')
+                    setOtp('')
+                    setError('')
+                  }}
                   className="w-full text-medical-600 hover:text-medical-700 text-sm font-medium transition-colors"
                 >
                   ← Change phone number
@@ -223,18 +234,21 @@ const Login = () => {
           <div className="px-8 py-6 bg-gray-50 border-t">
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
               <Shield className="text-medical-600" size={16} />
-              <span>Secure & encrypted</span>
+              <span>Secure admin access</span>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-600 mt-8">
-          Need help? <a href="#" className="text-medical-600 hover:underline font-medium">Contact Support</a>
-        </p>
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-600">
+            Regular user? <a href="/login" className="text-medical-600 hover:underline font-medium">Login here</a>
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
-export default Login
+export default AdminLogin
+

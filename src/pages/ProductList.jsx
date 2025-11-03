@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import axios from 'axios'
 import ProductCard from '../components/ProductCard'
 import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -33,25 +34,27 @@ const ProductList = () => {
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        page,
-        limit: 20,
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedCategory && { category: selectedCategory })
+      // Get API base URL from environment or use default
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      
+      const response = await axios.get(`${API_BASE_URL}/products`, {
+        params: {
+          page,
+          limit: 20,
+          ...(searchTerm && { search: searchTerm }),
+          ...(selectedCategory && { category: selectedCategory })
+        }
       })
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/products?${params}`)
-      const data = await response.json()
-
-      if (data.success) {
-        setProducts(data.products || [])
-        setTotalPages(data.pagination?.pages || 1)
+      if (response.data && response.data.success) {
+        setProducts(response.data.products || [])
+        setTotalPages(response.data.pagination?.pages || 1)
       } else {
         setError('Failed to load products')
       }
     } catch (err) {
       console.error('Fetch products error:', err)
-      setError('Failed to load products')
+      setError(err.response?.data?.message || 'Failed to load products. Please check your connection.')
     } finally {
       setLoading(false)
     }
@@ -158,8 +161,8 @@ const ProductList = () => {
           </div>
         ) : (
           <>
-            {/* Products Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            {/* Products Grid - Responsive: 1 mobile, 2 tablet, 6 laptop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}

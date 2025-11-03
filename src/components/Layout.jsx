@@ -8,7 +8,14 @@ import {
   Package, 
   FileText,
   LogOut,
-  Home
+  Home,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin
 } from 'lucide-react'
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 
@@ -53,8 +60,12 @@ const Layout = ({ children }) => {
 
   const isActive = (path) => location.pathname === path
 
-  // Don't show navigation on login/verify pages
-  const hideNav = location.pathname === '/login' || location.pathname === '/verify'
+  // Don't show navigation on login/verify pages or dashboard pages
+  const hideNav = 
+    location.pathname === '/login' || 
+    location.pathname === '/verify' ||
+    location.pathname.startsWith('/admin/dashboard') ||
+    location.pathname.startsWith('/user/dashboard')
 
   if (hideNav) {
     return <>{children}</>
@@ -69,9 +80,9 @@ const Layout = ({ children }) => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
+                <span className="text-white font-bold text-2xl">+</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">MediShop</span>
+              <span className="text-xl font-bold text-gray-900">HealthPlus</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -209,9 +220,9 @@ const Layout = ({ children }) => {
             <div className="text-center sm:text-left">
               <Link to="/" className="flex items-center justify-center sm:justify-start space-x-2 mb-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
+                  <span className="text-white font-bold text-2xl">+</span>
                 </div>
-                <span className="text-2xl font-bold text-medical-600">MediShop</span>
+                <span className="text-2xl font-bold text-medical-600">HealthPlus</span>
               </Link>
               <p className="text-sm text-gray-700">
                 Your trusted health partner. Quality medicines and healthcare products delivered to your doorstep.
@@ -248,7 +259,12 @@ const Layout = ({ children }) => {
                   </a>
                 </li>
                 <li>
-                  <Link to="/admin/login" className="text-sky-500 font-bold hover:text-sky-600 hover:underline transition-colors">
+                  <Link to="/login" className="text-gray-700 hover:text-medical-600 transition-colors">
+                    User Login
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/login" className="text-medical-600 font-bold hover:text-medical-700 hover:underline transition-colors">
                     Admin Login
                   </Link>
                 </li>
@@ -266,7 +282,7 @@ const Layout = ({ children }) => {
                   <span className="font-medium text-gray-700">Phone:</span> +1 (555) 123-4567
                 </li>
                 <li>
-                  <span className="font-medium text-gray-700">Address:</span> 123 Health Street, Medical City, 12345
+                  <span className="font-medium text-gray-700">Address:</span> HealthPlus Shop, Near Raj Corner, Nanded City, 431603
                 </li>
               </ul>
             </div>
@@ -274,7 +290,7 @@ const Layout = ({ children }) => {
 
           {/* Bottom Line Section */}
           <div className="border-t border-gray-200 mt-8 pt-6 text-center text-sm text-gray-700">
-            © {new Date().getFullYear()} MediShop. Your trusted health partner.
+            © {new Date().getFullYear()} HealthPlus. Your trusted health partner.
           </div>
         </div>
       </footer>

@@ -174,6 +174,42 @@ export const verifyOtp = async (phone, otp) => {
 }
 
 /**
+ * Decode JWT token to get user role
+ * @param {string} token - JWT token
+ * @returns {Object|null} Decoded token payload or null
+ */
+export const decodeToken = (token) => {
+  if (!token) return null
+  
+  try {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(jsonPayload)
+  } catch (error) {
+    console.error('Error decoding token:', error)
+    return null
+  }
+}
+
+/**
+ * Get user role from token
+ * @returns {string|null} User role (USER/ADMIN) or null
+ */
+export const getUserRole = () => {
+  const token = getAccessToken()
+  if (!token) return null
+  
+  const decoded = decodeToken(token)
+  return decoded?.role || null
+}
+
+/**
  * Get current user profile
  * @returns {Promise<{success: boolean, data: {user: Object}}>}
  */

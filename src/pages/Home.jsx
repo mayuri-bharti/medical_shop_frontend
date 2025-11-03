@@ -247,7 +247,7 @@ const Home = () => {
       {/* Features */}
       <section>
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Why Choose MediShop?
+          Why Choose HealthPlus?
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => {

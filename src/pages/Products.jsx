@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
-import { Search, Filter, ShoppingCart } from 'lucide-react'
+import { Search } from 'lucide-react'
 import PageCarousel from '../components/PageCarousel'
+import ProductCard from '../components/ProductCard'
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -11,11 +12,32 @@ const Products = () => {
 
   const { data, isLoading, error } = useQuery(
     ['products', searchTerm, selectedCategory, sortBy],
-    () => api.get('/products', {
-      params: { search: searchTerm, category: selectedCategory, sort: sortBy }
-    }).then(res => res.data),
+    async () => {
+      try {
+        const response = await api.get('/products', {
+          params: { search: searchTerm, category: selectedCategory, sort: sortBy }
+        })
+        
+        // Handle both old and new response formats
+        const responseData = response.data
+        if (responseData && responseData.success !== undefined) {
+          return responseData
+        }
+        // If no success field, assume success and add it
+        return {
+          success: true,
+          products: responseData.products || responseData || [],
+          pagination: responseData.pagination || {}
+        }
+      } catch (err) {
+        console.error('Products API error:', err)
+        throw err
+      }
+    },
     {
-      keepPreviousData: true
+      keepPreviousData: true,
+      retry: 2,
+      retryDelay: 1000
     }
   )
   
@@ -118,59 +140,19 @@ const Products = () => {
         </select>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {products?.map((product) => (
-          <div key={product._id} className="card p-3 hover:shadow-lg transition-shadow duration-200">
-            <div className="h-32 w-full bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
-              <img
-                src={product.images?.[0] || product.image || '/placeholder-medicine.jpg'}
-                alt={product.name}
-                className="h-32 w-full object-contain rounded-lg"
-                onError={(e) => {
-                  e.target.src = '/placeholder-medicine.jpg'
-                }}
-              />
-            </div>
-            
-            <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
-              {product.name}
-            </h3>
-            
-            <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-              {product.description}
-            </p>
-            
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <span className="text-xs font-bold text-gray-900">
-                  ₹{product.price}
-                </span>
-                {product.originalPrice && (
-                  <span className="text-xs text-gray-500 line-through ml-1">
-                    ₹{product.originalPrice}
-                  </span>
-                )}
-              </div>
-              {product.discount && (
-                <span className="bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded-full">
-                  {product.discount}% OFF
-                </span>
-              )}
-            </div>
-
-            <button className="w-full bg-teal-600 text-white text-xs px-2 py-1 rounded hover:bg-teal-700">
-              Add to Cart
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {products?.length === 0 && (
+      {/* Products Grid - Responsive: 1-2 mobile, 2-3 tablet, 6 laptop */}
+      {products?.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {products.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      ) : (
         <div className="text-center py-12">
           <p className="text-gray-600">No products found matching your criteria.</p>
         </div>
       )}
+
     </div>
   )
 }
