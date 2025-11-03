@@ -125,7 +125,7 @@ const PromoBannerCarousel = () => {
       >
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
-            <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-80 group">
+            <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-48 md:h-56 lg:h-64 group">
               {/* Background Gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgColor}`} />
               
@@ -149,12 +149,12 @@ const PromoBannerCarousel = () => {
                 </div>
 
                 {/* Text Content */}
-                <div className="space-y-3 md:space-y-4">
-                  <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight drop-shadow-md">
+                <div className="space-y-2 md:space-y-3">
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight drop-shadow-md">
                     {slide.title}
                   </h3>
                   
-                  <p className="text-sm md:text-base text-gray-700 leading-relaxed max-w-md drop-shadow-sm">
+                  <p className="text-xs md:text-sm text-gray-700 leading-relaxed max-w-md drop-shadow-sm">
                     {slide.description}
                   </p>
 

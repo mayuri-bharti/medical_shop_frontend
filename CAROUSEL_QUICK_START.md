@@ -170,3 +170,4 @@ For detailed information, see: `CAROUSEL_IMPLEMENTATION.md`
 - `frontend/src/pages/Cart.jsx`
 
 
+
