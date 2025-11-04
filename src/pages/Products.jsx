@@ -14,8 +14,13 @@ const Products = () => {
     ['products', searchTerm, selectedCategory, sortBy],
     async () => {
       try {
-        console.log('Fetching products with params:', { search: searchTerm, category: selectedCategory, sort: sortBy })
-        console.log('API Base URL:', api.defaults.baseURL)
+        const fullUrl = `${api.defaults.baseURL}/products`;
+        console.log('🔍 Fetching products:', {
+          baseURL: api.defaults.baseURL,
+          relativeURL: '/products',
+          fullURL: fullUrl,
+          params: { search: searchTerm, category: selectedCategory, sort: sortBy }
+        });
         
         const response = await api.get('/products', {
           params: { 
@@ -166,11 +171,10 @@ const Products = () => {
                 Status: {errorStatus}
               </p>
             )}
-            {import.meta.env.DEV && (
-              <p className="text-gray-400 text-xs mb-4 font-mono">
-                API URL: {api.defaults.baseURL}
-              </p>
-            )}
+            <p className="text-gray-400 text-xs mb-4 font-mono break-all">
+              API URL: {api.defaults.baseURL || 'Not set'}<br/>
+              Full URL: {api.defaults.baseURL ? `${api.defaults.baseURL}/products` : 'Not set'}
+            </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
