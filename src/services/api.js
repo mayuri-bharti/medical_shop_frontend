@@ -21,32 +21,56 @@ let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl();
 
 // Clean up the API URL - remove quotes and whitespace
 if (API_BASE_URL) {
+  // Convert to string and trim
   API_BASE_URL = String(API_BASE_URL).trim();
   
-  // Remove surrounding quotes if present (common issue with Vercel env vars)
-  if ((API_BASE_URL.startsWith('"') && API_BASE_URL.endsWith('"')) || 
-      (API_BASE_URL.startsWith("'") && API_BASE_URL.endsWith("'"))) {
+  // Remove surrounding quotes (single or double) - handle multiple quotes
+  while (
+    (API_BASE_URL.startsWith('"') && API_BASE_URL.endsWith('"')) || 
+    (API_BASE_URL.startsWith("'") && API_BASE_URL.endsWith("'"))
+  ) {
     API_BASE_URL = API_BASE_URL.slice(1, -1).trim();
   }
   
+  // Remove any embedded quotes that might be in the URL
+  API_BASE_URL = API_BASE_URL.replace(/^['"]+|['"]+$/g, '');
+  
   // Remove any leading/trailing slashes that might cause issues
   API_BASE_URL = API_BASE_URL.replace(/\/+$/, ''); // Remove trailing slashes
-}
-
-// Validate and ensure API_BASE_URL is always absolute
-if (!API_BASE_URL || (!API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://'))) {
-  // If not a valid absolute URL, use default
-  console.warn('⚠️ Invalid API_BASE_URL, using default:', API_BASE_URL);
+  
+  // Validate it's a proper URL
+  if (!API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://')) {
+    console.warn('⚠️ API_BASE_URL is not a valid absolute URL, using default');
+    API_BASE_URL = getDefaultApiUrl();
+  }
+} else {
+  // If no value, use default
   API_BASE_URL = getDefaultApiUrl();
 }
 
-// Log API configuration for debugging
+// Final validation - ensure API_BASE_URL is always absolute
+if (!API_BASE_URL || (!API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://'))) {
+  console.warn('⚠️ Invalid API_BASE_URL after cleanup, using default:', API_BASE_URL);
+  API_BASE_URL = getDefaultApiUrl();
+}
+
+// Log API configuration for debugging (with raw value for troubleshooting)
+const rawEnvValue = import.meta.env.VITE_API_BASE_URL;
 console.log('🔧 API Configuration:', {
   baseURL: API_BASE_URL,
-  env: import.meta.env.VITE_API_BASE_URL || 'not set',
+  rawEnvValue: rawEnvValue || 'not set',
+  rawEnvType: typeof rawEnvValue,
+  cleaned: API_BASE_URL !== rawEnvValue,
   hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
   mode: import.meta.env.MODE
 });
+
+// Final safety check - if URL still contains quotes, force default
+if (API_BASE_URL.includes("'") || API_BASE_URL.includes('"')) {
+  console.error('❌ API_BASE_URL still contains quotes after cleanup, using default');
+  console.error('Raw value:', rawEnvValue);
+  API_BASE_URL = getDefaultApiUrl();
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
