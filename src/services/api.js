@@ -19,12 +19,25 @@ const getDefaultApiUrl = () => {
 // ✅ Use environment variable if available, else fallback
 let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl();
 
-// Ensure API_BASE_URL is always absolute (starts with http:// or https://)
-if (API_BASE_URL && !API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://')) {
-  // If relative, make it absolute based on current host
-  if (typeof window !== 'undefined') {
-    API_BASE_URL = `${window.location.protocol}//${window.location.host}${API_BASE_URL.startsWith('/') ? '' : '/'}${API_BASE_URL}`;
+// Clean up the API URL - remove quotes and whitespace
+if (API_BASE_URL) {
+  API_BASE_URL = String(API_BASE_URL).trim();
+  
+  // Remove surrounding quotes if present (common issue with Vercel env vars)
+  if ((API_BASE_URL.startsWith('"') && API_BASE_URL.endsWith('"')) || 
+      (API_BASE_URL.startsWith("'") && API_BASE_URL.endsWith("'"))) {
+    API_BASE_URL = API_BASE_URL.slice(1, -1).trim();
   }
+  
+  // Remove any leading/trailing slashes that might cause issues
+  API_BASE_URL = API_BASE_URL.replace(/\/+$/, ''); // Remove trailing slashes
+}
+
+// Validate and ensure API_BASE_URL is always absolute
+if (!API_BASE_URL || (!API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://'))) {
+  // If not a valid absolute URL, use default
+  console.warn('⚠️ Invalid API_BASE_URL, using default:', API_BASE_URL);
+  API_BASE_URL = getDefaultApiUrl();
 }
 
 // Log API configuration for debugging
