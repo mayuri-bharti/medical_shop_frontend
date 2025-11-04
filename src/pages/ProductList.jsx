@@ -187,8 +187,8 @@ const ProductList = () => {
           </div>
         ) : (
           <>
-            {/* Products Grid - Responsive: 1 mobile, 2 tablet, 3 medium, 6 laptop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {/* Products Grid - Responsive: 2 mobile, 2 tablet, 3 medium, 6 laptop */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 mb-8">
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}

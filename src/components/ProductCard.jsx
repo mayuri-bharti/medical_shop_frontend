@@ -23,66 +23,61 @@ const ProductCard = ({ product }) => {
     : 0
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+    <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:border-medical-300 transition-all duration-200 flex flex-col">
       {/* Product Image */}
-      <div className="h-32 w-full bg-gray-100 relative overflow-hidden">
+      <div className="h-20 w-full bg-gray-50 relative overflow-hidden flex items-center justify-center">
         <img
           src={product.images?.[0] || product.image || '/placeholder-medicine.jpg'}
           alt={product.name}
-          className="h-32 w-full object-contain"
+          className="h-full w-full object-contain p-1"
           onError={(e) => {
             e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23E5E7EB" width="400" height="400"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EMedicine%3C/text%3E%3C/svg%3E'
           }}
         />
         {product.stock === 0 && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="bg-red-600 text-white px-2 py-0.5 rounded text-xs font-medium">
+            <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium">
               Out of Stock
+            </span>
+          </div>
+        )}
+        {discountPercentage > 0 && (
+          <div className="absolute top-1 right-1">
+            <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">
+              {discountPercentage}% OFF
             </span>
           </div>
         )}
       </div>
 
       {/* Product Info */}
-      <div className="p-2">
+      <div className="p-1.5 flex flex-col flex-grow">
         {/* Brand */}
         {product.brand && (
-          <p className="text-xs text-gray-500 mb-0.5 line-clamp-1">{product.brand}</p>
+          <p className="text-[10px] text-gray-400 mb-0.5 line-clamp-1">{product.brand}</p>
         )}
         
         {/* Name */}
-        <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
+        <h3 className="text-xs font-semibold text-gray-900 mb-1 line-clamp-2 leading-tight">
           {product.name}
         </h3>
-        
-        {/* Description */}
-        {product.description && (
-          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-            {product.description}
-          </p>
-        )}
 
         {/* Price */}
-        <div className="flex items-center space-x-1 mb-2">
-          <span className="text-xs font-bold text-gray-900">
+        <div className="flex items-baseline gap-1 mb-1 flex-wrap">
+          <span className="text-sm font-bold text-gray-900">
             ₹{product.price.toLocaleString()}
           </span>
           {product.mrp > product.price && (
-            <>
-              <span className="text-xs text-gray-500 line-through">
-                ₹{product.mrp.toLocaleString()}
-              </span>
-              <span className="bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded-full font-medium">
-                {discountPercentage}% OFF
-              </span>
-            </>
+            <span className="text-[10px] text-gray-500 line-through">
+              ₹{product.mrp.toLocaleString()}
+            </span>
           )}
         </div>
 
         {/* Stock Info */}
         {product.stock > 0 && product.stock < 10 && (
-          <p className="text-xs text-orange-600 mb-2">
-            Only {product.stock} left!
+          <p className="text-[10px] text-orange-600 mb-1 font-medium">
+            Only {product.stock} left
           </p>
         )}
 
@@ -90,7 +85,7 @@ const ProductCard = ({ product }) => {
         <button
           onClick={handleAddToCart}
           disabled={adding || product.stock === 0}
-          className="w-full flex items-center justify-center space-x-1 py-1 bg-medical-600 hover:bg-medical-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-1 py-1.5 bg-medical-600 hover:bg-medical-700 text-white text-[11px] font-medium rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
         >
           {adding ? (
             <>
@@ -99,17 +94,17 @@ const ProductCard = ({ product }) => {
             </>
           ) : (
             <>
-              <ShoppingCart size={12} />
+              <ShoppingCart size={11} />
               <span>Add to Cart</span>
             </>
           )}
         </button>
 
         {/* Quick Info */}
-        <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-          <span>{product.category || 'Product'}</span>
+        <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">
+          <span className="truncate">{product.category || 'Product'}</span>
           {product.stock > 0 && (
-            <span className="text-green-600 font-medium">In Stock</span>
+            <span className="text-green-600 font-medium ml-1">In Stock</span>
           )}
         </div>
       </div>

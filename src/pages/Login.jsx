@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
-import { sendOtp, verifyOtp, setAccessToken, getUserRole } from '../lib/api'
+import { sendOtp, verifyOtp, setAccessToken } from '../lib/api'
 import toast from 'react-hot-toast'
 
 const Login = () => {
@@ -53,33 +53,9 @@ const Login = () => {
       const response = await verifyOtp(phone, otp)
       
       if (response.success) {
-        // Set token first
-        if (response.data?.accessToken) {
-          setAccessToken(response.data.accessToken)
-        }
-        
-        // Get user role from response data first (most reliable)
-        // Then fallback to token decoding if needed
-        let userRole = response.data?.user?.role
-        
-        // If role not in response, try to get from token
-        if (!userRole) {
-          // Small delay to ensure token is set in storage
-          await new Promise(resolve => setTimeout(resolve, 100))
-          userRole = getUserRole()
-        }
-        
-        console.log('User role from login:', userRole)
-        console.log('User data:', response.data?.user)
-        
+        setAccessToken(response.data.accessToken)
         toast.success('Login successful!')
-        
-        // Redirect based on user role
-        if (userRole === 'ADMIN') {
-          navigate('/admin/dashboard')
-        } else {
-          navigate('/user/dashboard')
-        }
+        navigate('/prescription')
       }
     } catch (err) {
       setError(err.message || 'Invalid OTP')

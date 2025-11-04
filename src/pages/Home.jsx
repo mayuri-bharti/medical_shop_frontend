@@ -99,13 +99,7 @@ const Home = () => {
       const formData = new FormData()
       formData.append('prescription', file)
 
-      const getDefaultApiUrl = () => {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          return 'http://localhost:4000'
-        }
-        return 'https://medical-shop-backend.vercel.app'
-      }
-      const API_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl()
+      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
       const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
       
       if (!token) {
@@ -170,6 +164,11 @@ const Home = () => {
         onSuccess={handleOtpSuccess}
       />
       <div className="space-y-16">
+      {/* Promotional Banner Carousel */}
+      <section className="mb-8">
+        <PromoBannerCarousel />
+      </section>
+
       {/* Search Section */}
       <section className="bg-gradient-to-r from-medical-600 to-medical-700 rounded-2xl text-white p-8 md:p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{
@@ -245,15 +244,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Promotional Banner Carousel */}
-      <section className="mb-8">
-        <PromoBannerCarousel />
-      </section>
-
       {/* Features */}
       <section>
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Why Choose HealthPlus?
+          Why Choose MediShop?
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => {

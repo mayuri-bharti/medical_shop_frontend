@@ -193,7 +193,3 @@ export default OtpModal
 
 
 
-
-
-
-

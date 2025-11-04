@@ -446,7 +446,3 @@ Your PharmEasy-style promotional carousel is ready!
 **Start your dev server and see it in action!** 🎠🚀
 
 
-
-
-
-

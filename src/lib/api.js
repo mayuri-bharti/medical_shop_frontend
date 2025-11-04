@@ -2,17 +2,7 @@
  * API utility functions for authentication
  */
 
-// Use production URL by default for deployed apps, localhost only for development
-const getDefaultApiUrl = () => {
-  // Check if we're in development
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://localhost:4000/api'
-  }
-  // Use production URL for deployed apps
-  return 'https://medical-shop-backend.vercel.app/api'
-}
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl()
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
 /**
  * Get stored access token
@@ -113,22 +103,7 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
 
   try {
     const response = await fetch(url, config)
-    
-    // Get response text first to handle both JSON and plain text
-    const responseText = await response.text()
-    let data
-    
-    // Try to parse as JSON, fallback to plain text
-    try {
-      data = JSON.parse(responseText)
-    } catch (parseError) {
-      // If it's not JSON, create a proper error response
-      data = {
-        success: false,
-        message: responseText || 'Request failed',
-        error: parseError.message
-      }
-    }
+    const data = await response.json()
     
     // If 401 and we haven't retried yet, try to refresh token
     if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/')) {
@@ -159,10 +134,6 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
     return data
   } catch (error) {
     console.error('API Error:', error)
-    // If error doesn't have a message, provide a default one
-    if (!error.message) {
-      error.message = 'Network error. Please check your connection and try again.'
-    }
     throw error
   }
 }
@@ -200,42 +171,6 @@ export const verifyOtp = async (phone, otp) => {
   }
   
   return result
-}
-
-/**
- * Decode JWT token to get user role
- * @param {string} token - JWT token
- * @returns {Object|null} Decoded token payload or null
- */
-export const decodeToken = (token) => {
-  if (!token) return null
-  
-  try {
-    const base64Url = token.split('.')[1]
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
-  } catch (error) {
-    console.error('Error decoding token:', error)
-    return null
-  }
-}
-
-/**
- * Get user role from token
- * @returns {string|null} User role (USER/ADMIN) or null
- */
-export const getUserRole = () => {
-  const token = getAccessToken()
-  if (!token) return null
-  
-  const decoded = decodeToken(token)
-  return decoded?.role || null
 }
 
 /**
