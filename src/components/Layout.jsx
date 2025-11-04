@@ -16,6 +16,7 @@ const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -24,13 +25,23 @@ const Layout = ({ children }) => {
       const token = getAccessToken()
       setIsAuthenticated(!!token)
       
+      // Check admin role from storage
+      const userRole = localStorage.getItem('userRole') || sessionStorage.getItem('userRole')
+      setIsAdmin(userRole === 'ADMIN')
+      
       if (token) {
         try {
           const userData = await getCurrentUser()
-          setUser(userData.data?.user)
+          const userObj = userData.data?.user
+          setUser(userObj)
+          // Also check role from user object
+          if (userObj?.role === 'ADMIN') {
+            setIsAdmin(true)
+          }
         } catch (error) {
           setIsAuthenticated(false)
           setUser(null)
+          setIsAdmin(false)
         }
       }
     }
@@ -40,8 +51,11 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     removeAccessToken()
+    localStorage.removeItem('userRole')
+    sessionStorage.removeItem('userRole')
     setIsAuthenticated(false)
     setUser(null)
+    setIsAdmin(false)
     navigate('/')
   }
 
@@ -69,9 +83,9 @@ const Layout = ({ children }) => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
+                <span className="text-white font-bold text-2xl">+</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">MediShop</span>
+              <span className="text-xl font-bold text-gray-900">HealthPlus</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -202,10 +216,183 @@ const Layout = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600">
-            <p>&copy; 2024 MediShop. Your trusted health partner.</p>
+      <footer className="mt-auto border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${isAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} mb-8`}>
+            {/* Company Info */}
+            <div className="col-span-2 md:col-span-1">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">HealthPlus</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Your trusted health partner. Quality medicines and healthcare products delivered to your doorstep.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Products
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/prescriptions" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Prescriptions
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Customer Service */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Customer Service</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/orders" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    My Orders
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/shipping" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Shipping Info
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/returns" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Returns & Refunds
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/faq" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/support" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Support
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/privacy" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Terms & Conditions
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/cancellation" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Cancellation Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/disclaimer" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                    Disclaimer
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Contact</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li>
+                  <a href="tel:+911234567890" className="hover:text-medical-600 transition-colors">
+                    📞 +91 123 456 7890
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:support@medishop.com" className="hover:text-medical-600 transition-colors">
+                    ✉️ healthplus@gmail.com
+                  </a>
+                </li>
+                <li className="pt-2">
+                  <p className="text-xs text-gray-500">
+                    Monday - Saturday<br />
+                    9:00 AM - 8:00 PM
+                  </p>
+                </li>
+              </ul>
+            </div>
+
+            {/* Admin Panel - Only visible to admins */}
+            {isAdmin && (
+              <div className="col-span-2 md:col-span-1">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4">Admin Panel</h4>
+                <ul className="space-y-2">
+                  <li>
+                    <Link to="/admin/dashboard" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/dashboard/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Manage Products
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/dashboard/add-product" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Add Product
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/dashboard/orders" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Manage Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/dashboard/users" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Manage Users
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/admin/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                      Products (Admin)
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-200 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-600 text-center md:text-left">
+                &copy; {new Date().getFullYear()} HealthPlus. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>Licensed Pharmacy</span>
+                <span className="hidden md:inline">|</span>
+                <span>Verified Products</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

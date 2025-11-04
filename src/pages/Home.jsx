@@ -164,11 +164,6 @@ const Home = () => {
         onSuccess={handleOtpSuccess}
       />
       <div className="space-y-16">
-      {/* Promotional Banner Carousel */}
-      <section className="mb-8">
-        <PromoBannerCarousel />
-      </section>
-
       {/* Search Section */}
       <section className="bg-gradient-to-r from-medical-600 to-medical-700 rounded-2xl text-white p-8 md:p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{
@@ -242,6 +237,11 @@ const Home = () => {
             </label>
           </div>
         </div>
+      </section>
+
+      {/* Promotional Banner Carousel */}
+      <section className="mb-8">
+        <PromoBannerCarousel />
       </section>
 
       {/* Features */}
