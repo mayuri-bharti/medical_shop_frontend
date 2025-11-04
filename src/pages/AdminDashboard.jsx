@@ -56,8 +56,8 @@ const AdminDashboard = () => {
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Add Product', href: '/admin/dashboard/add-product', icon: Package },
-    { name: 'View Products', href: '/admin/dashboard/products', icon: Package },
-    { name: 'Users', href: '/admin/dashboard/users', icon: Users },
+    { name: 'Manage Products', href: '/admin/dashboard/products', icon: Package },
+    { name: 'Manage Users', href: '/admin/dashboard/users', icon: Users },
     { name: 'Orders', href: '/admin/dashboard/orders', icon: ShoppingBag },
   ]
 

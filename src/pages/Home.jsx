@@ -99,7 +99,13 @@ const Home = () => {
       const formData = new FormData()
       formData.append('prescription', file)
 
-      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+      const getDefaultApiUrl = () => {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return 'http://localhost:4000'
+        }
+        return 'https://medical-shop-backend.vercel.app'
+      }
+      const API_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl()
       const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
       
       if (!token) {

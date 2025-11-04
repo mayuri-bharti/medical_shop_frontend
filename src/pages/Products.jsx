@@ -14,23 +14,66 @@ const Products = () => {
     ['products', searchTerm, selectedCategory, sortBy],
     async () => {
       try {
+        console.log('Fetching products with params:', { search: searchTerm, category: selectedCategory, sort: sortBy })
+        console.log('API Base URL:', api.defaults.baseURL)
+        
         const response = await api.get('/products', {
-          params: { search: searchTerm, category: selectedCategory, sort: sortBy }
+          params: { 
+            search: searchTerm || undefined, 
+            category: selectedCategory || undefined, 
+            sort: sortBy || undefined 
+          },
+          timeout: 60000, // 60 second timeout for mobile networks (increased)
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         })
+        
+        console.log('Products API response:', response.status, response.data)
         
         // Handle both old and new response formats
         const responseData = response.data
+        
+        // If response has success field, use it directly
         if (responseData && responseData.success !== undefined) {
-          return responseData
+          if (responseData.success && responseData.products) {
+            console.log(`Successfully loaded ${responseData.products.length} products`)
+            return responseData
+          } else {
+            console.warn('API returned success=false:', responseData)
+            throw new Error(responseData.message || 'Failed to load products')
+          }
         }
-        // If no success field, assume success and add it
+        
+        // If no success field, check if products array exists
+        if (responseData && (responseData.products || Array.isArray(responseData))) {
+          const products = responseData.products || responseData || []
+          console.log(`Loaded ${products.length} products (legacy format)`)
+          return {
+            success: true,
+            products: products,
+            pagination: responseData.pagination || {}
+          }
+        }
+        
+        // No products found
+        console.warn('No products in response:', responseData)
         return {
           success: true,
-          products: responseData.products || responseData || [],
-          pagination: responseData.pagination || {}
+          products: [],
+          pagination: {}
         }
       } catch (err) {
-        console.error('Products API error:', err)
+        console.error('Products API error details:', {
+          message: err.message,
+          code: err.code,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          url: err.config?.url,
+          baseURL: err.config?.baseURL
+        })
         throw err
       }
     },
@@ -85,9 +128,68 @@ const Products = () => {
   }
 
   if (error) {
+    console.error('Products loading error:', error)
+    
+    // Get more detailed error information
+    const errorMessage = error.response?.data?.message || 
+                         error.message || 
+                         'Unknown error occurred'
+    const errorStatus = error.response?.status
+    const isNetworkError = error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')
+    const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+    const isCorsError = error.message?.includes('CORS') || error.message?.includes('cors')
+    
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading products. Please try again.</p>
+      <div className="text-center py-12 px-4">
+        <div className="max-w-md mx-auto">
+          <div className="mb-4">
+            <p className="text-red-600 font-semibold text-lg mb-2">
+              {isNetworkError 
+                ? 'Network Error' 
+                : isTimeout 
+                  ? 'Connection Timeout' 
+                  : isCorsError
+                    ? 'Connection Error'
+                    : 'Error loading products'}
+            </p>
+            <p className="text-gray-600 text-sm mb-4">
+              {isNetworkError 
+                ? 'Please check your internet connection and try again. If the problem persists, the server may be temporarily unavailable.'
+                : isTimeout
+                  ? 'The request took too long. This may be due to a slow connection. Please check your internet and try again.'
+                  : isCorsError
+                    ? 'Unable to connect to the server. Please try again or contact support if the issue persists.'
+                    : errorMessage}
+            </p>
+            {errorStatus && (
+              <p className="text-gray-500 text-xs mb-4">
+                Status: {errorStatus}
+              </p>
+            )}
+            {import.meta.env.DEV && (
+              <p className="text-gray-400 text-xs mb-4 font-mono">
+                API URL: {api.defaults.baseURL}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-medical-600 hover:bg-medical-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Reload Page
+            </button>
+            <button
+              onClick={() => {
+                // Force refetch by clearing cache and retrying
+                window.location.href = '/products'
+              }}
+              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -140,7 +242,7 @@ const Products = () => {
         </select>
       </div>
 
-      {/* Products Grid - Responsive: 1-2 mobile, 2-3 tablet, 6 laptop */}
+      {/* Products Grid - Responsive: 1 mobile, 2 tablet, 3 medium, 6 laptop */}
       {products?.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {products.map((product) => (

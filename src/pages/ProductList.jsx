@@ -35,7 +35,15 @@ const ProductList = () => {
 
     try {
       // Get API base URL from environment or use default
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const getDefaultApiUrl = () => {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return 'http://localhost:4000/api'
+        }
+        return 'https://medical-shop-backend.vercel.app/api'
+      }
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl()
+      
+      console.log('Fetching products from:', API_BASE_URL)
       
       const response = await axios.get(`${API_BASE_URL}/products`, {
         params: {
@@ -43,18 +51,36 @@ const ProductList = () => {
           limit: 20,
           ...(searchTerm && { search: searchTerm }),
           ...(selectedCategory && { category: selectedCategory })
+        },
+        timeout: 30000, // 30 second timeout for mobile networks
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       })
 
       if (response.data && response.data.success) {
-        setProducts(response.data.products || [])
+        const productsData = response.data.products || []
+        setProducts(productsData)
         setTotalPages(response.data.pagination?.pages || 1)
+        console.log(`Loaded ${productsData.length} products`)
       } else {
-        setError('Failed to load products')
+        console.error('Invalid response format:', response.data)
+        setError('Failed to load products: Invalid response format')
       }
     } catch (err) {
       console.error('Fetch products error:', err)
-      setError(err.response?.data?.message || 'Failed to load products. Please check your connection.')
+      
+      // Better error messages for mobile users
+      if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+        setError('Connection timeout. Please check your internet connection and try again.')
+      } else if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+        setError('Network error. Please check your internet connection.')
+      } else if (err.response?.status === 0) {
+        setError('Cannot connect to server. Please check your internet connection.')
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to load products. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -161,8 +187,8 @@ const ProductList = () => {
           </div>
         ) : (
           <>
-            {/* Products Grid - Responsive: 1 mobile, 2 tablet, 6 laptop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+            {/* Products Grid - Responsive: 1 mobile, 2 tablet, 3 medium, 6 laptop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
               {products.map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}

@@ -53,15 +53,32 @@ const AdminLogin = () => {
       const response = await verifyOtp(phone, otp)
       
       if (response.success) {
-        setAccessToken(response.data.accessToken)
+        // Set token first
+        if (response.data?.accessToken) {
+          setAccessToken(response.data.accessToken)
+        }
         
-        // Get user role from token or response
-        const userRole = response.data?.user?.role || getUserRole()
+        // Get user role from response data first (most reliable)
+        // Then fallback to token decoding if needed
+        let userRole = response.data?.user?.role
+        
+        // If role not in response, try to get from token
+        if (!userRole) {
+          // Small delay to ensure token is set in storage
+          await new Promise(resolve => setTimeout(resolve, 100))
+          userRole = getUserRole()
+        }
+        
+        console.log('User role from login:', userRole)
+        console.log('User data:', response.data?.user)
         
         // Verify admin role
         if (userRole !== 'ADMIN') {
-          toast.error('Access denied. Admin privileges required.')
-          setError('This account does not have admin privileges.')
+          toast.error('This account does not have admin privileges. Redirecting to user dashboard...')
+          // Redirect regular users to their dashboard instead of blocking
+          setTimeout(() => {
+            navigate('/user/dashboard')
+          }, 1500)
           return
         }
         
@@ -241,8 +258,11 @@ const AdminLogin = () => {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 mb-2">
             Regular user? <a href="/login" className="text-medical-600 hover:underline font-medium">Login here</a>
+          </p>
+          <p className="text-xs text-gray-500">
+            Note: If you're not an admin, you'll be redirected to your user dashboard after login.
           </p>
         </div>
       </div>

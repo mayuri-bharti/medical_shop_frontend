@@ -53,10 +53,24 @@ const Login = () => {
       const response = await verifyOtp(phone, otp)
       
       if (response.success) {
-        setAccessToken(response.data.accessToken)
+        // Set token first
+        if (response.data?.accessToken) {
+          setAccessToken(response.data.accessToken)
+        }
         
-        // Get user role from token or response
-        const userRole = response.data?.user?.role || getUserRole()
+        // Get user role from response data first (most reliable)
+        // Then fallback to token decoding if needed
+        let userRole = response.data?.user?.role
+        
+        // If role not in response, try to get from token
+        if (!userRole) {
+          // Small delay to ensure token is set in storage
+          await new Promise(resolve => setTimeout(resolve, 100))
+          userRole = getUserRole()
+        }
+        
+        console.log('User role from login:', userRole)
+        console.log('User data:', response.data?.user)
         
         toast.success('Login successful!')
         

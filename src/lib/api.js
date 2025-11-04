@@ -2,7 +2,17 @@
  * API utility functions for authentication
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://medical-shop-backend.vercel.app/api'
+// Use production URL by default for deployed apps, localhost only for development
+const getDefaultApiUrl = () => {
+  // Check if we're in development
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:4000/api'
+  }
+  // Use production URL for deployed apps
+  return 'https://medical-shop-backend.vercel.app/api'
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiUrl()
 
 /**
  * Get stored access token
@@ -103,7 +113,22 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
 
   try {
     const response = await fetch(url, config)
-    const data = await response.json()
+    
+    // Get response text first to handle both JSON and plain text
+    const responseText = await response.text()
+    let data
+    
+    // Try to parse as JSON, fallback to plain text
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      // If it's not JSON, create a proper error response
+      data = {
+        success: false,
+        message: responseText || 'Request failed',
+        error: parseError.message
+      }
+    }
     
     // If 401 and we haven't retried yet, try to refresh token
     if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/')) {
@@ -134,6 +159,10 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
     return data
   } catch (error) {
     console.error('API Error:', error)
+    // If error doesn't have a message, provide a default one
+    if (!error.message) {
+      error.message = 'Network error. Please check your connection and try again.'
+    }
     throw error
   }
 }

@@ -15,7 +15,8 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Linkedin
+  Linkedin,
+  Shield
 } from 'lucide-react'
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 
@@ -130,6 +131,25 @@ const Layout = ({ children }) => {
                     <ShoppingCart size={20} />
                   </Link>
                   
+                  {/* User Dashboard Link */}
+                  {user?.role !== 'ADMIN' ? (
+                    <Link
+                      to="/user/dashboard"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:text-medical-600 hover:bg-gray-50 rounded-md transition-colors"
+                    >
+                      <User size={16} />
+                      <span className="hidden md:block">User Dashboard</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-medical-600 hover:text-medical-700 hover:bg-medical-50 rounded-md transition-colors font-medium"
+                    >
+                      <Shield size={16} />
+                      <span className="hidden md:block">Admin Panel</span>
+                    </Link>
+                  )}
+                  
                   <Link
                     to="/profile"
                     className="flex items-center space-x-2 text-gray-700 hover:text-medical-600 transition-colors"
@@ -189,18 +209,47 @@ const Layout = ({ children }) => {
                 )
               })}
               {isAuthenticated && (
-                <Link
-                  to="/prescriptions"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive('/prescriptions')
-                      ? 'text-medical-600 bg-medical-50'
-                      : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <FileText size={20} />
-                  <span>Prescriptions</span>
-                </Link>
+                <>
+                  {user?.role !== 'ADMIN' ? (
+                    <Link
+                      to="/user/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                        isActive('/user/dashboard')
+                          ? 'text-medical-600 bg-medical-50'
+                          : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <User size={20} />
+                      <span>User Dashboard</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                        isActive('/admin/dashboard')
+                          ? 'text-medical-600 bg-medical-50'
+                          : 'text-medical-600 hover:bg-medical-50'
+                      }`}
+                    >
+                      <Shield size={20} />
+                      <span>Admin Panel</span>
+                    </Link>
+                  )}
+                  <Link
+                    to="/prescriptions"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      isActive('/prescriptions')
+                        ? 'text-medical-600 bg-medical-50'
+                        : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <FileText size={20} />
+                    <span>Prescriptions</span>
+                  </Link>
+                </>
               )}
             </div>
           </div>

@@ -43,15 +43,33 @@ const UserDashboard = () => {
   const fetchProducts = async () => {
     try {
       const response = await api.get('/products', {
-        params: { limit: 20 }
+        params: { limit: 20 },
+        timeout: 30000, // 30 second timeout for mobile networks
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       })
       
       if (response.data && response.data.success) {
-        setProducts(response.data.products || [])
+        const productsData = response.data.products || []
+        setProducts(productsData)
+        console.log(`Loaded ${productsData.length} products`)
+      } else {
+        console.error('Invalid response format:', response.data)
+        toast.error('Failed to load products: Invalid response')
       }
     } catch (error) {
       console.error('Failed to fetch products:', error)
-      toast.error('Failed to load products')
+      
+      // Better error messages for mobile
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        toast.error('Connection timeout. Please check your internet connection.')
+      } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+        toast.error('Network error. Please check your internet connection.')
+      } else {
+        toast.error(error.response?.data?.message || error.message || 'Failed to load products')
+      }
     } finally {
       setLoading(false)
     }
@@ -155,7 +173,7 @@ const UserDashboard = () => {
           </div>
 
           {products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {products.slice(0, 8).map((product) => (
                 <ProductCard key={product._id} product={product} />
               ))}
