@@ -2,6 +2,8 @@
  * API utility functions for authentication
  */
 
+import axios from "axios";
+
 const isLocalhost = window.location.hostname === "localhost";
 
 
