@@ -2,7 +2,8 @@
  * API utility functions for authentication
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+// const API_BASE_URL=import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+const API_BASE_URL='http://localhost:4000/api'
 
 /**
  * Get stored access token
@@ -40,8 +41,149 @@ export const setRefreshToken = (token) => {
 export const removeAccessToken = () => {
   sessionStorage.removeItem('accessToken')
   sessionStorage.removeItem('refreshToken')
+  sessionStorage.removeItem('adminToken')
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
+  localStorage.removeItem('adminToken')
+  localStorage.removeItem('userRole')
+  sessionStorage.removeItem('userRole')
+}
+
+/**
+ * Admin API functions
+ */
+
+/**
+ * Set admin access token
+ */
+export const setAdminToken = (token) => {
+  sessionStorage.setItem('adminToken', token)
+  localStorage.setItem('adminToken', token)
+  localStorage.setItem('userRole', 'ADMIN')
+  sessionStorage.setItem('userRole', 'ADMIN')
+}
+
+/**
+ * Get admin access token
+ */
+export const getAdminToken = () => {
+  return sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken')
+}
+
+/**
+ * Send OTP to admin phone number
+ */
+export const sendAdminOtp = async (phone) => {
+  return await apiCall('/admin/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone })
+  })
+}
+
+/**
+ * Verify admin OTP
+ */
+export const verifyAdminOtp = async (phone, otp) => {
+  const result = await apiCall('/admin/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone, otp })
+  })
+  
+  // Store admin token if present
+  if (result.data?.accessToken) {
+    setAdminToken(result.data.accessToken)
+  }
+  
+  return result
+}
+
+/**
+ * Get all users (admin only)
+ */
+export const getUsers = async (params = {}) => {
+  const queryParams = new URLSearchParams(params).toString()
+  return await apiCall(`/admin/users?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Get all orders (admin only)
+ */
+export const getOrders = async (params = {}) => {
+  const queryParams = new URLSearchParams(params).toString()
+  return await apiCall(`/admin/orders?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Get all products (admin only)
+ */
+export const getAdminProducts = async (params = {}) => {
+  const queryParams = new URLSearchParams(params).toString()
+  return await apiCall(`/admin/products?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Get single product by ID (admin only)
+ */
+export const getAdminProduct = async (productId) => {
+  return await apiCall(`/admin/products/${productId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Create product (admin only)
+ */
+export const createProduct = async (productData) => {
+  return await apiCall('/admin/products', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    },
+    body: JSON.stringify(productData)
+  })
+}
+
+/**
+ * Update product (admin only)
+ */
+export const updateProduct = async (productId, productData) => {
+  return await apiCall(`/admin/products/${productId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    },
+    body: JSON.stringify(productData)
+  })
+}
+
+/**
+ * Delete product (admin only)
+ */
+export const deleteProduct = async (productId) => {
+  return await apiCall(`/admin/products/${productId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
 }
 
 /**
@@ -129,11 +271,13 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
       error.status = response.status
       error.data = data
       throw error
+      
     }
     
     return data
   } catch (error) {
     console.error('API Error:', error)
+    console.log(error);
     throw error
   }
 }

@@ -67,8 +67,10 @@ const Layout = ({ children }) => {
 
   const isActive = (path) => location.pathname === path
 
-  // Don't show navigation on login/verify pages
-  const hideNav = location.pathname === '/login' || location.pathname === '/verify'
+  // Don't show navigation on login/verify/admin pages
+  const hideNav = location.pathname === '/login' || 
+                  location.pathname === '/verify' || 
+                  location.pathname.startsWith('/admin')
 
   if (hideNav) {
     return <>{children}</>
@@ -313,6 +315,11 @@ const Layout = ({ children }) => {
                 <li>
                   <Link to="/disclaimer" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
                     Disclaimer
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/login" className="text-sm text-medical-600 hover:text-medical-700 font-medium transition-colors">
+                    Admin Login
                   </Link>
                 </li>
               </ul>

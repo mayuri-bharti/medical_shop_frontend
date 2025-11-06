@@ -73,7 +73,7 @@ const Login = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-medical-600 to-medical-700 rounded-2xl mb-4 shadow-lg">
             <Shield className="text-white" size={40} />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">MediShop</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">HealthPlus</h1>
           <p className="text-gray-600 text-lg">Your trusted health partner</p>
         </div>
 

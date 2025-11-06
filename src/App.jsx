@@ -14,6 +14,17 @@ import Prescriptions from './pages/Prescriptions'
 import Profile from './pages/Profile'
 import AdminProducts from './pages/AdminProducts'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminProtectedRoute from './components/AdminProtectedRoute'
+
+// Admin Pages
+import AdminLogin from './pages/admin/Login'
+import AdminDashboard from './pages/admin/Dashboard'
+import AdminDashboardHome from './pages/admin/DashboardHome'
+import AdminUsers from './pages/admin/Users'
+import AdminOrders from './pages/admin/Orders'
+import AdminAddProduct from './pages/admin/AddProduct'
+import AdminManageProducts from './pages/admin/ManageProducts'
+import AdminEditProduct from './pages/admin/EditProduct'
 
 function App() {
   return (
@@ -67,6 +78,21 @@ function App() {
             <AdminProducts />
           </ProtectedRoute>
         } />
+
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={
+          <AdminProtectedRoute>
+            <AdminDashboard />
+          </AdminProtectedRoute>
+        }>
+          <Route index element={<AdminDashboardHome />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="add-product" element={<AdminAddProduct />} />
+          <Route path="manage-products" element={<AdminManageProducts />} />
+          <Route path="edit-product/:id" element={<AdminEditProduct />} />
+        </Route>
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />

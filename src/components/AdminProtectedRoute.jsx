@@ -1,26 +1,14 @@
-import { Navigate, useLocation } from 'react-router-dom'
-import { getAccessToken, getUserRole } from '../lib/api'
+import { Navigate } from 'react-router-dom'
+import { getAdminToken } from '../lib/api'
 
 const AdminProtectedRoute = ({ children }) => {
-  const location = useLocation()
-  const accessToken = getAccessToken()
-  const userRole = getUserRole()
+  const adminToken = getAdminToken()
 
-  if (!accessToken) {
-    return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  if (userRole !== 'ADMIN') {
-    return <Navigate to="/user/dashboard" replace />
+  if (!adminToken) {
+    return <Navigate to="/admin/login" replace />
   }
 
   return children
 }
 
 export default AdminProtectedRoute
-
-
-
-
-
-

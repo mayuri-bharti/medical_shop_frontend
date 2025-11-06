@@ -125,7 +125,7 @@ const PromoBannerCarousel = () => {
       >
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
-            <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-80 group">
+            <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-60 md:h-64 group">
               {/* Background Gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgColor}`} />
               
