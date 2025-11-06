@@ -16,6 +16,7 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+const API_BASE_URL = api.defaults.baseURL;
 /**
  * Get stored access token
  */
