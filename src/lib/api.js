@@ -2,9 +2,18 @@
  * API utility functions for authentication
  */
 
-// const API_BASE_URL=import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
-const API_BASE_URL='http://localhost:4000/api'
+const isLocalhost = window.location.hostname === "localhost";
 
+
+const api = axios.create({
+  // Prefer environment variable; then local; then deployed backend
+  baseURL : isLocalhost
+    ? "http://localhost:4000/api"
+    : "https://medical-shop-backend.vercel.app/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 /**
  * Get stored access token
  */
@@ -236,11 +245,13 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
   const url = `${API_BASE_URL}${endpoint}`
   
   const config = {
+    method: options.method || 'GET',
+    ...options,
+    // Ensure headers are merged properly (not overwritten by spread)
     headers: {
       'Content-Type': 'application/json',
       ...options.headers
-    },
-    ...options
+    }
   }
 
   try {
