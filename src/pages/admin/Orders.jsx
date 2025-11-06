@@ -65,82 +65,80 @@ const AdminOrders = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orders Management</h1>
-          <p className="text-gray-600 mt-1">View and manage all orders</p>
-        </div>
+      <div className="pb-2">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Orders Management</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">View and manage all orders</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex items-center space-x-4">
-          <Filter size={20} className="text-gray-400" />
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 md:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Status:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
-            >
-              <option value="all">All Orders</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+            <Filter size={20} className="text-gray-400 flex-shrink-0" />
+            <label className="text-sm md:text-base font-medium text-gray-700 whitespace-nowrap">Status:</label>
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 text-sm md:text-base font-medium"
+          >
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
       </div>
 
       {/* Orders List */}
-      <div className="space-y-4">
+      <div className="space-y-4 md:space-y-5">
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sm:p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading orders...</p>
+            <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading orders...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sm:p-12 text-center">
             <ShoppingBag className="mx-auto text-gray-400" size={48} />
-            <p className="mt-4 text-gray-600">No orders found</p>
+            <p className="mt-4 text-gray-600 text-sm sm:text-base">No orders found</p>
           </div>
         ) : (
           orders.map((order) => (
-            <div key={order._id} className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
+            <div key={order._id} className="bg-white rounded-xl shadow-md border border-gray-100 p-5 md:p-6 lg:p-7 hover:shadow-lg transition-shadow duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                    <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
                       Order #{order._id.slice(-8).toUpperCase()}
                     </h3>
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                    <span className={`px-4 py-1.5 text-xs md:text-sm font-semibold rounded-full w-fit ${getStatusColor(order.status)}`}>
                       {order.status?.toUpperCase() || 'UNKNOWN'}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <User size={14} />
-                      <span>{order.user?.name || order.user?.phone || 'Unknown User'}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm md:text-base text-gray-600">
+                    <div className="flex items-center space-x-2">
+                      <User size={16} className="text-gray-400" />
+                      <span className="font-medium">{order.user?.name || order.user?.phone || 'Unknown User'}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar size={14} />
+                    <div className="flex items-center space-x-2">
+                      <Calendar size={16} className="text-gray-400" />
                       <span>{formatDate(order.createdAt)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">
+                <div className="text-left sm:text-right">
+                  <div className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
                     {formatCurrency(order.total)}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm md:text-base text-gray-500 mt-1">
                     {order.items?.length || 0} item(s)
                   </div>
                 </div>
@@ -193,21 +191,21 @@ const AdminOrders = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-lg shadow-sm px-6 py-4 flex items-center justify-between">
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 px-4 sm:px-6 lg:px-8 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-5 py-2.5 border-2 border-gray-300 rounded-lg text-sm md:text-base font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             Previous
           </button>
-          <span className="text-sm text-gray-700">
+          <span className="text-sm md:text-base text-gray-700 font-medium">
             Page {currentPage} of {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-5 py-2.5 border-2 border-gray-300 rounded-lg text-sm md:text-base font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             Next
           </button>

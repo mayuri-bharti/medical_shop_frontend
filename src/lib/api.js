@@ -29,7 +29,7 @@ export const getAccessToken = () => {
  */
 export const setAccessToken = (token) => {
   sessionStorage.setItem('accessToken', token)
-  localStorage.setItem('accessToken', token)
+  localStorage.setItem('accessToken', token);
 }
 
 /**

@@ -92,15 +92,15 @@ const AddProduct = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-        <p className="text-gray-600 mt-1">Create a new product for your store</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Add New Product</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Create a new product for your store</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -273,7 +273,7 @@ const AddProduct = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => {
@@ -289,14 +289,14 @@ const AddProduct = () => {
                 images: []
               })
             }}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Reset
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="w-full sm:w-auto px-6 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
             {loading ? (
               <>
@@ -317,6 +317,8 @@ const AddProduct = () => {
 }
 
 export default AddProduct
+
+
 
 
 
