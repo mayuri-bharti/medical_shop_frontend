@@ -349,43 +349,14 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Admin Panel - Only visible to admins */}
-            {isAdmin && (
-              <div className="col-span-2 md:col-span-1">
-                <h4 className="text-sm font-semibold text-gray-900 mb-4">Admin Panel</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <Link to="/admin/dashboard" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/dashboard/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Manage Products
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/dashboard/add-product" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Add Product
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/dashboard/orders" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Manage Orders
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/dashboard/users" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Manage Users
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/admin/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
-                      Products (Admin)
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            )}
+            
+
+                
+               
+                 
+                
+             
+            
           </div>
 
           {/* Bottom Bar */}
