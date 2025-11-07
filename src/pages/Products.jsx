@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useQuery } from 'react-query'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { Search } from 'lucide-react'
 import PageCarousel from '../components/PageCarousel'
 import ProductCard from '../components/ProductCard'
 
 const Products = () => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [sortBy, setSortBy] = useState('name')
 
   const { data, isLoading, error } = useQuery(
@@ -210,7 +212,16 @@ const Products = () => {
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* Search */}
-        <div className="flex-1 relative">
+        <form 
+          className="flex-1 relative"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const params = new URLSearchParams()
+            if (searchTerm) params.set('search', searchTerm)
+            if (selectedCategory) params.set('category', selectedCategory)
+            setSearchParams(params, { replace: true })
+          }}
+        >
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
@@ -219,13 +230,28 @@ const Products = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+        </form>
 
         {/* Category Filter */}
         <select
           className="input-field md:w-48"
           value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value)
+            // Update URL immediately when category changes
+            const params = new URLSearchParams(searchParams)
+            if (e.target.value) {
+              params.set('category', e.target.value)
+            } else {
+              params.delete('category')
+            }
+            if (searchTerm) {
+              params.set('search', searchTerm)
+            } else {
+              params.delete('search')
+            }
+            setSearchParams(params, { replace: true })
+          }}
         >
           <option value="">All Categories</option>
           {categories.map(category => (
