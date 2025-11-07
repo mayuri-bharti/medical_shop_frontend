@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
-import { sendOtp, verifyOtp, setAccessToken } from '../lib/api'
+import { sendOtp, verifyOtp, setAccessToken, getAccessToken } from '../lib/api'
 import toast from 'react-hot-toast'
 
 const Login = () => {
@@ -11,6 +11,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectUrl = searchParams.get('redirect')
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const token = getAccessToken()
+    if (token) {
+      // User is already logged in, redirect them
+      if (redirectUrl) {
+        const decodedUrl = decodeURIComponent(redirectUrl)
+        navigate(decodedUrl, { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [navigate, redirectUrl])
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -55,7 +71,14 @@ const Login = () => {
       if (response.success) {
         setAccessToken(response.data.accessToken)
         toast.success('Login successful!')
-        navigate('/prescription')
+        
+        // Redirect to the specified URL or default to dashboard
+        if (redirectUrl) {
+          const decodedUrl = decodeURIComponent(redirectUrl)
+          navigate(decodedUrl)
+        } else {
+          navigate('/dashboard')
+        }
       }
     } catch (err) {
       setError(err.message || 'Invalid OTP')

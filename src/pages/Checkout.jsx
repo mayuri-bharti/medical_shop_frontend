@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MapPin, CreditCard, Smartphone, Wallet, CheckCircle } from 'lucide-react'
+import { getAccessToken } from '../lib/api'
 import toast from 'react-hot-toast'
 
 const Checkout = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [cart, setCart] = useState(null)
   const [shippingAddress, setShippingAddress] = useState({
@@ -17,16 +19,73 @@ const Checkout = () => {
     landmark: ''
   })
   const [paymentMethod, setPaymentMethod] = useState('COD')
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
   useEffect(() => {
-    fetchCart()
+    // Check if we need to add a product to cart (from Buy Now redirect)
+    const productId = searchParams.get('productId')
+    const quantity = parseInt(searchParams.get('quantity')) || 1
+    
+    if (productId) {
+      addProductToCart(productId, quantity).then(() => {
+        fetchCart()
+        // Remove productId from URL
+        const newParams = new URLSearchParams(searchParams)
+        newParams.delete('productId')
+        newParams.delete('quantity')
+        navigate(`/checkout?${newParams.toString()}`, { replace: true })
+      })
+    } else {
+      fetchCart()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const addProductToCart = async (productId, quantity) => {
+    try {
+      const token = getAccessToken()
+      if (!token) {
+        toast.error('Please login to continue')
+        navigate('/login')
+        return
+      }
+
+      const response = await fetch(`${API_BASE}/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId,
+          quantity
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Product added to cart!')
+      } else {
+        throw new Error(data.message || 'Failed to add product to cart')
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error)
+      toast.error(error.message || 'Failed to add product to cart')
+    }
+  }
 
   const fetchCart = async () => {
     try {
-      const token = sessionStorage.getItem('accessToken')
+      const token = getAccessToken()
+      if (!token) {
+        toast.error('Please login to continue')
+        navigate('/login?redirect=' + encodeURIComponent('/checkout'))
+        return
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/cart`,
+        `${API_BASE}/cart`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -36,10 +95,16 @@ const Checkout = () => {
       const data = await response.json()
       if (data.success) {
         setCart(data.data)
+      } else {
+        throw new Error(data.message || 'Failed to fetch cart')
       }
     } catch (error) {
       console.error('Failed to fetch cart:', error)
       toast.error('Failed to load cart')
+      // If unauthorized, redirect to login
+      if (error.message?.includes('401') || error.message?.includes('unauthorized')) {
+        navigate('/login?redirect=' + encodeURIComponent('/checkout'))
+      }
     }
   }
 
@@ -48,9 +113,15 @@ const Checkout = () => {
     setLoading(true)
 
     try {
-      const token = sessionStorage.getItem('accessToken')
+      const token = getAccessToken()
+      if (!token) {
+        toast.error('Please login to continue')
+        navigate('/login?redirect=' + encodeURIComponent('/checkout'))
+        return
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/orders`,
+        `${API_BASE}/orders`,
         {
           method: 'POST',
           headers: {

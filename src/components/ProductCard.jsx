@@ -1,9 +1,15 @@
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Zap } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getAccessToken } from '../lib/api'
 import toast from 'react-hot-toast'
 
 const ProductCard = ({ product }) => {
+  const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
+  const [buying, setBuying] = useState(false)
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
   const handleAddToCart = async () => {
     setAdding(true)
@@ -15,6 +21,50 @@ const ProductCard = ({ product }) => {
       toast.error('Failed to add to cart')
     } finally {
       setAdding(false)
+    }
+  }
+
+  const handleBuyNow = async () => {
+    // Check if user is authenticated
+    const token = getAccessToken()
+    
+    if (!token) {
+      // User not logged in, redirect to login with return URL
+      const returnUrl = encodeURIComponent(`/checkout?productId=${product._id}&quantity=1`)
+      navigate(`/login?redirect=${returnUrl}`)
+      return
+    }
+
+    // User is authenticated, proceed with buy now
+    setBuying(true)
+    try {
+      // Add product to cart
+      const response = await fetch(`${API_BASE}/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast.success('Product added to cart!')
+        // Navigate to checkout
+        navigate('/checkout')
+      } else {
+        throw new Error(data.message || 'Failed to add product to cart')
+      }
+    } catch (error) {
+      console.error('Buy now error:', error)
+      toast.error(error.message || 'Failed to proceed with purchase')
+    } finally {
+      setBuying(false)
     }
   }
 
@@ -81,24 +131,46 @@ const ProductCard = ({ product }) => {
           </p>
         )}
 
-        {/* Add to Cart Button */}
-        <button
-          onClick={handleAddToCart}
-          disabled={adding || product.stock === 0}
-          className="w-full flex items-center justify-center gap-1 py-1.5 bg-medical-600 hover:bg-medical-700 text-white text-[11px] font-medium rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
-        >
-          {adding ? (
-            <>
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-              <span>Adding...</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart size={11} />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-row gap-1.5 mt-auto">
+          {/* Buy Now Button */}
+          <button
+            onClick={handleBuyNow}
+            disabled={buying || product.stock === 0}
+            className="group flex-1 flex items-center justify-center gap-1 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[11px] font-medium rounded transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg active:scale-95 transform"
+          >
+            {buying ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <Zap size={11} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+                <span className="transition-all duration-300">Buy Now</span>
+              </>
+            )}
+          </button>
+
+          {/* Add to Cart Button */}
+          <button
+            onClick={handleAddToCart}
+            disabled={adding || product.stock === 0}
+            className="group flex-1 flex items-center justify-center gap-1 py-1.5 bg-medical-600 hover:bg-medical-700 text-white text-[11px] font-medium rounded transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg active:scale-95 transform"
+          >
+            {adding ? (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <span>Adding...</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={11} className="transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5" />
+                <span className="transition-all duration-300">Add to Cart</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {/* Quick Info */}
         <div className="mt-1 flex items-center justify-between text-[10px] text-gray-500">

@@ -1,5 +1,6 @@
 import { useQuery } from 'react-query'
 import { api } from '../services/api'
+import { getAccessToken } from '../lib/api'
 import { Package } from 'lucide-react'
 
 // Dummy data for demonstration
@@ -39,13 +40,44 @@ const dummyOrders = [
 ]
 
 const Orders = () => {
+  // Check if user is authenticated (ProtectedRoute already checks, but double-check here)
+  const token = getAccessToken()
+  
   // Try to fetch real orders, fallback to dummy data if error
   const { data: orders, isLoading, error } = useQuery(
     'orders',
-    () => api.get('/orders').then(res => res.data),
+    async () => {
+      if (!token) {
+        // This shouldn't happen if ProtectedRoute is working, but handle it gracefully
+        throw new Error('Not authenticated')
+      }
+      try {
+        const response = await api.get('/orders', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        return response.data
+      } catch (err) {
+        // If it's a 401, the API interceptor will handle the redirect
+        // For other errors, we'll use dummy data
+        if (err.response?.status === 401) {
+          throw err // Let the interceptor handle it
+        }
+        throw err
+      }
+    },
     {
       retry: false,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      enabled: !!token, // Only run query if token exists
+      // Don't throw errors for non-auth errors, just use dummy data
+      onError: (err) => {
+        // Only log non-401 errors (401 will be handled by interceptor)
+        if (err.response?.status !== 401) {
+          console.log('Orders fetch error (using dummy data):', err)
+        }
+      }
     }
   )
 
