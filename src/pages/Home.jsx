@@ -39,6 +39,20 @@ const Home = () => {
     { name: 'Ayurvedic Products', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' }
   ], [])
 
+  const categoryImages = useMemo(
+    () => ({
+      'Prescription Medicines': 'https://images.unsplash.com/photo-1582719478181-2cf4e1baedb5?w=200&h=200&fit=crop&q=80',
+      'OTC Medicines': 'https://images.unsplash.com/photo-1580281780460-82d277b0e3a3?w=200&h=200&fit=crop&q=80',
+      'HealthPlus Products': 'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=200&h=200&fit=crop&q=80',
+      'Personal Care': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200&h=200&fit=crop&q=80',
+      'Health Supplements': 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=200&h=200&fit=crop&q=80',
+      'Baby Care': 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=200&fit=crop&q=80',
+      'Medical Devices': 'https://images.unsplash.com/photo-1582719478250-428daf0c0d4b?w=200&h=200&fit=crop&q=80',
+      'Ayurvedic Products': 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=200&h=200&fit=crop&q=80'
+    }),
+    []
+  )
+
   const mockSuggestions = useMemo(() => [
     'Paracetamol',
     'Crocin Advance',
@@ -256,6 +270,43 @@ const Home = () => {
                 disabled={uploading}
               />
             </label>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Strip */}
+      <section className="relative z-20 -mt-16 mb-12 px-4 md:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 rounded-2xl bg-white/90 p-6 shadow-xl backdrop-blur">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h3 className="text-lg font-semibold text-gray-900">Browse Categories</h3>
+            <Link
+              to="/products"
+              className="text-sm font-semibold text-medical-600 hover:text-medical-700 transition-colors"
+            >
+              View All Products →
+            </Link>
+          </div>
+          <div className="flex w-full gap-4 overflow-x-auto pb-2 md:flex-wrap md:justify-between">
+            {categories.map((category, index) => (
+              <Link
+                key={index}
+                to={`/products?category=${encodeURIComponent(category.name)}`}
+                className="flex min-w-[200px] flex-1 items-center gap-4 rounded-xl border border-white/50 bg-white/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg md:max-w-[23%]"
+              >
+                <div className="h-14 w-14 overflow-hidden rounded-lg border border-white/40 shadow">
+                  <img
+                    src={categoryImages[category.name]}
+                    alt={category.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">{category.name}</h4>
+                  <p className="text-xs text-gray-500">Explore now</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
