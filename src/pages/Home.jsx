@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search, ArrowRight, Shield, Clock, Truck, Upload, FileText, Pill, Heart, Baby, Stethoscope, Leaf } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
@@ -9,20 +9,26 @@ import toast from 'react-hot-toast'
 const Home = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [pendingFile, setPendingFile] = useState(null)
   const fileInputRef = useRef(null)
+  const [isHeroVisible, setIsHeroVisible] = useState(false)
 
-  const features = [
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setIsHeroVisible(true))
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  // Memoize static data
+  const features = useMemo(() => [
     { icon: Shield, title: 'Authentic Medicines', description: '100% genuine medicines from verified suppliers' },
     { icon: Clock, title: '24/7 Availability', description: 'Order medicines anytime, anywhere' },
     { icon: Truck, title: 'Fast Delivery', description: 'Quick and safe delivery to your doorstep' }
-  ]
+  ], [])
 
-  const categories = [
+  const categories = useMemo(() => [
     { name: 'Prescription Medicines', icon: FileText, color: 'bg-blue-100 text-blue-600' },
     { name: 'OTC Medicines', icon: Pill, color: 'bg-green-100 text-green-600' },
     { name: 'HealthPlus Products', icon: Heart, color: 'bg-pink-100 text-pink-600' },
@@ -31,9 +37,9 @@ const Home = () => {
     { name: 'Baby Care', icon: Baby, color: 'bg-yellow-100 text-yellow-600' },
     { name: 'Medical Devices', icon: Stethoscope, color: 'bg-red-100 text-red-600' },
     { name: 'Ayurvedic Products', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' }
-  ]
+  ], [])
 
-  const mockSuggestions = [
+  const mockSuggestions = useMemo(() => [
     'Paracetamol',
     'Crocin Advance',
     'Dolo 650',
@@ -42,28 +48,83 @@ const Home = () => {
     'Azithromycin',
     'Amoxicillin',
     'Vitamin D3'
-  ]
+  ], [])
 
+  // Memoize filtered suggestions
+  const filteredSuggestions = useMemo(() => {
+    if (searchQuery.length === 0) return []
+    return mockSuggestions.filter(item => 
+      item.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }, [searchQuery, mockSuggestions])
 
-  const handleSearch = (value) => {
+  const handleSearch = useCallback((value) => {
     setSearchQuery(value)
     if (value.length > 0) {
-      setSuggestions(mockSuggestions.filter(item => 
-        item.toLowerCase().includes(value.toLowerCase())
-      ))
       setShowSuggestions(true)
     } else {
-      setSuggestions([])
       setShowSuggestions(false)
     }
-  }
+  }, [])
 
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = useCallback((e) => {
     e.preventDefault()
     navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
-  }
+  }, [searchQuery, navigate])
 
-  const handlePrescriptionUpload = async (e) => {
+  const performUpload = useCallback(async (file) => {
+    setUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('prescription', file)
+
+      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
+      
+      
+      if (!token) {
+        toast.error('Please login to upload prescription')
+        setShowOtpModal(true)
+        return
+      }
+
+      console.log('Uploading to:', `${API_URL}/prescriptions`)
+      console.log('File:', file.name, file.type, file.size)
+
+      const response = await fetch(
+        `${API_URL}/prescriptions`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        }
+        
+      )
+
+      const data = await response.json()
+      console.log('Upload response:', response.status, data)
+
+      if (response.ok && data.success) {
+        toast.success('Prescription uploaded successfully!')
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+        navigate('/prescriptions')
+      } else {
+        throw new Error(data.message || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Failed to upload prescription. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }, [navigate])
+
+  const handlePrescriptionUpload = useCallback(async (e) => {
     const file = e.target.files[0]
     if (!file) return
 
@@ -90,65 +151,15 @@ const Home = () => {
 
     // User is authenticated, proceed with upload
     await performUpload(file)
-  }
+  }, [performUpload])
 
-  const performUpload = async (file) => {
-    setUploading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append('prescription', file)
-
-      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
-      
-      if (!token) {
-        toast.error('Please login to upload prescription')
-        setShowOtpModal(true)
-        return
-      }
-
-      console.log('Uploading to:', `${API_URL}/api/prescriptions`)
-      console.log('File:', file.name, file.type, file.size)
-
-      const response = await fetch(
-        `${API_URL}/api/prescriptions`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        }
-      )
-
-      const data = await response.json()
-      console.log('Upload response:', response.status, data)
-
-      if (response.ok && data.success) {
-        toast.success('Prescription uploaded successfully!')
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-        navigate('/prescriptions')
-      } else {
-        throw new Error(data.message || 'Upload failed')
-      }
-    } catch (error) {
-      console.error('Upload error:', error)
-      toast.error(error.message || 'Failed to upload prescription. Please try again.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleOtpSuccess = () => {
+  const handleOtpSuccess = useCallback(() => {
     // User authenticated, upload pending file
     if (pendingFile) {
       performUpload(pendingFile)
       setPendingFile(null)
     }
-  }
+  }, [pendingFile, performUpload])
 
   return (
     <>
@@ -165,37 +176,47 @@ const Home = () => {
       />
       <div className="space-y-16">
       {/* Search Section */}
-      <section className="bg-gradient-to-r from-medical-600 to-medical-700 rounded-2xl text-white p-8 md:p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }}></div>
-        
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+      <section
+        className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-[url('https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png')] bg-cover bg-center text-white md:min-h-[320px]"
+      >
+        <div className="absolute inset-0 bg-black/35"></div>
+        <div
+          className="absolute inset-0 opacity-15"
+          style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.65) 1px, transparent 0)`,
+            backgroundSize: '38px 38px'
+          }}
+        ></div>
+
+        <div
+          className={`relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 py-8 text-center transition-all duration-700 ease-out md:px-12 md:py-10 ${
+            isHeroVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+          }`}
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">
             Find Your Medicines
           </h2>
-          <p className="text-lg md:text-xl mb-6 opacity-90">
+          <p className="text-base md:text-lg mb-5 opacity-90">
             Search from thousands of authentic products
           </p>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto mb-6">
+          <form onSubmit={handleSearchSubmit} className="relative w-full max-w-3xl mx-auto mb-5">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-white/80" size={24} />
               <input
                 type="text"
                 placeholder="Search medicines, symptoms, or health concerns..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => setShowSuggestions(searchQuery.length > 0)}
-                className="w-full pl-14 pr-4 py-4 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
+                className="w-full rounded-lg border border-white/50 bg-transparent pl-16 pr-4 py-2.5 text-white shadow-sm backdrop-blur-sm placeholder:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/80"
               />
               
               {/* Autocomplete Suggestions */}
-              {showSuggestions && suggestions.length > 0 && (
+              {showSuggestions && filteredSuggestions.length > 0 && (
                 <div className="absolute z-20 w-full mt-2 bg-white rounded-lg shadow-lg overflow-hidden">
-                  {suggestions.map((suggestion, index) => (
+                  {filteredSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       type="button"

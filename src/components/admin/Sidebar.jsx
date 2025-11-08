@@ -7,6 +7,7 @@ import {
   ShoppingBag, 
   PackagePlus, 
   Package, 
+  FileText,
   LogOut,
   Home,
   X
@@ -37,6 +38,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/dashboard/users', icon: Users },
     { name: 'Orders', href: '/admin/dashboard/orders', icon: ShoppingBag },
+    { name: 'Prescriptions', href: '/admin/dashboard/prescriptions', icon: FileText },
     { name: 'Add Product', href: '/admin/dashboard/add-product', icon: PackagePlus },
     { name: 'Manage Products', href: '/admin/dashboard/manage-products', icon: Package },
   ]

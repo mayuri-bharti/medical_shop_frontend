@@ -1,17 +1,29 @@
 import { ShoppingCart, Zap } from 'lucide-react'
-import { useState } from 'react'
+import { useState, memo, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAccessToken } from '../lib/api'
 import toast from 'react-hot-toast'
 
-const ProductCard = ({ product }) => {
+const ProductCard = memo(({ product }) => {
   const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
   const [buying, setBuying] = useState(false)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
-  const handleAddToCart = async () => {
+  // Memoize discount calculation
+  const discountPercentage = useMemo(() => {
+    return product.mrp > product.price 
+      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+      : 0
+  }, [product.mrp, product.price])
+
+  // Memoize image source
+  const imageSrc = useMemo(() => {
+    return product.images?.[0] || product.image || '/placeholder-medicine.jpg'
+  }, [product.images, product.image])
+
+  const handleAddToCart = useCallback(async () => {
     setAdding(true)
     try {
       // TODO: Implement add to cart API call
@@ -22,9 +34,9 @@ const ProductCard = ({ product }) => {
     } finally {
       setAdding(false)
     }
-  }
+  }, [product._id, product.name])
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = useCallback(async () => {
     // Check if user is authenticated
     const token = getAccessToken()
     
@@ -66,20 +78,18 @@ const ProductCard = ({ product }) => {
     } finally {
       setBuying(false)
     }
-  }
-
-  const discountPercentage = product.mrp > product.price 
-    ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-    : 0
+  }, [product._id, navigate])
 
   return (
     <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:border-medical-300 transition-all duration-200 flex flex-col">
       {/* Product Image */}
       <div className="h-20 w-full bg-gray-50 relative overflow-hidden flex items-center justify-center">
         <img
-          src={product.images?.[0] || product.image || '/placeholder-medicine.jpg'}
+          src={imageSrc}
           alt={product.name}
           className="h-full w-full object-contain p-1"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23E5E7EB" width="400" height="400"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EMedicine%3C/text%3E%3C/svg%3E'
           }}
@@ -182,7 +192,9 @@ const ProductCard = ({ product }) => {
       </div>
     </div>
   )
-}
+})
+
+ProductCard.displayName = 'ProductCard'
 
 export default ProductCard
 

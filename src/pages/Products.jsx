@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback, useDeferredValue } from 'react'
 import { useQuery } from 'react-query'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
@@ -11,9 +11,12 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [sortBy, setSortBy] = useState('name')
+  
+  // Use deferred value for search to reduce API calls
+  const deferredSearchTerm = useDeferredValue(searchTerm)
 
   const { data, isLoading, error } = useQuery(
-    ['products', searchTerm, selectedCategory, sortBy],
+    ['products', deferredSearchTerm, selectedCategory, sortBy],
     async () => {
       try {
         const fullUrl = `${api.defaults.baseURL}/products`;
@@ -26,9 +29,11 @@ const Products = () => {
         
         const response = await api.get('/products', {
           params: { 
-            search: searchTerm || undefined, 
+            search: deferredSearchTerm || undefined, 
             category: selectedCategory || undefined, 
-            sort: sortBy || undefined 
+            sort: sortBy || undefined,
+            page: 1,
+            limit: 20
           },
           timeout: 60000, // 60 second timeout for mobile networks (increased)
           headers: {
@@ -87,13 +92,15 @@ const Products = () => {
     {
       keepPreviousData: true,
       retry: 2,
-      retryDelay: 1000
+      retryDelay: 1000,
+      staleTime: 30000, // Cache for 30 seconds
+      cacheTime: 300000 // Keep in cache for 5 minutes
     }
   )
   
-  const products = data?.products || []
+  const products = useMemo(() => data?.products || [], [data?.products])
 
-  const categories = [
+  const categories = useMemo(() => [
     'Prescription Medicines',
     'OTC Medicines',
     'Wellness Products',
@@ -102,10 +109,10 @@ const Products = () => {
     'Baby Care',
     'Medical Devices',
     'Ayurvedic Products'
-  ]
+  ], [])
 
   // Products Page Carousel
-  const productBanners = [
+  const productBanners = useMemo(() => [
     {
       src: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1200&h=400&fit=crop',
       alt: 'Medicine Collection',
@@ -124,7 +131,15 @@ const Products = () => {
       title: '100% Verified Products',
       description: 'All medicines verified and approved by health authorities'
     }
-  ]
+  ], [])
+
+  const handleSearchSubmit = useCallback((e) => {
+    e.preventDefault()
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('search', searchTerm)
+    if (selectedCategory) params.set('category', selectedCategory)
+    setSearchParams(params, { replace: true })
+  }, [searchTerm, selectedCategory, setSearchParams])
 
   if (isLoading) {
     return (
@@ -214,13 +229,7 @@ const Products = () => {
         {/* Search */}
         <form 
           className="flex-1 relative"
-          onSubmit={(e) => {
-            e.preventDefault()
-            const params = new URLSearchParams()
-            if (searchTerm) params.set('search', searchTerm)
-            if (selectedCategory) params.set('category', selectedCategory)
-            setSearchParams(params, { replace: true })
-          }}
+          onSubmit={handleSearchSubmit}
         >
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input

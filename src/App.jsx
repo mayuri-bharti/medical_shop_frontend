@@ -1,102 +1,116 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import VerifyOtp from './pages/VerifyOtp'
-import Dashboard from './pages/Dashboard'
-import Products from './pages/Products'
-import ProductList from './pages/ProductList'
-import Cart from './pages/Cart'
-import Checkout from './pages/Checkout'
-import Orders from './pages/Orders'
-import OrderSuccess from './pages/OrderSuccess'
-import Prescriptions from './pages/Prescriptions'
-import Profile from './pages/Profile'
-import AdminProducts from './pages/AdminProducts'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
 
-// Admin Pages
-import AdminLogin from './pages/admin/Login'
-import AdminDashboard from './pages/admin/Dashboard'
-import AdminDashboardHome from './pages/admin/DashboardHome'
-import AdminUsers from './pages/admin/Users'
-import AdminOrders from './pages/admin/Orders'
-import AdminAddProduct from './pages/admin/AddProduct'
-import AdminManageProducts from './pages/admin/ManageProducts'
-import AdminEditProduct from './pages/admin/EditProduct'
+// Lazy load components for code splitting
+const Home = lazy(() => import('./pages/Home'))
+const Login = lazy(() => import('./pages/Login'))
+const VerifyOtp = lazy(() => import('./pages/VerifyOtp'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Products = lazy(() => import('./pages/Products'))
+const ProductList = lazy(() => import('./pages/ProductList'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const Orders = lazy(() => import('./pages/Orders'))
+const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
+const Prescriptions = lazy(() => import('./pages/Prescriptions'))
+const Profile = lazy(() => import('./pages/Profile'))
+const AdminProducts = lazy(() => import('./pages/AdminProducts'))
+
+// Admin Pages - Lazy loaded
+const AdminLogin = lazy(() => import('./pages/admin/Login'))
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
+const AdminDashboardHome = lazy(() => import('./pages/admin/DashboardHome'))
+const AdminUsers = lazy(() => import('./pages/admin/Users'))
+const AdminOrders = lazy(() => import('./pages/admin/Orders'))
+const AdminPrescriptions = lazy(() => import('./pages/admin/Prescriptions'))
+const AdminAddProduct = lazy(() => import('./pages/admin/AddProduct'))
+const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
+const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex justify-center items-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600"></div>
+  </div>
+)
 
 function App() {
   return (
     <Layout>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/verify" element={<VerifyOtp />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products-list" element={<ProductList />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/verify" element={<VerifyOtp />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products-list" element={<ProductList />} />
 
-        {/* Protected Routes */}
-        <Route path="/checkout" element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        } />
-        <Route path="/order-success" element={
-          <ProtectedRoute>
-            <OrderSuccess />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/cart" element={
-          <ProtectedRoute>
-            <Cart />
-          </ProtectedRoute>
-        } />
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        } />
-        <Route path="/prescriptions" element={
-          <ProtectedRoute>
-            <Prescriptions />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/products" element={
-          <ProtectedRoute>
-            <AdminProducts />
-          </ProtectedRoute>
-        } />
+          {/* Protected Routes */}
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          } />
+          <Route path="/order-success" element={
+            <ProtectedRoute>
+              <OrderSuccess />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/cart" element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          } />
+          <Route path="/prescriptions" element={
+            <ProtectedRoute>
+              <Prescriptions />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/products" element={
+            <ProtectedRoute>
+              <AdminProducts />
+            </ProtectedRoute>
+          } />
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={
-          <AdminProtectedRoute>
-            <AdminDashboard />
-          </AdminProtectedRoute>
-        }>
-          <Route index element={<AdminDashboardHome />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="add-product" element={<AdminAddProduct />} />
-          <Route path="manage-products" element={<AdminManageProducts />} />
-          <Route path="edit-product/:id" element={<AdminEditProduct />} />
-        </Route>
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          }>
+            <Route index element={<AdminDashboardHome />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="prescriptions" element={<AdminPrescriptions />} />
+            <Route path="add-product" element={<AdminAddProduct />} />
+            <Route path="manage-products" element={<AdminManageProducts />} />
+            <Route path="edit-product/:id" element={<AdminEditProduct />} />
+          </Route>
 
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Layout>
   )
 }

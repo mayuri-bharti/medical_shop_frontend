@@ -1,4 +1,5 @@
 import { useQuery } from 'react-query'
+import { useMemo } from 'react'
 import { api } from '../services/api'
 import { getAccessToken } from '../lib/api'
 import { Package } from 'lucide-react'
@@ -44,7 +45,7 @@ const Orders = () => {
   const token = getAccessToken()
   
   // Try to fetch real orders, fallback to dummy data if error
-  const { data: orders, isLoading, error } = useQuery(
+  const { data: ordersResponse, isLoading, error } = useQuery(
     'orders',
     async () => {
       if (!token) {
@@ -81,6 +82,29 @@ const Orders = () => {
     }
   )
 
+  // Extract orders array from response - handle different response formats
+  const orders = useMemo(() => {
+    if (!ordersResponse) return null
+    
+    // Handle different response formats
+    if (Array.isArray(ordersResponse)) {
+      return ordersResponse
+    }
+    
+    // Handle { success: true, data: [...] } format
+    if (ordersResponse.success && Array.isArray(ordersResponse.data)) {
+      return ordersResponse.data
+    }
+    
+    // Handle { data: [...] } format
+    if (Array.isArray(ordersResponse.data)) {
+      return ordersResponse.data
+    }
+    
+    // If it's an object but not the expected format, return empty array
+    return []
+  }, [ordersResponse])
+
   const getStatusBadge = (status) => {
     const statusStyles = {
       pending: 'bg-yellow-100 text-yellow-800',
@@ -109,27 +133,42 @@ const Orders = () => {
   }
 
   // Use dummy data if API call failed or no orders
-  const displayData = (error || !orders || orders.length === 0) ? dummyOrders : orders
+  // Ensure displayData is always an array
+  const displayData = useMemo(() => {
+    if (error || !orders || !Array.isArray(orders) || orders.length === 0) {
+      return dummyOrders
+    }
+    return orders
+  }, [error, orders])
 
   // Transform data for table display
-  const tableRows = []
-  
-  displayData.forEach(order => {
-    const medicines = order.medicines || order.items || []
+  const tableRows = useMemo(() => {
+    const rows = []
     
-    medicines.forEach((medicine, index) => {
-      tableRows.push({
-        key: `${order.id || order._id}-${index}`,
-        orderId: order.orderId || order.orderNumber || order.id || order._id,
-        medicineName: medicine.name || medicine.product?.name,
-        quantity: medicine.quantity,
-        price: medicine.price,
-        status: order.status,
-        date: order.date || order.createdAt,
-        isFirstItem: index === 0
+    if (!Array.isArray(displayData)) {
+      console.warn('displayData is not an array:', displayData)
+      return rows
+    }
+    
+    displayData.forEach(order => {
+      const medicines = order.medicines || order.items || []
+      
+      medicines.forEach((medicine, index) => {
+        rows.push({
+          key: `${order.id || order._id}-${index}`,
+          orderId: order.orderId || order.orderNumber || order.id || order._id,
+          medicineName: medicine.name || medicine.product?.name,
+          quantity: medicine.quantity,
+          price: medicine.price,
+          status: order.status,
+          date: order.date || order.createdAt,
+          isFirstItem: index === 0
+        })
       })
     })
-  })
+    
+    return rows
+  }, [displayData])
 
   if (tableRows.length === 0) {
     return (
@@ -212,7 +251,9 @@ const Orders = () => {
 
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-600">
-          Total Orders: <span className="font-medium text-gray-900">{displayData.length}</span>
+          Total Orders: <span className="font-medium text-gray-900">
+            {Array.isArray(displayData) ? displayData.length : 0}
+          </span>
         </p>
       </div>
     </div>
