@@ -193,32 +193,27 @@ const CategoryBar = () => {
 
   return (
     <>
-      <div className="relative z-30 mt-4 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-5 shadow-sm">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 items-stretch gap-3 sm:grid-cols-4 md:grid-cols-8 md:gap-5">
+      <div className="relative z-30 mt-4 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-3 shadow-sm">
+        <div className="mx-auto grid w-full max-w-full grid-cols-8 items-end gap-2 px-2 sm:max-w-6xl sm:gap-3 sm:px-3 md:gap-4 md:px-0">
             {categories.map((category, idx) => (
               <div
                 key={category.name}
-              className="group relative flex cursor-pointer flex-col items-center rounded-2xl bg-white px-3 py-2 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:z-40"
+              className="group relative flex min-w-0 cursor-pointer flex-col items-center px-1 py-1 text-center transition-all hover:-translate-y-1 hover:z-40 sm:px-2 sm:py-2"
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
               >
                 <img
                   src={category.iconUrl}
                   alt={category.name}
-                className="mx-auto h-14 w-14 rounded-full border border-white/80 object-cover shadow-sm transition-transform duration-300 group-hover:scale-105"
+                className="mx-auto h-12 w-12 rounded-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14"
                   loading="lazy"
                 />
                 <p
-                className="mt-2 w-full truncate text-xs font-semibold text-gray-800"
+                className="mt-1 w-full truncate text-xs font-semibold text-gray-900 sm:text-sm"
                   title={category.name}
                 >
                   {category.shortName}
                 </p>
-              <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-gray-500">
-                Explore
-                <ChevronDown className="h-3 w-3 transition-transform duration-200 group-hover:rotate-180" />
-              </div>
-
                 {hoveredIdx === idx && (
                 <div className="absolute left-1/2 top-full z-50 mt-3 w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-6 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
