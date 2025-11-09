@@ -175,7 +175,7 @@ const Home = () => {
         }}
         onSuccess={handleOtpSuccess}
       />
-      <div className="space-y-14 px-4 pb-16 md:px-8">
+      <div className="space-y-6 px-2 pb-16 md:px-8">
       {/* Search Section */}
       <section
         className="relative -mx-4 flex min-h-[260px] w-auto items-center justify-center overflow-hidden bg-[url('https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png')] bg-cover bg-center text-white md:-mx-8 md:min-h-[320px]"
@@ -266,7 +266,7 @@ const Home = () => {
       </section>
 
       {/* Promotional Banner Carousel */}
-      <section className="-mx-4 md:-mx-8">
+      <section className="-mx-4 -mt-4 md:-mx-8 md:-mt-6">
         <PromoBannerCarousel />
       </section>
 

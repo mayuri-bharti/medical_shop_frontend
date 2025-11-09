@@ -193,19 +193,19 @@ const CategoryBar = () => {
 
   return (
     <>
-      <div className="relative z-30 mt-4 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-3 shadow-sm">
+      <div className="relative z-30 mt-1 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-2 shadow-sm">
         <div className="mx-auto grid w-full max-w-full grid-cols-8 items-end gap-2 px-2 sm:max-w-6xl sm:gap-3 sm:px-3 md:gap-4 md:px-0">
             {categories.map((category, idx) => (
               <div
                 key={category.name}
-              className="group relative flex min-w-0 cursor-pointer flex-col items-center px-1 py-1 text-center transition-all hover:-translate-y-1 hover:z-40 sm:px-2 sm:py-2"
+              className="group relative flex min-w-0 cursor-pointer flex-col items-center px-1 py-1 text-center transition-all hover:-translate-y-1 hover:z-40 sm:px-2 sm:py-1.5"
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
               >
                 <img
                   src={category.iconUrl}
                   alt={category.name}
-                className="mx-auto h-12 w-12 rounded-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14"
+                className="mx-auto h-10 w-10 rounded-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-12 sm:w-12"
                   loading="lazy"
                 />
                 <p
