@@ -150,33 +150,22 @@ const PromoBannerCarousel = () => {
 
                 {/* Text Content */}
                 <div className="space-y-3 md:space-y-4">
-                  <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight drop-shadow-md">
+                  <Link
+                    to={slide.link}
+                    className="block text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight drop-shadow-md transition-transform duration-200 hover:translate-x-1"
+                  >
                     {slide.title}
-                  </h3>
+                  </Link>
                   
                   <p className="text-sm md:text-base text-gray-700 leading-relaxed max-w-md drop-shadow-sm">
                     {slide.description}
                   </p>
 
-                  {/* CTA Button */}
                   <Link
                     to={slide.link}
-                    className="inline-flex items-center justify-center bg-medical-600 hover:bg-medical-700 text-white font-semibold text-sm md:text-base px-6 py-2.5 md:px-8 md:py-3 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-medical-500 focus:ring-offset-2"
+                    className="inline-flex items-center text-sm font-semibold text-medical-700 transition-colors hover:text-medical-800"
                   >
-                    Order Now
-                    <svg
-                      className="w-4 h-4 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 7l5 5m0 0l-5 5m5-5H6"
-                      />
-                    </svg>
+                    Shop now →
                   </Link>
                 </div>
               </div>
