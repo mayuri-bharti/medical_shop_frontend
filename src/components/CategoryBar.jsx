@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const categories = [
   {
@@ -189,36 +189,87 @@ const categories = [
 ]
 
 const CategoryBar = () => {
-  const [hoveredIdx, setHoveredIdx] = useState(null)
+  const [activeIdx, setActiveIdx] = useState(null)
+  const closeTimerRef = useRef(null)
+  const navigate = useNavigate()
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleClose = useCallback(() => {
+    clearCloseTimer()
+    closeTimerRef.current = setTimeout(() => setActiveIdx(null), 150)
+  }, [clearCloseTimer])
+
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer])
+
+  const handleCategoryOpen = useCallback((idx) => {
+    clearCloseTimer()
+    setActiveIdx(idx)
+  }, [clearCloseTimer])
+
+  const handleCategoryToggle = useCallback((idx) => {
+    setActiveIdx((prev) => (prev === idx ? null : idx))
+  }, [])
+
+  const handleLinkClick = useCallback((label) => {
+    setActiveIdx(null)
+    navigate(`/products?category=${encodeURIComponent(label)}`)
+  }, [navigate])
 
   return (
     <>
       <div className="relative z-30 mt-1 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-2 shadow-sm">
-        <div className="mx-auto grid w-full max-w-full grid-cols-8 items-end gap-2 px-2 sm:max-w-6xl sm:gap-3 sm:px-3 md:gap-4 md:px-0">
-            {categories.map((category, idx) => (
+        <div className="mx-auto grid w-full max-w-full grid-cols-4 items-end gap-2 px-2 sm:max-w-6xl sm:grid-cols-6 sm:gap-3 sm:px-3 md:grid-cols-8 md:gap-4 md:px-0">
+          {categories.map((category, idx) => {
+            const isActive = activeIdx === idx
+
+            return (
               <div
                 key={category.name}
-              className="group relative flex min-w-0 cursor-pointer flex-col items-center px-1 py-1 text-center transition-all hover:-translate-y-1 hover:z-40 sm:px-2 sm:py-1.5"
-                onMouseEnter={() => setHoveredIdx(idx)}
-                onMouseLeave={() => setHoveredIdx(null)}
+                className="relative flex min-w-0 flex-col items-center text-center"
+                onMouseEnter={() => handleCategoryOpen(idx)}
+                onMouseLeave={scheduleClose}
               >
-                <img
-                  src={category.iconUrl}
-                  alt={category.name}
-                className="mx-auto h-10 w-10 rounded-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-12 sm:w-12"
-                  loading="lazy"
-                />
-                <p
-                className="mt-1 w-full truncate text-xs font-semibold text-gray-900 sm:text-sm"
-                  title={category.name}
+                <button
+                  type="button"
+                  className={`group flex w-full flex-col items-center rounded-lg px-1 py-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/60 hover:shadow-sm hover:ring-1 hover:ring-white/70 sm:px-2 sm:py-1.5 ${isActive ? 'bg-white/70 shadow-sm ring-1 ring-white/80' : ''}`}
+                  onClick={() => handleCategoryToggle(idx)}
+                  onTouchStart={(event) => {
+                    event.preventDefault()
+                    handleCategoryToggle(idx)
+                  }}
+                  onFocus={() => handleCategoryOpen(idx)}
+                  onBlur={scheduleClose}
+                  aria-expanded={isActive}
+                  aria-haspopup="true"
                 >
-                  {category.shortName}
-                </p>
-                {hoveredIdx === idx && (
-                <div className="absolute left-1/2 top-full z-50 mt-3 w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-6 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out">
+                  <img
+                    src={category.iconUrl}
+                    alt={category.name}
+                    className="mx-auto h-10 w-10 rounded-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-12 sm:w-12"
+                    loading="lazy"
+                  />
+                  <p
+                    className="mt-1 w-full truncate text-xs font-semibold text-gray-900 sm:text-sm"
+                    title={category.name}
+                  >
+                    {category.shortName}
+                  </p>
+                </button>
+
+                <div
+                  className={`pointer-events-auto absolute left-1/2 top-full mt-3 w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out sm:w-[min(30rem,90vw)] md:p-6 ${isActive ? 'translate-y-0 opacity-100 visible' : 'pointer-events-none -translate-y-2 opacity-0 invisible'}`}
+                  onMouseEnter={() => handleCategoryOpen(idx)}
+                  onMouseLeave={scheduleClose}
+                >
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {category.dropdownSections.map((section) => (
-                      <div key={section.title} className="flex flex-col space-y-2">
+                      <div key={section.title} className="flex flex-col space-y-2 text-left">
                         <p className="border-b border-slate-200 pb-1 text-xs font-bold uppercase tracking-wide text-slate-600">
                           {section.title}
                         </p>
@@ -227,14 +278,7 @@ const CategoryBar = () => {
                             key={link.name}
                             type="button"
                             className="rounded-md px-2 py-1 text-left text-sm text-slate-600 transition duration-150 hover:bg-medical-50 hover:text-medical-700"
-                            onClick={() => {
-                              if (link.url.startsWith('#')) {
-                                const target = document.querySelector(link.url)
-                                target?.scrollIntoView({ behavior: 'smooth' })
-                              } else {
-                                window.location.href = link.url
-                              }
-                            }}
+                            onClick={() => handleLinkClick(link.name)}
                           >
                             {link.name}
                           </button>
@@ -243,17 +287,16 @@ const CategoryBar = () => {
                     ))}
                   </div>
                 </div>
-                )}
               </div>
-            ))}
+            )
+          })}
         </div>
       </div>
 
       <p className="mt-3 text-center text-xs text-gray-500 md:hidden">
         Browse all categories tailored for you.
       </p>
-      </>
-    
+    </>
   )
 }
 

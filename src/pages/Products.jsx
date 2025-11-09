@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useDeferredValue } from 'react'
+import { useState, useMemo, useCallback, useDeferredValue, useEffect, useRef } from 'react'
 import { useQuery } from 'react-query'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
@@ -11,11 +11,14 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [sortBy, setSortBy] = useState('name')
+  const [isFilterTransitioning, setIsFilterTransitioning] = useState(false)
+  const previousCategoryRef = useRef(selectedCategory)
+  const previousSearchRef = useRef(searchTerm)
   
   // Use deferred value for search to reduce API calls
   const deferredSearchTerm = useDeferredValue(searchTerm)
 
-  const { data, isLoading, error } = useQuery(
+  const { data, isLoading, error, isFetching } = useQuery(
     ['products', deferredSearchTerm, selectedCategory, sortBy],
     async () => {
       try {
@@ -100,6 +103,35 @@ const Products = () => {
   
   const products = useMemo(() => data?.products || [], [data?.products])
 
+  useEffect(() => {
+    const categoryParam = searchParams.get('category') || ''
+    const searchParam = searchParams.get('search') || ''
+
+    setSelectedCategory((prev) => (prev === categoryParam ? prev : categoryParam))
+    setSearchTerm((prev) => (prev === searchParam ? prev : searchParam))
+
+    const categoryChanged = previousCategoryRef.current !== categoryParam
+    const searchChanged = previousSearchRef.current !== searchParam
+
+    if ((categoryChanged || searchChanged) && (categoryParam || searchParam)) {
+      setIsFilterTransitioning(true)
+    }
+
+    previousCategoryRef.current = categoryParam
+    previousSearchRef.current = searchParam
+  }, [searchParams])
+
+  useEffect(() => {
+    if (isFetching && !isLoading) {
+      setIsFilterTransitioning(true)
+      return
+    }
+    if (!isFilterTransitioning) return
+
+    const timeout = setTimeout(() => setIsFilterTransitioning(false), 350)
+    return () => clearTimeout(timeout)
+  }, [isFetching, isLoading, isFilterTransitioning])
+
   const categories = useMemo(() => [
     'Prescription Medicines',
     'OTC Medicines',
@@ -108,8 +140,81 @@ const Products = () => {
     'Health Supplements',
     'Baby Care',
     'Medical Devices',
-    'Ayurvedic Products'
+    'Ayurvedic Products',
+    'Pain Relief',
+    'Antibiotics',
+    'Allergy & Cold',
+    'Diabetes Care',
+    'Cardiology Meds',
+    'Thyroid & Hormones',
+    'Fever & Flu',
+    'Antiseptics',
+    'Eye/Ear Drops',
+    'Digestion & Acidity',
+    'Laxatives',
+    'Stomach Care',
+    'Multivitamins',
+    'Vitamin D & C',
+    'Calcium & Iron',
+    'Protein Powder',
+    'Weight Management',
+    'Herbal & Organic',
+    'Moisturizers',
+    'Serums & Toners',
+    'Sunscreen',
+    'Shampoos & Conditioners',
+    'Deodorants & Perfumes',
+    'Feminine Hygiene',
+    'Diapers & Wipes',
+    'Baby Food',
+    'Bath & Skincare',
+    'Maternity Care',
+    'Breastfeeding Aids',
+    'Postpartum Support',
+    'BP Monitors',
+    'Oximeters',
+    'Thermometers',
+    'Wheelchairs',
+    'Supports & Braces',
+    'Physiotherapy',
+    'Adult Diapers',
+    'Nutritional Drinks',
+    'Walker & Sticks',
+    'Heart Care',
+    'Bone & Joint',
+    'Memory Support',
+    'Condoms',
+    'Performance',
+    'Lubricants',
+    'Intimate Care',
+    'Pregnancy Tests',
+    'Wellness Kits'
   ], [])
+
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategory) return products
+
+    const normalizedCategory = selectedCategory.toLowerCase()
+
+    return products.filter((product) => {
+      const searchableFields = [
+        product.category,
+        product.subcategory,
+        product.subCategory,
+        product.type,
+        product.tag,
+        ...(Array.isArray(product.tags) ? product.tags : []),
+        product.name
+      ]
+
+      return searchableFields.some((field) => {
+        if (typeof field === 'string') {
+          return field.toLowerCase().includes(normalizedCategory)
+        }
+        return false
+      })
+    })
+  }, [products, selectedCategory])
 
   // Products Page Carousel
   const productBanners = useMemo(() => [
@@ -260,6 +365,9 @@ const Products = () => {
               params.delete('search')
             }
             setSearchParams(params, { replace: true })
+            if (e.target.value) {
+              setIsFilterTransitioning(true)
+            }
           }}
         >
           <option value="">All Categories</option>
@@ -281,12 +389,44 @@ const Products = () => {
         </select>
       </div>
 
+      {selectedCategory && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-medical-100 bg-medical-50 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-medical-700">
+              Showing results for <span className="underline decoration-medical-400 decoration-2">{selectedCategory}</span>
+            </p>
+            <p className="text-xs text-medical-500">
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory('')
+              const params = new URLSearchParams(searchParams)
+              params.delete('category')
+              setSearchParams(params, { replace: true })
+            }}
+            className="rounded-full border border-medical-200 px-3 py-1 text-xs font-medium text-medical-700 transition-colors hover:bg-white hover:text-medical-800"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
+
       {/* Products Grid - Responsive: 2 mobile, 2 tablet, 3 medium, 6 laptop */}
-      {products?.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
-          {products.map((product) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
+      {filteredProducts?.length > 0 ? (
+        <div className="relative">
+          {isFilterTransitioning && !isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/70 backdrop-blur-[2px]">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-medical-300 border-t-medical-600"></div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="text-center py-12">
