@@ -4,6 +4,7 @@ import { Search, ArrowRight, Shield, Clock, Truck, Upload, FileText, Pill, Heart
 import { getAccessToken } from '../lib/api'
 import OtpModal from '../components/OtpModal'
 import PromoBannerCarousel from '../components/PromoBannerCarousel'
+import CategoryBar from '../components/CategoryBar'
 import toast from 'react-hot-toast'
 
 const Home = () => {
@@ -38,20 +39,6 @@ const Home = () => {
     { name: 'Medical Devices', icon: Stethoscope, color: 'bg-red-100 text-red-600' },
     { name: 'Ayurvedic Products', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' }
   ], [])
-
-  const categoryImages = useMemo(
-    () => ({
-      'Prescription Medicines': 'https://images.unsplash.com/photo-1582719478181-2cf4e1baedb5?w=200&h=200&fit=crop&q=80',
-      'OTC Medicines': 'https://images.unsplash.com/photo-1580281780460-82d277b0e3a3?w=200&h=200&fit=crop&q=80',
-      'HealthPlus Products': 'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=200&h=200&fit=crop&q=80',
-      'Personal Care': 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=200&h=200&fit=crop&q=80',
-      'Health Supplements': 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=200&h=200&fit=crop&q=80',
-      'Baby Care': 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=200&fit=crop&q=80',
-      'Medical Devices': 'https://images.unsplash.com/photo-1582719478250-428daf0c0d4b?w=200&h=200&fit=crop&q=80',
-      'Ayurvedic Products': 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=200&h=200&fit=crop&q=80'
-    }),
-    []
-  )
 
   const mockSuggestions = useMemo(() => [
     'Paracetamol',
@@ -188,10 +175,10 @@ const Home = () => {
         }}
         onSuccess={handleOtpSuccess}
       />
-      <div className="space-y-16">
+      <div className="space-y-14 px-4 pb-16 md:px-8">
       {/* Search Section */}
       <section
-        className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl bg-[url('https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png')] bg-cover bg-center text-white md:min-h-[320px]"
+        className="relative -mx-4 flex min-h-[260px] w-auto items-center justify-center overflow-hidden bg-[url('https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png')] bg-cover bg-center text-white md:-mx-8 md:min-h-[320px]"
       >
         <div className="absolute inset-0 bg-black/35"></div>
         <div
@@ -274,45 +261,12 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Category Strip */}
-      <section className="relative z-20 -mt-16 mb-12 px-4 md:px-6">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 rounded-2xl bg-white/90 p-6 shadow-xl backdrop-blur">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <h3 className="text-lg font-semibold text-gray-900">Browse Categories</h3>
-            <Link
-              to="/products"
-              className="text-sm font-semibold text-medical-600 hover:text-medical-700 transition-colors"
-            >
-              View All Products →
-            </Link>
-          </div>
-          <div className="flex w-full gap-4 overflow-x-auto pb-2 md:flex-wrap md:justify-between">
-            {categories.map((category, index) => (
-              <Link
-                key={index}
-                to={`/products?category=${encodeURIComponent(category.name)}`}
-                className="flex min-w-[200px] flex-1 items-center gap-4 rounded-xl border border-white/50 bg-white/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg md:max-w-[23%]"
-              >
-                <div className="h-14 w-14 overflow-hidden rounded-lg border border-white/40 shadow">
-                  <img
-                    src={categoryImages[category.name]}
-                    alt={category.name}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">{category.name}</h4>
-                  <p className="text-xs text-gray-500">Explore now</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+      <section className="-mx-4 md:-mx-8">
+        <CategoryBar />
       </section>
 
       {/* Promotional Banner Carousel */}
-      <section className="mb-8">
+      <section className="-mx-4 md:-mx-8">
         <PromoBannerCarousel />
       </section>
 
