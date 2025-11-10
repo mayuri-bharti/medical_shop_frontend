@@ -1,11 +1,13 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
+import { useQuery } from 'react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ArrowRight, Shield, Clock, Truck, Upload, FileText, Pill, Heart, Baby, Stethoscope, Leaf } from 'lucide-react'
+import { Search, ArrowRight, Shield, Clock, Truck, Upload } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
 import OtpModal from '../components/OtpModal'
 import PromoBannerCarousel from '../components/PromoBannerCarousel'
 import CategoryBar from '../components/CategoryBar'
 import toast from 'react-hot-toast'
+import { api } from '../services/api'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -29,16 +31,139 @@ const Home = () => {
     { icon: Truck, title: 'Fast Delivery', description: 'Quick and safe delivery to your doorstep' }
   ], [])
 
-  const categories = useMemo(() => [
-    { name: 'Prescription Medicines', icon: FileText, color: 'bg-blue-100 text-blue-600' },
-    { name: 'OTC Medicines', icon: Pill, color: 'bg-green-100 text-green-600' },
-    { name: 'HealthPlus Products', icon: Heart, color: 'bg-pink-100 text-pink-600' },
-    { name: 'Personal Care', icon: Shield, color: 'bg-purple-100 text-purple-600' },
-    { name: 'Health Supplements', icon: Pill, color: 'bg-orange-100 text-orange-600' },
-    { name: 'Baby Care', icon: Baby, color: 'bg-yellow-100 text-yellow-600' },
-    { name: 'Medical Devices', icon: Stethoscope, color: 'bg-red-100 text-red-600' },
-    { name: 'Ayurvedic Products', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' }
-  ], [])
+  const fallbackFeaturedProducts = useMemo(
+    () => [
+      {
+        id: 'fallback-1',
+        name: 'Lipicure Gold 10mg Capsules',
+        image: 'https://images.unsplash.com/photo-1582719478250-428daf0c0d4b?w=640&q=80&auto=format&fit=crop',
+        price: 92,
+        mrp: 110,
+        delivery: 'Delivery within 1 day',
+        inStock: true
+      },
+      {
+        id: 'fallback-2',
+        name: 'Azulix-4MF Forte Tablets',
+        image: 'https://images.unsplash.com/photo-1578302758068-22308e6e4daf?w=640&q=80&auto=format&fit=crop',
+        price: 189,
+        mrp: 210,
+        delivery: 'Delivery within 2 hrs',
+        inStock: true
+      },
+      {
+        id: 'fallback-3',
+        name: 'Razel-Gold 10mg Capsules',
+        image: 'https://images.unsplash.com/photo-1586374579358-93e04d95ccf5?w=640&q=80&auto=format&fit=crop',
+        price: 287,
+        mrp: 320,
+        delivery: 'Delivery within 2 hrs',
+        inStock: true
+      },
+      {
+        id: 'fallback-4',
+        name: 'Euclide-M-OD 60mg Tablets',
+        image: 'https://images.unsplash.com/photo-1580281658170-3f03f0c5fa1f?w=640&q=80&auto=format&fit=crop',
+        price: 170,
+        mrp: 195,
+        delivery: 'Delivery within 2 hrs',
+        inStock: true
+      },
+      {
+        id: 'fallback-5',
+        name: 'Ascoril-Flu Syrup 60ml',
+        image: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=640&q=80&auto=format&fit=crop',
+        price: 98,
+        mrp: 115,
+        delivery: 'Delivery within 1 day',
+        inStock: true
+      },
+      {
+        id: 'fallback-6',
+        name: 'Dolo 650 Tablets (15)',
+        image: 'https://images.unsplash.com/photo-1612632576808-1e655d60dddf?w=640&q=80&auto=format&fit=crop',
+        price: 110,
+        mrp: 125,
+        delivery: 'Delivery within 1 day',
+        inStock: true
+      },
+      {
+        id: 'fallback-7',
+        name: 'Shelcal 500 Tablets',
+        image: 'https://images.unsplash.com/photo-1502740479091-635887520276?w=640&q=80&auto=format&fit=crop',
+        price: 180,
+        mrp: 215,
+        delivery: 'Delivery within 2 hrs',
+        inStock: true
+      },
+      {
+        id: 'fallback-8',
+        name: 'Cetzine 10mg Tablets',
+        image: 'https://images.unsplash.com/photo-1584017911766-d451b5cdae67?w=640&q=80&auto=format&fit=crop',
+        price: 75,
+        mrp: 90,
+        delivery: 'Delivery within 1 day',
+        inStock: true
+      }
+    ],
+    []
+  )
+
+  const {
+    data: popularProductsData,
+    isLoading: isPopularLoading,
+    isError: isPopularError
+  } = useQuery(
+    ['home-popular-products'],
+    async () => {
+      const response = await api.get('/products', {
+        params: {
+          page: 1,
+          limit: 8,
+          sort: 'rating'
+        }
+      })
+
+      const responseData = response.data
+
+      if (responseData?.success !== undefined) {
+        if (responseData.success) {
+          return responseData.products || []
+        }
+        throw new Error(responseData.message || 'Failed to load products')
+      }
+
+      if (Array.isArray(responseData)) {
+        return responseData
+      }
+
+      if (responseData?.products) {
+        return responseData.products
+      }
+
+      return []
+    },
+    {
+      staleTime: 300000,
+      cacheTime: 300000,
+      refetchOnWindowFocus: false
+    }
+  )
+
+  const featuredProducts = useMemo(() => {
+    if (popularProductsData && popularProductsData.length > 0) {
+      return popularProductsData.map((product) => ({
+        id: product._id,
+        name: product.name,
+        image: product.images?.[0] || product.image || '/placeholder-medicine.jpg',
+        price: product.price,
+        mrp: product.mrp ?? product.price,
+        delivery: product.deliveryInfo || 'Delivery within 2 days',
+        inStock: product.stock > 0
+      }))
+    }
+    return fallbackFeaturedProducts
+  }, [popularProductsData, fallbackFeaturedProducts])
 
   const mockSuggestions = useMemo(() => [
     'Paracetamol',
@@ -295,30 +420,118 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Featured Products */}
       <section>
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Shop by Category
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category, index) => {
-            const Icon = category.icon
-            return (
-              <Link
-                key={index}
-                to={`/products?category=${encodeURIComponent(category.name)}`}
-                className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow duration-200"
-              >
-                <div className={`w-12 h-12 ${category.color} rounded-lg mx-auto mb-4 flex items-center justify-center`}>
-                  <Icon size={24} />
-                </div>
-                <h3 className="font-medium text-gray-900 text-sm">
-                  {category.name}
-                </h3>
-              </Link>
-            )
-          })}
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-gray-900">
+            Popular Medicines
+          </h2>
+          <Link
+            to="/products"
+            className="text-sm font-semibold text-medical-600 hover:text-medical-700"
+          >
+            View all
+          </Link>
         </div>
+        {isPopularError && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Unable to load featured products. Showing recommendations instead.
+          </div>
+        )}
+        {isPopularLoading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                // eslint-disable-next-line react/no-array-index-key
+                key={index}
+                className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex flex-col gap-3 animate-pulse">
+                  <div className="ml-auto h-5 w-5 rounded-full bg-slate-200" />
+                  <div className="h-32 w-full rounded-lg bg-slate-200" />
+                  <div className="h-4 w-3/4 rounded bg-slate-200" />
+                  <div className="h-4 w-1/2 rounded bg-slate-200" />
+                  <div className="h-3 w-2/3 rounded bg-slate-200" />
+                  <div className="mt-2 flex gap-2">
+                    <div className="h-9 flex-1 rounded-full bg-slate-200" />
+                    <div className="h-9 w-9 rounded-full bg-slate-200" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {featuredProducts.map((product) => (
+              <div
+                key={product.id ?? product.name}
+                className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <button
+                  type="button"
+                  className="ml-auto text-slate-300 transition group-hover:text-medical-500"
+                  aria-label="Add to wishlist"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a7 7 0 0 1 10 0l.35.35.35-.35a7 7 0 1 1 9.9 9.9l-10.25 10.2a1 1 0 0 1-1.4 0L5 14.9A7 7 0 0 1 5 5Z" />
+                  </svg>
+                </button>
+                <div className="flex flex-1 flex-col">
+                  <div className="flex items-center justify-center">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-32 w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-col gap-2">
+                    <h3 className="min-h-[40px] text-sm font-semibold text-gray-900 line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-gray-900">
+                        ₹{Number(product.price ?? 0).toLocaleString()}
+                      </span>
+                      {product.mrp && product.mrp !== product.price && (
+                        <span className="text-xs text-gray-500 line-through">
+                          ₹{Number(product.mrp ?? 0).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    <p className="flex items-center gap-1 text-xs text-slate-600">
+                      <span className={`inline-flex h-2 w-2 rounded-full ${product.inStock ? 'bg-medical-500' : 'bg-red-500'}`}></span>
+                      {product.inStock ? product.delivery : 'Currently unavailable'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!product.inStock}
+                    className={`flex-1 rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      product.inStock
+                        ? 'border-medical-600 text-medical-600 hover:bg-medical-600 hover:text-white'
+                        : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                    }`}
+                  >
+                    {product.inStock ? 'Add to cart' : 'Out of stock'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:border-medical-600 hover:text-medical-600"
+                    aria-label="View details"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       </div>

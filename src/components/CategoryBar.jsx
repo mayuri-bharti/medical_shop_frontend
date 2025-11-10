@@ -5,6 +5,7 @@ const categories = [
   {
     name: 'Prescription Medicines',
     shortName: 'Rx Meds',
+    query: 'Prescription Medicines',
     iconUrl: 'https://images.unsplash.com/photo-1582719478181-2cf4e1baedb5?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -28,6 +29,7 @@ const categories = [
   {
     name: 'Over-the-Counter Drugs',
     shortName: 'OTC',
+    query: 'Over-the-Counter Drugs',
     iconUrl: 'https://images.unsplash.com/photo-1580281780460-82d277b0e3a3?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -51,6 +53,7 @@ const categories = [
   {
     name: 'Health Supplements',
     shortName: 'Supplements',
+    query: 'Health Supplements',
     iconUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -74,6 +77,7 @@ const categories = [
   {
     name: 'Personal & Beauty Care',
     shortName: 'Beauty',
+    query: 'Beauty',
     iconUrl: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -97,6 +101,7 @@ const categories = [
   {
     name: 'Baby & Mom Care',
     shortName: 'Baby Care',
+    query: 'Baby Care',
     iconUrl: 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -120,6 +125,7 @@ const categories = [
   {
     name: 'Medical Devices',
     shortName: 'Devices',
+    query: 'Medical Devices',
     iconUrl: 'https://images.unsplash.com/photo-1582719478250-428daf0c0d4b?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -143,6 +149,7 @@ const categories = [
   {
     name: 'Elder Care',
     shortName: 'Senior',
+    query: 'Elder Care',
     iconUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -166,6 +173,7 @@ const categories = [
   {
     name: 'Sexual Wellness',
     shortName: 'Wellness',
+    query: 'Sexual Wellness',
     iconUrl: 'https://images.unsplash.com/photo-1516826431361-749a0e5dde43?w=120&h=120&fit=crop&q=80',
     dropdownSections: [
       {
@@ -190,6 +198,7 @@ const categories = [
 
 const CategoryBar = () => {
   const [activeIdx, setActiveIdx] = useState(null)
+  const [isDesktop, setIsDesktop] = useState(false)
   const closeTimerRef = useRef(null)
   const navigate = useNavigate()
 
@@ -205,7 +214,24 @@ const CategoryBar = () => {
     closeTimerRef.current = setTimeout(() => setActiveIdx(null), 150)
   }, [clearCloseTimer])
 
-  useEffect(() => () => clearCloseTimer(), [clearCloseTimer])
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const handleChange = (event) => setIsDesktop(event.matches)
+
+    setIsDesktop(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+      clearCloseTimer()
+    }
+  }, [clearCloseTimer])
+
+  useEffect(() => {
+    if (!isDesktop) {
+      setActiveIdx(null)
+    }
+  }, [isDesktop])
 
   const handleCategoryOpen = useCallback((idx) => {
     clearCloseTimer()
@@ -221,10 +247,47 @@ const CategoryBar = () => {
     navigate(`/products?category=${encodeURIComponent(label)}`)
   }, [navigate])
 
+  const handleCategoryNavigate = useCallback((label) => {
+    navigate(`/products?category=${encodeURIComponent(label)}`)
+  }, [navigate])
+
+  const handleMouseEnter = useCallback((idx) => {
+    if (!isDesktop) return
+    handleCategoryOpen(idx)
+  }, [handleCategoryOpen, isDesktop])
+
+  const handleMouseLeave = useCallback(() => {
+    if (!isDesktop) return
+    scheduleClose()
+  }, [isDesktop, scheduleClose])
+
   return (
     <>
       <div className="relative z-30 mt-1 w-full bg-gradient-to-r from-blue-50 to-cyan-50 py-2 shadow-sm">
-        <div className="mx-auto grid w-full max-w-full grid-cols-4 items-end gap-2 px-2 sm:max-w-6xl sm:grid-cols-6 sm:gap-3 sm:px-3 md:grid-cols-8 md:gap-4 md:px-0">
+        {/* Mobile: horizontal scroll row */}
+        <div className="mx-auto flex w-full max-w-full gap-3 overflow-x-auto px-3 pb-3 md:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+          {categories.map((category) => (
+            <button
+              key={category.name}
+              type="button"
+              onClick={() => handleCategoryNavigate(category.query || category.shortName || category.name)}
+              className="flex min-w-[5.75rem] flex-col items-center gap-1 rounded-xl bg-white px-2 py-2 text-center shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <img
+                src={category.iconUrl}
+                alt={category.name}
+                className="h-14 w-14 rounded-full object-cover shadow-sm"
+                loading="lazy"
+              />
+              <span className="w-full truncate text-[11px] font-semibold text-slate-700">
+                {category.shortName}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: interactive dropdowns */}
+        <div className="mx-auto hidden w-full max-w-full grid-cols-4 items-end gap-2 px-2 sm:max-w-6xl sm:grid-cols-6 sm:gap-3 sm:px-3 md:grid md:grid-cols-8 md:gap-4 md:px-0">
           {categories.map((category, idx) => {
             const isActive = activeIdx === idx
 
@@ -232,19 +295,20 @@ const CategoryBar = () => {
               <div
                 key={category.name}
                 className="relative flex min-w-0 flex-col items-center text-center"
-                onMouseEnter={() => handleCategoryOpen(idx)}
-                onMouseLeave={scheduleClose}
+                onMouseEnter={() => handleMouseEnter(idx)}
+                onMouseLeave={handleMouseLeave}
               >
                 <button
                   type="button"
                   className={`group flex w-full flex-col items-center rounded-lg px-1 py-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/60 hover:shadow-sm hover:ring-1 hover:ring-white/70 sm:px-2 sm:py-1.5 ${isActive ? 'bg-white/70 shadow-sm ring-1 ring-white/80' : ''}`}
                   onClick={() => handleCategoryToggle(idx)}
                   onTouchStart={(event) => {
+                    if (!isDesktop) return
                     event.preventDefault()
                     handleCategoryToggle(idx)
                   }}
-                  onFocus={() => handleCategoryOpen(idx)}
-                  onBlur={scheduleClose}
+                  onFocus={() => handleMouseEnter(idx)}
+                  onBlur={handleMouseLeave}
                   aria-expanded={isActive}
                   aria-haspopup="true"
                 >
@@ -263,9 +327,9 @@ const CategoryBar = () => {
                 </button>
 
                 <div
-                  className={`pointer-events-auto absolute left-1/2 top-full mt-3 w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out sm:w-[min(30rem,90vw)] md:p-6 ${isActive ? 'translate-y-0 opacity-100 visible' : 'pointer-events-none -translate-y-2 opacity-0 invisible'}`}
-                  onMouseEnter={() => handleCategoryOpen(idx)}
-                  onMouseLeave={scheduleClose}
+                  className={`pointer-events-auto absolute left-1/2 top-full mt-3 w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out sm:w-[min(30rem,90vw)] md:p-6 ${isActive ? 'translate-y-0 opacity-100 visible' : 'pointer-events-none -translate-y-2 opacity-0 invisible'} hidden md:block`}
+                  onMouseEnter={() => handleMouseEnter(idx)}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {category.dropdownSections.map((section) => (
