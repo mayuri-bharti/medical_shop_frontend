@@ -11,6 +11,7 @@ const VerifyOtp = lazy(() => import('./pages/VerifyOtp'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Products = lazy(() => import('./pages/Products'))
 const ProductList = lazy(() => import('./pages/ProductList'))
+const AllMedicine = lazy(() => import('./pages/AllMedicine'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Orders = lazy(() => import('./pages/Orders'))
@@ -18,6 +19,7 @@ const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
 const Prescriptions = lazy(() => import('./pages/Prescriptions'))
 const Profile = lazy(() => import('./pages/Profile'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
+const Subcategory = lazy(() => import('./pages/Subcategory'))
 
 // Admin Pages - Lazy loaded
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
@@ -48,6 +50,8 @@ function App() {
           <Route path="/verify" element={<VerifyOtp />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products-list" element={<ProductList />} />
+          <Route path="/all-medicine" element={<AllMedicine />} />
+          <Route path="/subcategory/:slug" element={<Subcategory />} />
 
           {/* Protected Routes */}
           <Route path="/checkout" element={

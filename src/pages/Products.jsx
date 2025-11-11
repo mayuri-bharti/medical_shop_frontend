@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useDeferredValue, useEffect, useRef } from 'react'
 import { useQuery } from 'react-query'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { Search } from 'lucide-react'
 import PageCarousel from '../components/PageCarousel'
 import ProductCard from '../components/ProductCard'
+import SearchResultCard from '../components/SearchResultCard'
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -102,6 +103,120 @@ const Products = () => {
   )
   
   const products = useMemo(() => data?.products || [], [data?.products])
+
+  const trimmedSearch = deferredSearchTerm?.trim() || ''
+
+  const {
+    data: combinedSearchResults = [],
+    isLoading: isCombinedLoading,
+    isFetching: isCombinedFetching,
+    error: combinedSearchError,
+    isError: hasCombinedError
+  } = useQuery(
+    ['combined-search', trimmedSearch],
+    async () => {
+      if (!trimmedSearch) {
+        return []
+      }
+
+      const parseResponseData = (data) => {
+        if (data?.success && Array.isArray(data.results)) {
+          return data.results
+        }
+        return []
+      }
+
+      const tryFetch = async (url) => {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          const error = new Error(`Request failed with status ${response.status}`)
+          error.response = response
+          throw error
+        }
+
+        const json = await response.json()
+        return parseResponseData(json)
+      }
+
+      try {
+        const response = await api.get('/search', {
+          params: {
+            search: trimmedSearch,
+            _t: Date.now()
+          },
+          timeout: 45000,
+          headers: {
+            Accept: 'application/json'
+          }
+        })
+
+        if (response.status === 304) {
+          return []
+        }
+
+        if (response.data?.success && Array.isArray(response.data.results)) {
+          return response.data.results
+        }
+      } catch (axiosError) {
+        console.error('Combined search axios error:', axiosError)
+        const attemptedUrls = new Set()
+
+        if (api?.defaults?.baseURL) {
+          const normalizedBase = api.defaults.baseURL.endsWith('/')
+            ? api.defaults.baseURL.slice(0, -1)
+            : api.defaults.baseURL
+
+          const remoteUrl = `${normalizedBase}/search?search=${encodeURIComponent(trimmedSearch)}&_t=${Date.now()}`
+          attemptedUrls.add(remoteUrl)
+        }
+
+        const localUrl = `http://localhost:4000/api/search?search=${encodeURIComponent(trimmedSearch)}&_t=${Date.now()}`
+        attemptedUrls.add(localUrl)
+
+        for (const url of attemptedUrls) {
+          try {
+            return await tryFetch(url)
+          } catch (fallbackError) {
+            console.error(`Combined search fallback failed for ${url}:`, fallbackError)
+          }
+        }
+
+        throw axiosError
+      }
+
+      return []
+    },
+    {
+      enabled: Boolean(trimmedSearch),
+      staleTime: 0,
+      cacheTime: 0,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      keepPreviousData: false
+    }
+  )
+
+  const combinedErrorMessage = useMemo(() => {
+    if (!hasCombinedError || !combinedSearchError) {
+      return ''
+    }
+
+    if (combinedSearchError?.response?.data?.message) {
+      return combinedSearchError.response.data.message
+    }
+
+    if (combinedSearchError?.message) {
+      return combinedSearchError.message
+    }
+
+    return 'Failed to fetch combined results.'
+  }, [combinedSearchError, hasCombinedError])
 
   useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
@@ -431,6 +546,39 @@ const Products = () => {
       ) : (
         <div className="text-center py-12">
           <p className="text-gray-600">No products found matching your criteria.</p>
+        </div>
+      )}
+
+      {searchTerm?.trim() && (
+        <div className="space-y-3 rounded-lg border border-medical-100 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-medical-700">
+                Combined results for “{searchTerm.trim()}”
+              </p>
+              <p className="text-xs text-medical-500">
+                {isCombinedLoading || isCombinedFetching
+                  ? 'Searching medicines and products...'
+                  : combinedSearchResults.length > 0
+                    ? `Found ${combinedSearchResults.length} matching items.`
+                    : combinedErrorMessage || 'No medicines or products found for this search.'}
+              </p>
+            </div>
+            <Link
+              to={`/all-medicine?search=${encodeURIComponent(searchTerm.trim())}`}
+              className="inline-flex items-center justify-center rounded-md bg-medical-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-medical-700"
+            >
+              View medicines catalogue
+            </Link>
+          </div>
+
+          {combinedSearchResults.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+              {combinedSearchResults.slice(0, 8).map((result) => (
+                <SearchResultCard key={`${result.type}-${result.id}`} result={result} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

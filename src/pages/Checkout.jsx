@@ -11,15 +11,23 @@ const Checkout = () => {
   const [cart, setCart] = useState(null)
   const [shippingAddress, setShippingAddress] = useState({
     name: '',
-    phone: '',
-    street: '',
+    phoneNumber: '',
+    address: '',
     city: '',
     state: '',
     pincode: '',
     landmark: ''
   })
   const [paymentMethod, setPaymentMethod] = useState('COD')
+  const [prescriptionFile, setPrescriptionFile] = useState(null)
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+
+  const handlePrescriptionChange = (event) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setPrescriptionFile(file)
+    }
+  }
 
   useEffect(() => {
     // Check if we need to add a product to cart (from Buy Now redirect)
@@ -112,6 +120,12 @@ const Checkout = () => {
     e.preventDefault()
     setLoading(true)
 
+    if (!prescriptionFile) {
+      toast.error('Please upload your prescription before placing the order')
+      setLoading(false)
+      return
+    }
+
     try {
       const token = getAccessToken()
       if (!token) {
@@ -120,37 +134,36 @@ const Checkout = () => {
         return
       }
 
-      const response = await fetch(
-        `${API_BASE}/orders`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            shippingAddress,
-            paymentMethod
-          })
-        }
-      )
+      const formData = new FormData()
+      formData.append('shippingAddress', JSON.stringify(shippingAddress))
+      formData.append('paymentMethod', paymentMethod)
+      formData.append('prescription', prescriptionFile)
+
+      const response = await fetch(`${API_BASE}/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
 
       const data = await response.json()
 
       if (response.ok && data.success) {
         toast.success('Order placed successfully!')
-        // Navigate to order success page with order ID
-        navigate('/order-success', { state: { order: data.data } })
+        navigate('/orders')
       } else {
         throw new Error(data.message || 'Order failed')
       }
     } catch (error) {
       console.error('Order error:', error)
-      toast.error('Failed to place order')
+      
+      toast.error(error.message || 'Failed to place order')
     } finally {
       setLoading(false)
     }
   }
+  
 
   if (!cart) {
     return (
@@ -214,8 +227,8 @@ const Checkout = () => {
                     <input
                       type="tel"
                       required
-                      value={shippingAddress.phone}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                    value={shippingAddress.phoneNumber}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, phoneNumber: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
                       placeholder="9876543210"
                       maxLength={10}
@@ -230,8 +243,8 @@ const Checkout = () => {
                   <input
                     type="text"
                     required
-                    value={shippingAddress.street}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
+                    value={shippingAddress.address}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
                     placeholder="House/Flat No., Building Name"
                   />
@@ -353,6 +366,38 @@ const Checkout = () => {
                     <div className="text-sm text-gray-600">Paytm/UPI (Mock)</div>
                   </div>
                 </label>
+              </div>
+            </div>
+
+            {/* Prescription Upload */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <CheckCircle className="text-medical-600" size={24} />
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Prescription</h2>
+                  <p className="text-sm text-gray-600">Upload a clear photo or PDF of your prescription.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prescription File *
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handlePrescriptionChange}
+                  className="w-full"
+                  required
+                />
+                {prescriptionFile && (
+                  <div className="rounded-lg border border-medical-100 bg-medical-50 px-4 py-3 text-sm text-medical-700">
+                    <p className="font-medium">{prescriptionFile.name}</p>
+                    <p className="text-xs text-medical-500">
+                      {(prescriptionFile.size / 1024 / 1024).toFixed(2)} MB • {prescriptionFile.type}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
-import { Upload, FileText, Trash2, Eye, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, FileText, Trash2, Eye, Clock, CheckCircle, AlertCircle, Package, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Helper to get file URL with Cloudinary optimization
@@ -32,6 +32,85 @@ const getFileUrl = (fileUrl) => {
   // Otherwise, construct full URL
   const baseUrl = apiBaseUrl.replace('/api', '')
   return `${baseUrl}/${fileUrl.replace(/^\//, '')}`
+}
+
+const statusDisplayConfig = {
+  submitted: {
+    label: 'Submitted',
+    icon: Clock,
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-800',
+    borderColor: 'border-yellow-200',
+    message: 'Your prescription has been submitted and is waiting for review.'
+  },
+  in_review: {
+    label: 'In Review',
+    icon: AlertCircle,
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-800',
+    borderColor: 'border-blue-200',
+    message: 'Our pharmacists are reviewing your prescription.'
+  },
+  approved: {
+    label: 'Approved',
+    icon: CheckCircle,
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-800',
+    borderColor: 'border-green-200',
+    message: 'Prescription approved. We will prepare your order shortly.'
+  },
+  rejected: {
+    label: 'Rejected',
+    icon: AlertCircle,
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-800',
+    borderColor: 'border-red-200',
+    message: 'We could not process this prescription. Please check notes for details.'
+  },
+  ordered: {
+    label: 'Order Created',
+    icon: Package,
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-800',
+    borderColor: 'border-indigo-200',
+    message: 'Your medicines have been added to an order and will be processed soon.'
+  },
+  fulfilled: {
+    label: 'In Progress',
+    icon: Package,
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-800',
+    borderColor: 'border-purple-200',
+    message: 'Your order is being packed or has been shipped.'
+  },
+  delivered: {
+    label: 'Delivered',
+    icon: ShieldCheck,
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-800',
+    borderColor: 'border-emerald-200',
+    message: 'Your order has been delivered successfully.'
+  },
+  cancelled: {
+    label: 'Cancelled',
+    icon: AlertCircle,
+    bgColor: 'bg-gray-200',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    message: 'This prescription order has been cancelled.'
+  }
+}
+
+const normalizeStatus = (status) => {
+  if (!status) return 'submitted'
+  const normalized = status.toLowerCase()
+  const aliases = {
+    pending: 'submitted',
+    verified: 'approved',
+    completed: 'delivered',
+    reviewing: 'in_review'
+  }
+  return statusDisplayConfig[normalized] ? normalized : (statusDisplayConfig[aliases[normalized]] ? aliases[normalized] : 'submitted')
 }
 
 const Prescriptions = () => {
@@ -120,48 +199,23 @@ const Prescriptions = () => {
   }
 
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      'Pending': {
-        icon: Clock,
-        bgColor: 'bg-yellow-100',
-        textColor: 'text-yellow-800',
-        borderColor: 'border-yellow-200',
-        message: 'Your prescription is pending verification'
-      },
-      'Verified': {
-        icon: CheckCircle,
-        bgColor: 'bg-blue-100',
-        textColor: 'text-blue-800',
-        borderColor: 'border-blue-200',
-        message: 'Your prescription has been verified'
-      },
-      'Completed': {
-        icon: CheckCircle,
-        bgColor: 'bg-green-100',
-        textColor: 'text-green-800',
-        borderColor: 'border-green-200',
-        message: 'Your prescription processing is completed'
-      }
-    }
-
-    const config = statusConfig[status] || statusConfig['Pending']
+    const normalized = normalizeStatus(status)
+    const config = statusDisplayConfig[normalized]
     const Icon = config.icon
 
     return (
       <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ${config.bgColor} ${config.textColor} ${config.borderColor} border`}>
         <Icon size={14} />
-        <span className="text-xs font-medium">{status}</span>
+        <span className="text-xs font-medium uppercase tracking-wide">
+          {config.label}
+        </span>
       </div>
     )
   }
 
   const getStatusMessage = (status) => {
-    const messages = {
-      'Pending': 'Your prescription is being verified',
-      'Verified': 'Your prescription has been verified and is ready',
-      'Completed': 'Your prescription processing is completed'
-    }
-    return messages[status] || messages['Pending']
+    const normalized = normalizeStatus(status)
+    return statusDisplayConfig[normalized].message
   }
 
   if (isLoading) {
@@ -299,6 +353,34 @@ const Prescriptions = () => {
                   </p>
                 )}
                 
+                {prescription.order && (
+                  <div className="mb-4 rounded-lg border border-medical-100 bg-medical-50 p-3 text-sm text-medical-700">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">Linked Order</p>
+                        <p className="text-xs text-medical-500">Order Number: {prescription.order.orderNumber}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/orders?highlight=${prescription.order._id}`)}
+                        className="text-xs font-semibold text-medical-600 hover:text-medical-700"
+                      >
+                        View Order
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 font-medium text-medical-600">
+                        Status: {prescription.order.status}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 font-medium text-medical-600">
+                        Total: ₹{prescription.order.total?.toLocaleString() || '—'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 font-medium text-medical-600">
+                        Source: {prescription.order.source || 'Prescription'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex space-x-2">
                   <a
                     href={getFileUrl(prescription.fileUrl)}

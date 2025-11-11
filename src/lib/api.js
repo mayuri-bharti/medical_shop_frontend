@@ -127,11 +127,35 @@ export const getUsers = async (params = {}) => {
  */
 export const getOrders = async (params = {}) => {
   const queryParams = new URLSearchParams(params).toString()
-  return await apiCall(`/admin/orders?${queryParams}`, {
+  return await apiCall(`/orders/all${queryParams ? `?${queryParams}` : ''}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${getAdminToken()}`
     }
+  })
+}
+
+export const getMyOrders = async () => {
+  const token = getAccessToken()
+  if (!token) {
+    throw new Error('No access token found')
+  }
+
+  return await apiCall('/orders/my-orders', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+}
+
+export const updateOrderStatus = async (orderId, status) => {
+  return await apiCall(`/orders/${orderId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    },
+    body: JSON.stringify({ status })
   })
 }
 
@@ -249,13 +273,17 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
   
   const config = {
     method: options.method || 'GET',
-    ...options,
-    // Ensure headers are merged properly (not overwritten by spread)
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    }
+    ...options
   }
+
+  const headers = { ...(options.headers || {}) }
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+
+  if (!isFormData && !headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  config.headers = headers
 
   try {
     const response = await fetch(url, config)
