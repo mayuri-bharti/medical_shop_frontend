@@ -134,8 +134,18 @@ const Checkout = () => {
         return
       }
 
+      const normalizedAddress = {
+        name: shippingAddress.name.trim(),
+        phone: shippingAddress.phoneNumber.trim(),
+        street: shippingAddress.address.trim(),
+        city: shippingAddress.city.trim(),
+        state: shippingAddress.state.trim(),
+        pincode: shippingAddress.pincode.trim(),
+        landmark: shippingAddress.landmark.trim()
+      }
+
       const formData = new FormData()
-      formData.append('shippingAddress', JSON.stringify(shippingAddress))
+      formData.append('shippingAddress', JSON.stringify(normalizedAddress))
       formData.append('paymentMethod', paymentMethod)
       formData.append('prescription', prescriptionFile)
 
@@ -227,8 +237,11 @@ const Checkout = () => {
                     <input
                       type="tel"
                       required
-                    value={shippingAddress.phoneNumber}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, phoneNumber: e.target.value })}
+                      value={shippingAddress.phoneNumber}
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\\D/g, '').slice(0, 10)
+                        setShippingAddress({ ...shippingAddress, phoneNumber: digitsOnly })
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
                       placeholder="9876543210"
                       maxLength={10}
@@ -240,14 +253,14 @@ const Checkout = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Street Address *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={shippingAddress.address}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
-                    placeholder="House/Flat No., Building Name"
-                  />
+                    <input
+                      type="text"
+                      required
+                      value={shippingAddress.address}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
+                      placeholder="House/Flat No., Building Name"
+                    />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
@@ -289,7 +302,10 @@ const Checkout = () => {
                       pattern="[0-9]{6}"
                       maxLength={6}
                       value={shippingAddress.pincode}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, pincode: e.target.value })}
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\\D/g, '').slice(0, 6)
+                        setShippingAddress({ ...shippingAddress, pincode: digitsOnly })
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-transparent"
                       placeholder="123456"
                     />
