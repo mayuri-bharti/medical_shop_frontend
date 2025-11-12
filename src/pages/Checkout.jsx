@@ -100,6 +100,7 @@ const Checkout = () => {
           }
         }
       )
+      
       const data = await response.json()
       if (data.success) {
         setCart(data.data)
@@ -118,43 +119,51 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
 
-    if (!prescriptionFile) {
-      toast.error('Please upload your prescription before placing the order')
-      setLoading(false)
+    if (loading) {
       return
     }
 
     try {
       const token = getAccessToken()
       if (!token) {
-        toast.error('Please login to continue')
-        navigate('/login?redirect=' + encodeURIComponent('/checkout'))
+        toast.error('Please log in to place an order')
         return
       }
 
-      const normalizedAddress = {
-        name: shippingAddress.name.trim(),
-        phone: shippingAddress.phoneNumber.trim(),
-        street: shippingAddress.address.trim(),
-        city: shippingAddress.city.trim(),
-        state: shippingAddress.state.trim(),
-        pincode: shippingAddress.pincode.trim(),
-        landmark: shippingAddress.landmark.trim()
+      if (!shippingAddress || !shippingAddress.name) {
+        toast.error('Please select or add an address')
+        return
       }
 
-      const formData = new FormData()
-      formData.append('shippingAddress', JSON.stringify(normalizedAddress))
-      formData.append('paymentMethod', paymentMethod)
-      formData.append('prescription', prescriptionFile)
+      const selectedItems = Array.isArray(cart?.items)
+        ? cart.items.map((item) => ({
+            cartItemId: item?._id || item?.id,
+            productId: item?.product?._id || item?.product?.id || item?.product,
+            quantity: item?.quantity ?? 1
+          }))
+        : []
 
-      const response = await fetch(`${API_BASE}/orders`, {
+      if (!selectedItems.length) {
+        toast.error('Your cart is empty')
+        return
+      }
+
+      setLoading(true)
+
+      const payload = {
+        shippingAddress,
+        paymentMethod,
+        selectedItems
+      }
+
+      const response = await fetch(`${API_BASE}/orders/checkout`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: formData
+        body: JSON.stringify(payload)
       })
 
       const data = await response.json()
@@ -167,7 +176,6 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Order error:', error)
-      
       toast.error(error.message || 'Failed to place order')
     } finally {
       setLoading(false)
