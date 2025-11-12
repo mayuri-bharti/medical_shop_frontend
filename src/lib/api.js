@@ -127,7 +127,7 @@ export const getUsers = async (params = {}) => {
  */
 export const getOrders = async (params = {}) => {
   const queryParams = new URLSearchParams(params).toString()
-  return await apiCall(`/orders/all${queryParams ? `?${queryParams}` : ''}`, {
+  return await apiCall(`/admin/orders${queryParams ? `?${queryParams}` : ''}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${getAdminToken()}`
@@ -149,13 +149,13 @@ export const getMyOrders = async () => {
   })
 }
 
-export const updateOrderStatus = async (orderId, status) => {
-  return await apiCall(`/orders/${orderId}/status`, {
-    method: 'PUT',
+export const updateOrderStatus = async (orderId, status, note) => {
+  return await apiCall(`/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${getAdminToken()}`
     },
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status, note })
   })
 }
 

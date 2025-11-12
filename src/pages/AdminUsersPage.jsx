@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Users, Shield } from 'lucide-react'
 import { api } from '../services/api'
 import toast from 'react-hot-toast'
@@ -8,24 +8,46 @@ const AdminUsersPage = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    fetchUsers()
-  }, [searchTerm])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/users', {
-        params: { search: searchTerm || undefined }
-      })
+      const params = {}
+      if (searchTerm) {
+        params.search = searchTerm
+      }
+      
+      const response = await api.get('/admin/users', { params })
+      
+      console.log('Users API response:', response.data)
       
       if (response.data && response.data.success) {
         setUsers(response.data.users || [])
+      } else {
+        console.error('Users fetch error:', response.data)
+        toast.error(response.data?.message || 'Failed to fetch users')
+        setUsers([])
       }
+    } catch (error) {
+      console.error('Failed to fetch admin users:', error)
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+      
+      const message = error.response?.data?.message || error.message || 'Failed to fetch users'
+      toast.error(message)
+      setUsers([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm])
+
+  useEffect(() => {
+    // Debounce search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      fetchUsers()
+    }, searchTerm ? 300 : 0) // Wait 300ms after user stops typing, or immediately on mount if no search
+
+    return () => clearTimeout(timeoutId)
+  }, [fetchUsers, searchTerm])
 
   if (loading) {
     return (

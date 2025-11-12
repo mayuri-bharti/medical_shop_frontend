@@ -151,10 +151,47 @@ const Checkout = () => {
 
       setLoading(true)
 
+      // Step 1: Upload prescription if file exists
+      let prescriptionId = null
+      if (prescriptionFile) {
+        try {
+          const formData = new FormData()
+          formData.append('prescription', prescriptionFile)
+          
+          if (shippingAddress.description) {
+            formData.append('description', shippingAddress.description)
+          }
+
+          const prescriptionResponse = await fetch(`${API_BASE}/prescriptions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+              // Don't set Content-Type - browser will set it with boundary for FormData
+            },
+            body: formData
+          })
+
+          const prescriptionData = await prescriptionResponse.json()
+          
+          if (prescriptionResponse.ok && prescriptionData.success) {
+            prescriptionId = prescriptionData.data?.prescriptionId || prescriptionData.data?._id
+            toast.success('Prescription uploaded successfully')
+          } else {
+            console.error('Prescription upload failed:', prescriptionData)
+            toast.error('Failed to upload prescription, but continuing with order...')
+          }
+        } catch (error) {
+          console.error('Prescription upload error:', error)
+          toast.error('Failed to upload prescription, but continuing with order...')
+        }
+      }
+
+      // Step 2: Create order with prescription ID
       const payload = {
         shippingAddress,
         paymentMethod,
-        selectedItems
+        selectedItems,
+        ...(prescriptionId && { prescriptionId })
       }
 
       const response = await fetch(`${API_BASE}/orders/checkout`, {

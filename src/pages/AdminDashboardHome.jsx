@@ -12,6 +12,9 @@ const AdminDashboardHome = () => {
     totalOrders: 0,
     totalRevenue: 0
   })
+  const [recentOrders, setRecentOrders] = useState([])
+  const [topProducts, setTopProducts] = useState([])
+  const [revenueByStatus, setRevenueByStatus] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,33 +24,19 @@ const AdminDashboardHome = () => {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      
-      // Fetch products
-      const productsRes = await api.get('/products', { params: { limit: 1 } })
-      const totalProducts = productsRes.data?.pagination?.total || 0
-
-      // Fetch users
-      const usersRes = await api.get('/admin/users', { params: { limit: 1 } })
-      const totalUsers = usersRes.data?.pagination?.total || 0
-
-      // Fetch orders
-      const ordersRes = await api.get('/admin/orders', { params: { limit: 1 } })
-      const totalOrders = ordersRes.data?.pagination?.total || 0
-      
-      // Calculate revenue (completed orders)
-      let totalRevenue = 0
-      if (ordersRes.data?.orders) {
-        totalRevenue = ordersRes.data.orders
-          .filter(order => order.status === 'completed')
-          .reduce((sum, order) => sum + (order.totalAmount || 0), 0)
-      }
+      const response = await api.get('/admin/dashboard/stats')
+      const data = response.data?.data || {}
+      const totals = data.totals || {}
 
       setStats({
-        totalProducts,
-        totalUsers,
-        totalOrders,
-        totalRevenue
+        totalProducts: Number(totals.products) || 0,
+        totalUsers: Number(totals.users) || 0,
+        totalOrders: Number(totals.orders) || 0,
+        totalRevenue: Number(totals.revenue) || 0
       })
+      setRecentOrders(Array.isArray(data.recentOrders) ? data.recentOrders : [])
+      setTopProducts(Array.isArray(data.topProducts) ? data.topProducts : [])
+      setRevenueByStatus(data.revenueByStatus || {})
     } catch (error) {
       console.error('Failed to fetch stats:', error)
       toast.error('Failed to load dashboard stats')
@@ -62,6 +51,23 @@ const AdminDashboardHome = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600"></div>
       </div>
     )
+  }
+
+  const formatCurrency = (value) => {
+    const amount = Number(value) || 0
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const formatStatus = (status) => {
+    if (!status) return 'Unknown'
+    return status
+      .split(' ')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
   }
 
   const statCards = [
@@ -88,7 +94,7 @@ const AdminDashboardHome = () => {
     },
     {
       title: 'Total Revenue',
-      value: `₹${stats.totalRevenue.toLocaleString()}`,
+      value: formatCurrency(stats.totalRevenue),
       icon: DollarSign,
       color: 'bg-medical-600',
       bgColor: 'bg-medical-100'
@@ -156,6 +162,105 @@ const AdminDashboardHome = () => {
               <p className="text-sm text-gray-600">See all registered users</p>
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
+            <button
+              onClick={() => navigate('/admin/dashboard/orders')}
+              className="text-sm text-medical-600 hover:text-medical-700 font-medium"
+            >
+              View All
+            </button>
+          </div>
+          {recentOrders.length === 0 ? (
+            <p className="text-sm text-gray-500">No orders yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="border border-gray-100 rounded-lg p-4 hover:border-medical-200 transition-colors"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {order.orderNumber || 'Order'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {order.customer?.name || 'Unknown customer'}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(order.total)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                    <span className="inline-flex items-center space-x-2">
+                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                        {formatStatus(order.status)}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                        {formatStatus(order.paymentStatus)}
+                      </span>
+                    </span>
+                    <span>
+                      {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">Top Products</h2>
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-gray-500">No product sales yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {topProducts.map((product) => (
+                <div key={product.productId} className="flex justify-between items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {product.name || 'Unnamed product'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {product.quantity} units sold
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(product.revenue)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {Object.keys(revenueByStatus).length > 0 && (
+            <div className="border-t border-gray-100 pt-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Revenue by Status</h3>
+              <div className="space-y-2">
+                {Object.entries(revenueByStatus).map(([status, data]) => (
+                  <div key={status} className="flex justify-between text-sm text-gray-600">
+                    <span>{formatStatus(status)}</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(data.revenue)} • {data.orders} orders
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

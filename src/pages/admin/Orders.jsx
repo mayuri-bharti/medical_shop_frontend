@@ -3,7 +3,15 @@ import { ShoppingBag, Filter, Calendar, User, ExternalLink } from 'lucide-react'
 import { getOrders, updateOrderStatus } from '../../lib/api'
 import toast from 'react-hot-toast'
 
-const statusOptions = ['Processing', 'Out for Delivery', 'Delivered', 'Cancelled']
+const statusOptions = ['processing', 'out for delivery', 'delivered', 'cancelled']
+
+const formatStatus = (status) => {
+  if (!status) return 'Unknown'
+  return status
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([])
@@ -17,17 +25,27 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true)
     try {
-      const response = await getOrders()
-      if (response.success) {
-        const filtered = statusFilter === 'all'
-          ? response.orders || []
-          : (response.orders || []).filter(order =>
-              order.status?.toLowerCase() === statusFilter.toLowerCase()
-            )
-        setOrders(filtered)
+      const params = {}
+      if (statusFilter && statusFilter !== 'all') {
+        params.status = statusFilter
+      }
+      
+      const response = await getOrders(params)
+      
+      if (response && response.success) {
+        setOrders(response.orders || [])
+      } else if (response && response.data && response.data.success) {
+        // Handle response wrapped in data property
+        setOrders(response.data.orders || [])
+      } else {
+        console.error('Unexpected response format:', response)
+        toast.error(response?.message || 'Failed to fetch orders')
+        setOrders([])
       }
     } catch (error) {
+      console.error('Failed to fetch orders:', error)
       toast.error(error.message || 'Failed to fetch orders')
+      setOrders([])
     } finally {
       setLoading(false)
     }
@@ -82,8 +100,8 @@ const AdminOrders = () => {
           >
             <option value="all">All Orders</option>
             {statusOptions.map((status) => (
-              <option key={status} value={status.toLowerCase()}>
-                {status}
+              <option key={status} value={status}>
+                {formatStatus(status)}
               </option>
             ))}
           </select>
@@ -120,7 +138,7 @@ const AdminOrders = () => {
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
-                          {status}
+                          {formatStatus(status)}
                         </option>
                       ))}
                     </select>

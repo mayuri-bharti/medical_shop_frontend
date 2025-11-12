@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getAccessToken, removeAccessToken } from '../lib/api'
+import { getAccessToken, getAdminToken, removeAccessToken } from '../lib/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
@@ -10,10 +10,17 @@ export const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = getAccessToken()
+    const requestUrl = config.url || ''
+    const isAdminRequest = requestUrl.startsWith('/admin/') || requestUrl.includes('/admin/')
+
+    const token = isAdminRequest ? getAdminToken() : getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    } else {
+      console.warn('No token found for', isAdminRequest ? 'admin' : 'user', 'request to', config.url)
     }
+    
+    // CRITICAL: Must return config for axios to work
     return config
   },
   (error) => {
@@ -26,12 +33,21 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid, remove it and redirect to login
+      const requestUrl = error.config?.url || ''
+      const isAdminRequest = requestUrl.includes('/admin/')
+
       removeAccessToken()
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
-        window.location.href = `/login?redirect=${returnUrl}`
+
+      const currentPath = window.location.pathname
+      if (isAdminRequest) {
+        if (currentPath !== '/admin/login') {
+          window.location.href = '/admin/login'
+        }
+      } else {
+        if (currentPath !== '/login') {
+          const returnUrl = encodeURIComponent(currentPath + window.location.search)
+          window.location.href = `/login?redirect=${returnUrl}`
+        }
       }
     }
     return Promise.reject(error)
