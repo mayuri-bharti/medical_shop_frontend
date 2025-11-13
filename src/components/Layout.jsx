@@ -335,7 +335,7 @@ const Layout = ({ children }) => {
                   </a>
                 </li>
                 <li>
-                  <a href="mailto:support@medishop.com" className="hover:text-medical-600 transition-colors">
+                  <a href="mailto:support@healthplus.com" className="hover:text-medical-600 transition-colors">
                     ✉️ healthplus@gmail.com
                   </a>
                 </li>
