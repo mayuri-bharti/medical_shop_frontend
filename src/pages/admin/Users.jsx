@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Users, Search, Phone, Mail, Calendar } from 'lucide-react'
+import { Users, Search, Phone, Mail, Calendar, Edit, Trash2, Ban, CheckCircle } from 'lucide-react'
 import { getUsers } from '../../lib/api'
+import { api } from '../../services/api'
 import toast from 'react-hot-toast'
 
 const AdminUsers = () => {
@@ -9,6 +10,17 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: ''
+  })
+  const [updating, setUpdating] = useState(false)
+  const [deleting, setDeleting] = useState(null)
+  const [blocking, setBlocking] = useState(null)
 
   useEffect(() => {
     fetchUsers()
@@ -34,6 +46,122 @@ const AdminUsers = () => {
     }
   }
 
+  const handleEdit = (user) => {
+    setEditingUser(user)
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      password: '' // Don't pre-fill password
+    })
+    setShowEditModal(true)
+  }
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault()
+    
+    if (!editingUser) return
+
+    // Validation
+    if (!editForm.name || !editForm.email || !editForm.phone) {
+      toast.error('Name, email, and phone are required')
+      return
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(editForm.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    // Phone validation (10 digits)
+    if (!/^[0-9]{10}$/.test(editForm.phone)) {
+      toast.error('Phone must be 10 digits')
+      return
+    }
+
+    // Password validation (if provided)
+    if (editForm.password && editForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const updateData = {
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone
+      }
+      
+      // Only include password if provided
+      if (editForm.password) {
+        updateData.password = editForm.password
+      }
+
+      const response = await api.put(`/admin/users/${editingUser._id}`, updateData)
+      
+      if (response.data.success) {
+        toast.success('User updated successfully!')
+        setShowEditModal(false)
+        setEditingUser(null)
+        setEditForm({ name: '', email: '', phone: '', password: '' })
+        fetchUsers() // Refresh users list
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to update user'
+      toast.error(message)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleDelete = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return
+    }
+
+    setDeleting(userId)
+    try {
+      const response = await api.delete(`/admin/users/${userId}`)
+      
+      if (response.data.success) {
+        toast.success('User deleted successfully!')
+        fetchUsers() // Refresh users list
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to delete user'
+      toast.error(message)
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const handleBlockToggle = async (user) => {
+    const action = user.isBlocked ? 'unblock' : 'block'
+    if (!confirm(`Are you sure you want to ${action} this user?`)) {
+      return
+    }
+
+    setBlocking(user._id)
+    try {
+      const response = await api.patch(`/admin/users/${user._id}/block`, {
+        isBlocked: !user.isBlocked
+      })
+      
+      if (response.data.success) {
+        toast.success(`User ${action}ed successfully!`)
+        fetchUsers() // Refresh users list
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || `Failed to ${action} user`
+      toast.error(message)
+    } finally {
+      setBlocking(null)
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -49,6 +177,101 @@ const AdminUsers = () => {
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Users Management</h1>
         <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Manage all registered users</p>
       </div>
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Edit User</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingUser(null)
+                  setEditForm({ name: '', email: '', phone: '', password: '' })
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password (Optional - leave empty to keep current)
+                </label>
+                <input
+                  type="password"
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter new password (min 6 characters)"
+                  minLength={6}
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty to keep current password</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingUser(null)
+                    setEditForm({ name: '', email: '', phone: '', password: '' })
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="flex-1 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {updating ? 'Updating...' : 'Update User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 md:p-5">
@@ -83,7 +306,7 @@ const AdminUsers = () => {
           <>
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+              <table className="w-full min-w-[1000px]">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                   <tr>
                     <th className="px-4 md:px-5 lg:px-6 py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider">
@@ -100,6 +323,9 @@ const AdminUsers = () => {
                     </th>
                     <th className="px-4 md:px-5 lg:px-6 py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Status
+                    </th>
+                    <th className="px-4 md:px-5 lg:px-6 py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -149,13 +375,61 @@ const AdminUsers = () => {
                         </div>
                       </td>
                       <td className="px-4 md:px-5 lg:px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1.5 text-xs md:text-sm font-semibold rounded-full ${
-                          user.isVerified
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {user.isVerified ? 'Verified' : 'Pending'}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-3 py-1.5 text-xs md:text-sm font-semibold rounded-full ${
+                            user.isVerified
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {user.isVerified ? 'Verified' : 'Pending'}
+                          </span>
+                          {user.isBlocked && (
+                            <span className="px-3 py-1.5 text-xs md:text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                              Blocked
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-5 lg:px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit User"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleBlockToggle(user)}
+                            disabled={blocking === user._id}
+                            className={`p-2 rounded-lg transition-colors ${
+                              user.isBlocked
+                                ? 'text-green-600 hover:bg-green-50'
+                                : 'text-orange-600 hover:bg-orange-50'
+                            } disabled:opacity-50`}
+                            title={user.isBlocked ? 'Unblock User' : 'Block User'}
+                          >
+                            {blocking === user._id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : user.isBlocked ? (
+                              <CheckCircle size={18} />
+                            ) : (
+                              <Ban size={18} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user._id)}
+                            disabled={deleting === user._id}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete User"
+                          >
+                            {deleting === user._id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : (
+                              <Trash2 size={18} />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -195,20 +469,55 @@ const AdminUsers = () => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.role === 'ADMIN'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {user.role || 'USER'}
-                    </span>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.isVerified
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {user.isVerified ? 'Verified' : 'Pending'}
-                    </span>
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.role === 'ADMIN'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {user.role || 'USER'}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.isVerified
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {user.isVerified ? 'Verified' : 'Pending'}
+                      </span>
+                      {user.isBlocked && (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                          Blocked
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <Edit size={16} className="inline mr-1" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleBlockToggle(user)}
+                      disabled={blocking === user._id}
+                      className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                        user.isBlocked
+                          ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                          : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+                      }`}
+                    >
+                      {user.isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user._id)}
+                      disabled={deleting === user._id}
+                      className="flex-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 size={16} className="inline mr-1" />
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}

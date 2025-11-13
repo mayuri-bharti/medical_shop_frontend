@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ShoppingBag, Filter, Calendar, User, ExternalLink } from 'lucide-react'
 import { getOrders, updateOrderStatus } from '../../lib/api'
 import toast from 'react-hot-toast'
@@ -14,13 +15,14 @@ const formatStatus = (status) => {
 }
 
 const AdminOrders = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
     fetchOrders()
-  }, [statusFilter])
+  }, [statusFilter, searchParams])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -28,6 +30,16 @@ const AdminOrders = () => {
       const params = {}
       if (statusFilter && statusFilter !== 'all') {
         params.status = statusFilter
+      }
+      
+      // Handle date filtering from URL params
+      const startDate = searchParams.get('startDate')
+      const endDate = searchParams.get('endDate')
+      if (startDate) {
+        params.startDate = startDate
+      }
+      if (endDate) {
+        params.endDate = endDate
       }
       
       const response = await getOrders(params)
@@ -88,23 +100,52 @@ const AdminOrders = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 md:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <div className="flex items-center space-x-2">
-            <Filter size={20} className="text-gray-400 flex-shrink-0" />
-            <label className="text-sm md:text-base font-medium text-gray-700 whitespace-nowrap">Status:</label>
+        <div className="flex flex-col gap-3">
+          {/* Date Filter Indicator */}
+          {searchParams.get('startDate') && searchParams.get('endDate') && (
+            <div className="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-indigo-600" />
+                <span className="text-sm font-medium text-indigo-800">
+                  Showing orders from {new Date(searchParams.get('startDate')).toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  const newParams = new URLSearchParams(searchParams)
+                  newParams.delete('startDate')
+                  newParams.delete('endDate')
+                  setSearchParams(newParams)
+                }}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium underline"
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+          
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center space-x-2">
+              <Filter size={20} className="text-gray-400 flex-shrink-0" />
+              <label className="text-sm md:text-base font-medium text-gray-700 whitespace-nowrap">Status:</label>
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 text-sm md:text-base font-medium"
+            >
+              <option value="all">All Orders</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {formatStatus(status)}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 text-sm md:text-base font-medium"
-          >
-            <option value="all">All Orders</option>
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {formatStatus(status)}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 

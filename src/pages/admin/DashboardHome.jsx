@@ -1,16 +1,30 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, ShoppingBag, Package, TrendingUp, DollarSign } from 'lucide-react'
+import { Users, ShoppingBag, Package, TrendingUp, DollarSign, UserPlus, Shield, Calendar } from 'lucide-react'
 import { getUsers, getOrders, getAdminProducts } from '../../lib/api'
+import { api } from '../../services/api'
+import toast from 'react-hot-toast'
 
 const AdminDashboardHome = () => {
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     users: 0,
     orders: 0,
     products: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    todayOrders: 0
   })
   const [loading, setLoading] = useState(true)
+  const [showCreateAdminForm, setShowCreateAdminForm] = useState(false)
+  const [creatingAdmin, setCreatingAdmin] = useState(false)
+  const [adminForm, setAdminForm] = useState({
+    phone: '',
+    name: '',
+    username: '',
+    email: '',
+    password: ''
+  })
 
   useEffect(() => {
     fetchStats()
@@ -19,10 +33,27 @@ const AdminDashboardHome = () => {
   const fetchStats = async () => {
     setLoading(true)
     try {
-      const [usersRes, ordersRes, productsRes] = await Promise.all([
+      // Get today's date range (start and end of today)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Start of today
+      const endOfToday = new Date()
+      endOfToday.setHours(23, 59, 59, 999) // End of today
+
+      const [usersRes, ordersRes, productsRes, todayOrdersRes] = await Promise.all([
         getUsers({ limit: 1 }),
         getOrders({ limit: 1 }),
-        getAdminProducts({ limit: 1 })
+        getAdminProducts({ limit: 1 }),
+        // Fetch today's orders
+        api.get('/admin/orders', {
+          params: {
+            startDate: today.toISOString(),
+            endDate: endOfToday.toISOString(),
+            limit: 1
+          }
+        }).catch(err => {
+          console.error('Failed to fetch today\'s orders:', err)
+          return { data: { pagination: { total: 0 } } }
+        })
       ])
 
       const totalRevenue = ordersRes.orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
@@ -31,12 +62,78 @@ const AdminDashboardHome = () => {
         users: usersRes.pagination?.total || 0,
         orders: ordersRes.pagination?.total || 0,
         products: productsRes.data?.pagination?.total || 0,
-        totalRevenue
+        totalRevenue,
+        todayOrders: todayOrdersRes?.data?.pagination?.total || 0
       })
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault()
+    
+    if (!adminForm.phone || !adminForm.name || !adminForm.username || !adminForm.email || !adminForm.password) {
+      toast.error('All fields are required')
+      return
+    }
+
+    if (adminForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    setCreatingAdmin(true)
+    try {
+      const response = await api.post('/admin/users/create-admin', adminForm)
+      
+      if (response.data.success) {
+        toast.success('Admin created successfully!')
+        setAdminForm({
+          phone: '',
+          name: '',
+          username: '',
+          email: '',
+          password: ''
+        })
+        setShowCreateAdminForm(false)
+        // Refresh stats to update user count
+        fetchStats()
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to create admin'
+      toast.error(message)
+    } finally {
+      setCreatingAdmin(false)
+    }
+  }
+
+  const handleCardClick = (cardName) => {
+    switch (cardName) {
+      case 'Total Users':
+        navigate('/admin/dashboard/users')
+        break
+      case 'Total Orders':
+        navigate('/admin/dashboard/orders')
+        break
+      case "Today's Orders":
+        // Navigate to orders page with today's date filter
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const endOfToday = new Date()
+        endOfToday.setHours(23, 59, 59, 999)
+        navigate(`/admin/dashboard/orders?startDate=${today.toISOString()}&endDate=${endOfToday.toISOString()}`)
+        break
+      case 'Total Products':
+        navigate('/admin/dashboard/manage-products')
+        break
+      case 'Total Revenue':
+        navigate('/admin/dashboard/orders')
+        break
+      default:
+        break
     }
   }
 
@@ -46,28 +143,40 @@ const AdminDashboardHome = () => {
       value: stats.users,
       icon: Users,
       color: 'bg-blue-500',
-      bgColor: 'bg-blue-50'
+      bgColor: 'bg-blue-50',
+      onClick: () => handleCardClick('Total Users')
     },
     {
       name: 'Total Orders',
       value: stats.orders,
       icon: ShoppingBag,
       color: 'bg-green-500',
-      bgColor: 'bg-green-50'
+      bgColor: 'bg-green-50',
+      onClick: () => handleCardClick('Total Orders')
+    },
+    {
+      name: "Today's Orders",
+      value: stats.todayOrders,
+      icon: Calendar,
+      color: 'bg-indigo-500',
+      bgColor: 'bg-indigo-50',
+      onClick: () => handleCardClick("Today's Orders")
     },
     {
       name: 'Total Products',
       value: stats.products,
       icon: Package,
       color: 'bg-purple-500',
-      bgColor: 'bg-purple-50'
+      bgColor: 'bg-purple-50',
+      onClick: () => handleCardClick('Total Products')
     },
     {
       name: 'Total Revenue',
       value: `₹${new Intl.NumberFormat('en-IN').format(stats.totalRevenue)}`,
       icon: DollarSign,
       color: 'bg-yellow-500',
-      bgColor: 'bg-yellow-50'
+      bgColor: 'bg-yellow-50',
+      onClick: () => handleCardClick('Total Revenue')
     }
   ]
 
@@ -115,15 +224,135 @@ const AdminDashboardHome = () => {
       className="space-y-5 md:space-y-6 lg:space-y-8"
     >
       {/* Header */}
-      <motion.div variants={headerVariants} className="mb-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Welcome to the admin panel</p>
+      <motion.div variants={headerVariants} className="mb-2 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Welcome to the admin panel</p>
+        </div>
+        <button
+          onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors shadow-md hover:shadow-lg"
+        >
+          <UserPlus size={20} />
+          <span className="hidden sm:inline">Create Admin</span>
+        </button>
       </motion.div>
+
+      {/* Create Admin Form */}
+      {showCreateAdminForm && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-white rounded-xl shadow-md border border-gray-100 p-5 md:p-6"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="text-medical-600" size={24} />
+            <h2 className="text-xl font-bold text-gray-900">Create New Admin</h2>
+          </div>
+          <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={adminForm.phone}
+                  onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={adminForm.name}
+                  onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter full name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={adminForm.username}
+                  onChange={(e) => setAdminForm({ ...adminForm, username: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={adminForm.email}
+                  onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter email address"
+                  required
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={adminForm.password}
+                  onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  placeholder="Enter password (min 6 characters)"
+                  minLength={6}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateAdminForm(false)
+                  setAdminForm({
+                    phone: '',
+                    name: '',
+                    username: '',
+                    email: '',
+                    password: ''
+                  })
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={creatingAdmin}
+                className="flex-1 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {creatingAdmin ? 'Creating...' : 'Create Admin'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <motion.div
         variants={containerVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-5 lg:gap-6"
       >
         {statCards.map((stat, index) => {
           const Icon = stat.icon
@@ -135,6 +364,7 @@ const AdminDashboardHome = () => {
                 y: -5,
                 transition: { duration: 0.2 }
               }}
+              onClick={stat.onClick}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-5 md:p-6 lg:p-7 border border-gray-100 cursor-pointer"
             >
               <div className="flex items-center justify-between">
