@@ -110,6 +110,119 @@ export const verifyAdminOtp = async (phone, otp) => {
 }
 
 /**
+ * Register new user with email/phone/name and password
+ */
+export const registerUser = async (phone, email, name, password, confirmPassword) => {
+  return await apiCall('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ phone, email, name, password, confirmPassword })
+  })
+}
+
+/**
+ * Login with password (phone/email/username + password)
+ */
+export const loginWithPassword = async (identifier, password) => {
+  return await apiCall('/auth/login-password', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, password })
+  })
+}
+
+/**
+ * Login admin with password (phone/email/username/name + password)
+ */
+export const loginAdminWithPassword = async (identifier, password) => {
+  return await apiCall('/admin/auth/login-password', {
+    method: 'POST',
+    body: JSON.stringify({ identifier, password }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+/**
+ * Set user password (for first-time setup)
+ */
+export const setUserPassword = async (password, confirmPassword) => {
+  const token = getAccessToken()
+  
+  if (!token) {
+    throw new Error('No access token found')
+  }
+  
+  return await apiCall('/auth/set-password', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password, confirmPassword })
+  })
+}
+
+/**
+ * Change user password (requires old password)
+ */
+export const changeUserPassword = async (oldPassword, newPassword, confirmPassword) => {
+  const token = getAccessToken()
+  
+  if (!token) {
+    throw new Error('No access token found')
+  }
+  
+  return await apiCall('/auth/change-password', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ oldPassword, newPassword, confirmPassword })
+  })
+}
+
+/**
+ * Set admin password (for first-time setup)
+ */
+export const setAdminPassword = async (password, confirmPassword) => {
+  const token = getAdminToken()
+  
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+  
+  return await apiCall('/admin/auth/set-password', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password, confirmPassword })
+  })
+}
+
+/**
+ * Change admin password (requires old password)
+ */
+export const changeAdminPassword = async (oldPassword, newPassword, confirmPassword) => {
+  const token = getAdminToken()
+  
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+  
+  return await apiCall('/admin/auth/change-password', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ oldPassword, newPassword, confirmPassword })
+  })
+}
+
+/**
  * Get all users (admin only)
  */
 export const getUsers = async (params = {}) => {
