@@ -1,19 +1,29 @@
 import { useQuery } from 'react-query'
-import { Package, FileText, ExternalLink } from 'lucide-react'
+import { Package, FileText, ExternalLink, MapPin } from 'lucide-react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 const statusStyles = {
-  Processing: 'bg-purple-100 text-purple-800',
-  'Out for Delivery': 'bg-indigo-100 text-indigo-800',
-  Delivered: 'bg-green-100 text-green-800',
-  Cancelled: 'bg-red-100 text-red-800'
+  processing: 'bg-purple-100 text-purple-800',
+  'out for delivery': 'bg-indigo-100 text-indigo-800',
+  delivered: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800'
+}
+
+const formatStatus = (status) => {
+  if (!status) return 'Unknown'
+  return status
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 const formatCurrency = (amount = 0) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount)
 
 const Orders = () => {
+  const navigate = useNavigate()
   const { data, isLoading, error } = useQuery(
     ['my-orders'],
     async () => {
@@ -81,10 +91,10 @@ const Orders = () => {
               <div className="flex items-center gap-3">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    statusStyles[order.status] || 'bg-gray-100 text-gray-700'
+                    statusStyles[order.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {order.status}
+                  {formatStatus(order.status)}
                 </span>
                 {order.prescriptionUrl && (
                   <a
@@ -120,14 +130,37 @@ const Orders = () => {
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-t border-gray-200 pt-4">
-              <div className="text-sm text-gray-600">
-                Payment Method: <span className="font-medium text-gray-900">{order.paymentMethod}</span>
-                <span className="ml-4">
-                  Payment Status: <span className="font-medium text-gray-900">{order.paymentStatus}</span>
-                </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(`/orders/${order._id}/track`)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors"
+                >
+                  <MapPin size={18} />
+                  Track Order
+                </button>
+                {order.prescriptionUrl && (
+                  <a
+                    href={order.prescriptionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-medical-600 hover:text-medical-700"
+                  >
+                    <FileText size={16} />
+                    View Prescription
+                    <ExternalLink size={14} />
+                  </a>
+                )}
               </div>
-              <div className="text-lg font-bold text-gray-900">
-                Total: {formatCurrency(order.totalAmount || order.total)}
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <div className="text-sm text-gray-600">
+                  Payment Method: <span className="font-medium text-gray-900">{order.paymentMethod}</span>
+                  <span className="ml-4">
+                    Payment Status: <span className="font-medium text-gray-900">{order.paymentStatus}</span>
+                  </span>
+                </div>
+                <div className="text-lg font-bold text-gray-900">
+                  Total: {formatCurrency(order.totalAmount || order.total)}
+                </div>
               </div>
             </div>
           </div>

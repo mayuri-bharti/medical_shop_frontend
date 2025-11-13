@@ -15,6 +15,7 @@ const AllMedicine = lazy(() => import('./pages/AllMedicine'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Orders = lazy(() => import('./pages/Orders'))
+const OrderTracking = lazy(() => import('./pages/OrderTracking'))
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
 const Prescriptions = lazy(() => import('./pages/Prescriptions'))
 const Profile = lazy(() => import('./pages/Profile'))
@@ -77,6 +78,11 @@ function App() {
           <Route path="/orders" element={
             <ProtectedRoute>
               <Orders />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders/:id/track" element={
+            <ProtectedRoute>
+              <OrderTracking />
             </ProtectedRoute>
           } />
           <Route path="/prescriptions" element={
