@@ -1,14 +1,40 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { api } from '../../services/api'
+import { getAccessToken, getAdminToken } from '../../lib/api'
 import { FileText, Search, Filter, User, Calendar, CheckCircle, Clock, Eye, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-// Helper to get file URL
-const getFileUrl = (fileUrl) => {
+// Helper to get file URL with Cloudinary optimization
+const getFileUrl = (fileUrl, prescriptionId) => {
   if (!fileUrl) return ''
-  if (fileUrl.startsWith('http')) return fileUrl
+  
+  // If it's already a full URL (Cloudinary), return it
+  if (fileUrl.startsWith('http')) {
+    // If it's a Cloudinary URL, add optimization parameters
+    if (fileUrl.includes('cloudinary.com')) {
+      // Add Cloudinary transformations for better performance
+      const separator = fileUrl.includes('?') ? '&' : '?'
+      return `${fileUrl}${separator}f_auto,q_auto`
+    }
+    return fileUrl
+  }
+  
+  // Local file - use secure API route if we have prescription ID
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+  
+  // If we have a prescription ID, use the secure API route with token
+  if (prescriptionId) {
+    const token = getAdminToken() || getAccessToken()
+    
+    if (token) {
+      return `${apiBaseUrl}/prescriptions/${prescriptionId}/file?token=${encodeURIComponent(token)}`
+    }
+    
+    return `${apiBaseUrl}/prescriptions/${prescriptionId}/file`
+  }
+  
+  // Fallback: try direct static file access
   const baseUrl = apiBaseUrl.replace('/api', '')
   return `${baseUrl}/${fileUrl.replace(/^\//, '')}`
 }
@@ -258,7 +284,7 @@ const AdminPrescriptions = () => {
                             <FileText size={20} className="text-gray-400" />
                           ) : (
                             <img
-                              src={getFileUrl(prescription.fileUrl)}
+                              src={getFileUrl(prescription.fileUrl, prescription._id)}
                               alt="Prescription"
                               className="w-12 h-12 object-cover rounded-lg"
                               onError={(e) => {
@@ -301,7 +327,7 @@ const AdminPrescriptions = () => {
                     <td className="px-4 md:px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <a
-                          href={getFileUrl(prescription.fileUrl)}
+                          href={getFileUrl(prescription.fileUrl, prescription._id)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
