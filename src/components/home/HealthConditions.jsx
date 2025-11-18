@@ -2,22 +2,23 @@ import { useNavigate } from 'react-router-dom'
 import { Heart, Brain, Circle, Pill, Droplet, Smile, Wind, User, Thermometer } from 'lucide-react'
 
 const conditions = [
-  { name: 'Diabetes', slug: 'diabetes', icon: Droplet, color: 'text-red-600', bgColor: 'bg-red-50' },
-  { name: 'Cardiac', slug: 'cardiac', icon: Heart, color: 'text-red-600', bgColor: 'bg-red-50' },
-  { name: 'Stomach', slug: 'stomach', icon: Circle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
-  { name: 'Pain Relief', slug: 'pain-relief', icon: Pill, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  { name: 'Liver', slug: 'liver', icon: Droplet, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-  { name: 'Oral Care', slug: 'oral-care', icon: Smile, color: 'text-teal-600', bgColor: 'bg-teal-50' },
-  { name: 'Respiratory', slug: 'respiratory', icon: Wind, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
-  { name: 'Elderly Care', slug: 'elderly-care', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-  { name: 'Cold & Immunity', slug: 'cold-immunity', icon: Thermometer, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+  { name: 'Diabetes', slug: 'diabetes', targetSlug: 'diabetes-care', icon: Droplet, color: 'text-red-600', bgColor: 'bg-red-50' },
+  { name: 'Cardiac', slug: 'cardiac', targetSlug: 'cardiology-meds', icon: Heart, color: 'text-red-600', bgColor: 'bg-red-50' },
+  { name: 'Stomach', slug: 'stomach', targetSlug: 'stomach-care', icon: Circle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  { name: 'Pain Relief', slug: 'pain-relief', targetSlug: 'pain-relief', icon: Pill, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  { name: 'Liver', slug: 'liver', targetSlug: 'liver-support', icon: Droplet, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+  { name: 'Oral Care', slug: 'oral-care', targetSlug: 'oral-care', icon: Smile, color: 'text-teal-600', bgColor: 'bg-teal-50' },
+  { name: 'Respiratory', slug: 'respiratory', targetSlug: 'respiratory-care', icon: Wind, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+  { name: 'Elderly Care', slug: 'elderly-care', targetSlug: 'elderly-care', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+  { name: 'Cold & Immunity', slug: 'cold-immunity', targetSlug: 'cold-immunity', icon: Thermometer, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
 ]
 
 const HealthConditions = () => {
   const navigate = useNavigate()
 
-  const handleConditionClick = (slug) => {
-    navigate(`/products?condition=${encodeURIComponent(slug)}`)
+  const handleConditionClick = (condition) => {
+    const destination = condition.targetSlug || condition.slug
+    navigate(`/subcategory/${encodeURIComponent(destination)}`)
   }
 
   return (
@@ -40,7 +41,7 @@ const HealthConditions = () => {
             return (
               <button
                 key={index}
-                onClick={() => handleConditionClick(condition.slug)}
+                onClick={() => handleConditionClick(condition)}
                 className="group bg-white rounded-xl p-4 shadow-soft hover:shadow-lg border border-gray-100 hover:border-apollo-200 transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Icon */}

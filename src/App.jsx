@@ -40,6 +40,8 @@ const AdminPrescriptions = lazy(() => import('./pages/admin/Prescriptions'))
 const AdminAddProduct = lazy(() => import('./pages/admin/AddProduct'))
 const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
 const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
+const AdminDoctorManagement = lazy(() => import('./pages/admin/DoctorManagement'))
+const AdminAppointmentManagement = lazy(() => import('./pages/admin/AppointmentManagement'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -54,16 +56,65 @@ function App() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  // Check for success flags on mount and location changes
   useEffect(() => {
-    if (sessionStorage.getItem('loginSuccess') === '1') {
+    const loginSuccess = sessionStorage.getItem('loginSuccess')
+    if (loginSuccess === '1') {
       sessionStorage.removeItem('loginSuccess')
-      setShowLoginSuccess(true)
+      // Small delay to ensure navigation completes and DOM is ready
+      setTimeout(() => {
+        setShowLoginSuccess(true)
+      }, 200)
     }
-    if (sessionStorage.getItem('orderSuccess') === '1') {
+    
+    const orderSuccess = sessionStorage.getItem('orderSuccess')
+    if (orderSuccess === '1') {
       sessionStorage.removeItem('orderSuccess')
-      setShowOrderSuccess(true)
+      setTimeout(() => {
+        setShowOrderSuccess(true)
+      }, 200)
     }
-  }, [location.key])
+  }, [location.pathname, location.key])
+
+  // Also check periodically for a short time after mount (fallback for fast navigation)
+  useEffect(() => {
+    let intervalId = null
+    let checkCount = 0
+    const maxChecks = 15 // Check for 1.5 seconds (15 * 100ms)
+    
+    intervalId = setInterval(() => {
+      if (checkCount >= maxChecks) {
+        clearInterval(intervalId)
+        return
+      }
+      
+      const loginSuccess = sessionStorage.getItem('loginSuccess')
+      if (loginSuccess === '1') {
+        sessionStorage.removeItem('loginSuccess')
+        clearInterval(intervalId)
+        setTimeout(() => {
+          setShowLoginSuccess(true)
+        }, 200)
+        return
+      }
+      
+      const orderSuccess = sessionStorage.getItem('orderSuccess')
+      if (orderSuccess === '1') {
+        sessionStorage.removeItem('orderSuccess')
+        clearInterval(intervalId)
+        setTimeout(() => {
+          setShowOrderSuccess(true)
+        }, 200)
+        return
+      }
+      
+      checkCount++
+    }, 100)
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [])
 
   return (
     <Layout>
@@ -71,10 +122,14 @@ function App() {
         show={showLoginSuccess}
         onClose={() => {
           setShowLoginSuccess(false)
+          // Navigation already happened in Login.jsx, just clean up if needed
           const target = sessionStorage.getItem('redirectAfterSuccess')
-          if (target) {
+          if (target && location.pathname !== target) {
+            // Only navigate if we're not already on the target page
             sessionStorage.removeItem('redirectAfterSuccess')
             navigate(target)
+          } else {
+            sessionStorage.removeItem('redirectAfterSuccess')
           }
         }}
       />
@@ -167,6 +222,8 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="prescriptions" element={<AdminPrescriptions />} />
+            <Route path="doctors" element={<AdminDoctorManagement />} />
+            <Route path="appointments" element={<AdminAppointmentManagement />} />
             <Route path="add-product" element={<AdminAddProduct />} />
             <Route path="manage-products" element={<AdminManageProducts />} />
             <Route path="edit-product/:id" element={<AdminEditProduct />} />

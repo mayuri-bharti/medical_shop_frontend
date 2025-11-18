@@ -69,12 +69,6 @@ const Profile = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 mb-8 text-white shadow-lg">
-          <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
-          <p className="text-lg text-blue-100">You have successfully logged in to HealthPlus</p>
-        </div>
-
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <h3 className="text-xl font-bold text-gray-900 mb-6">Your Profile</h3>

@@ -148,6 +148,174 @@ const subcategoryProducts = {
         images: ['https://images.unsplash.com/photo-1583275477744-4e86f5e76054?w=640&q=80&auto=format&fit=crop']
       }
     ]
+  },
+  'stomach-care': {
+    title: 'Stomach & Digestive Health',
+    description: 'Acidity control, digestion aids, and gut-friendly probiotics for everyday comfort.',
+    bannerImage: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Wellness Products',
+    products: [
+      {
+        _id: 'demo-stomach-1',
+        name: 'Omeprazole 20mg Capsules – 20s',
+        brand: 'Acidoff',
+        price: 130,
+        mrp: 160,
+        stock: 20,
+        category: 'Stomach Care',
+        images: ['https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-stomach-2',
+        name: 'Digestive Enzyme Syrup (200ml)',
+        brand: 'GastroEase',
+        price: 180,
+        mrp: 210,
+        stock: 15,
+        category: 'Stomach Care',
+        images: ['https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
+  },
+  'liver-support': {
+    title: 'Liver Support Essentials',
+    description: 'Hepatoprotective tonics and supplements that help keep your liver in top shape.',
+    bannerImage: 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Health Supplements',
+    products: [
+      {
+        _id: 'demo-liver-1',
+        name: 'LivCare Syrup (200ml)',
+        brand: 'HerbaLife',
+        price: 210,
+        mrp: 250,
+        stock: 26,
+        category: 'Liver Support',
+        images: ['https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-liver-2',
+        name: 'Silymarin Capsules – 30s',
+        brand: 'HepaShield',
+        price: 320,
+        mrp: 360,
+        stock: 18,
+        category: 'Liver Support',
+        images: ['https://images.unsplash.com/photo-1502741126161-b048400d0fda?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
+  },
+  'oral-care': {
+    title: 'Advanced Oral Care',
+    description: 'Toothpastes, mouthwashes and dental essentials trusted by dentists.',
+    bannerImage: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Personal Care',
+    products: [
+      {
+        _id: 'demo-oral-1',
+        name: 'Herbal Sensitive Toothpaste 100g',
+        brand: 'SmileBright',
+        price: 120,
+        mrp: 145,
+        stock: 40,
+        category: 'Oral Care',
+        images: ['https://images.unsplash.com/photo-1502741126161-b048400d0fda?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-oral-2',
+        name: 'Alcohol-free Mouthwash 250ml',
+        brand: 'FreshMint',
+        price: 165,
+        mrp: 190,
+        stock: 32,
+        category: 'Oral Care',
+        images: ['https://images.unsplash.com/photo-1502741126161-b048400d0fda?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
+  },
+  'respiratory-care': {
+    title: 'Respiratory Care',
+    description: 'Nebulizers, steamer kits and breathing aids for clear lungs and easy breathing.',
+    bannerImage: 'https://images.unsplash.com/photo-1583912086096-96f490fb9968?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Medical Devices',
+    products: [
+      {
+        _id: 'demo-resp-1',
+        name: 'Steam Inhaler Pro',
+        brand: 'BreatheEZ',
+        price: 999,
+        mrp: 1299,
+        stock: 12,
+        category: 'Respiratory Care',
+        images: ['https://images.unsplash.com/photo-1583912086096-96f490fb9968?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-resp-2',
+        name: 'Portable Nebulizer Kit',
+        brand: 'AirFlow',
+        price: 1899,
+        mrp: 2199,
+        stock: 9,
+        category: 'Respiratory Care',
+        images: ['https://images.unsplash.com/photo-1583912086096-96f490fb9968?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
+  },
+  'elderly-care': {
+    title: 'Elderly Care',
+    description: 'Daily-needs bundles curated for senior citizens – nutrition, mobility and hygiene support.',
+    bannerImage: 'https://images.unsplash.com/photo-1508931133743-80d303b4aa65?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Wellness Products',
+    products: [
+      {
+        _id: 'demo-elderly-1',
+        name: 'Adult Diapers XL – 10s',
+        brand: 'CareMate',
+        price: 430,
+        mrp: 499,
+        stock: 28,
+        category: 'Elderly Care',
+        images: ['https://images.unsplash.com/photo-1508931133743-80d303b4aa65?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-elderly-2',
+        name: 'Nutritional Drink Mix (Chocolate)',
+        brand: 'SilverBoost',
+        price: 650,
+        mrp: 720,
+        stock: 22,
+        category: 'Elderly Care',
+        images: ['https://images.unsplash.com/photo-1508931133743-80d303b4aa65?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
+  },
+  'cold-immunity': {
+    title: 'Cold & Immunity Boosters',
+    description: 'Vitamin C, zinc and ayurvedic blends that strengthen immunity throughout the year.',
+    bannerImage: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=1200&q=80&auto=format&fit=crop',
+    relatedCategory: 'Health Supplements',
+    products: [
+      {
+        _id: 'demo-cold-1',
+        name: 'Vitamin C + Zinc Chewables – 30s',
+        brand: 'ImmunoPlus',
+        price: 230,
+        mrp: 269,
+        stock: 34,
+        category: 'Cold & Immunity',
+        images: ['https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=640&q=80&auto=format&fit=crop']
+      },
+      {
+        _id: 'demo-cold-2',
+        name: 'Herbal Kadha Mix (150g)',
+        brand: 'AyurShield',
+        price: 199,
+        mrp: 249,
+        stock: 29,
+        category: 'Cold & Immunity',
+        images: ['https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=640&q=80&auto=format&fit=crop']
+      }
+    ]
   }
 }
 

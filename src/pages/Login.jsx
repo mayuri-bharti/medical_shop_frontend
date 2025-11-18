@@ -420,8 +420,19 @@ const Login = () => {
       )
       
       if (response.success) {
-        toast.success('Registration successful!')
-        handleLoginSuccess(response.data.accessToken)
+        toast.success('Account created successfully. Please log in.')
+        setMode('login')
+        setLoginMethod('password')
+        setStep('identifier')
+        setPassword('')
+        setConfirmPassword('')
+        if (phone) {
+          setIdentifier(phone)
+        } else if (email) {
+          setIdentifier(email)
+        }
+      } else {
+        toast.error(response.message || 'Registration failed')
       }
     } catch (err) {
       const errorMessage = err.message || 'Registration failed'
@@ -515,7 +526,7 @@ const Login = () => {
               <form onSubmit={handleRegister} className="space-y-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Name (Optional)
+                    Name
                   </label>
                   <input
                     type="text"
@@ -529,7 +540,7 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email (Optional)
+                    Email
                   </label>
                   <input
                     type="email"
@@ -543,7 +554,7 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Phone (Optional)
+                    Phone
                   </label>
                   <input
                     type="tel"

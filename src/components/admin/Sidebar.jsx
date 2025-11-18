@@ -10,7 +10,9 @@ import {
   FileText,
   LogOut,
   Home,
-  X
+  X,
+  Stethoscope,
+  CalendarClock
 } from 'lucide-react'
 import { removeAccessToken } from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
@@ -39,6 +41,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Users', href: '/admin/dashboard/users', icon: Users },
     { name: 'Orders', href: '/admin/dashboard/orders', icon: ShoppingBag },
     { name: 'Prescriptions', href: '/admin/dashboard/prescriptions', icon: FileText },
+    { name: 'Doctors', href: '/admin/dashboard/doctors', icon: Stethoscope },
+    { name: 'Appointments', href: '/admin/dashboard/appointments', icon: CalendarClock },
     { name: 'Add Product', href: '/admin/dashboard/add-product', icon: PackagePlus },
     { name: 'Manage Products', href: '/admin/dashboard/manage-products', icon: Package },
   ]

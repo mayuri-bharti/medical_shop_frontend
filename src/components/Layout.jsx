@@ -8,7 +8,8 @@ import {
   Package, 
   FileText,
   LogOut,
-  Home
+  Home,
+  Stethoscope
 } from 'lucide-react'
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 import { api } from '../services/api'
@@ -63,6 +64,11 @@ const Layout = ({ children }) => {
 
     checkAuth()
   }, [location])
+
+  // Ensure every navigation starts from top of the page
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -133,6 +139,7 @@ const Layout = ({ children }) => {
     { name: 'Home', href: '/', icon: Home },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Orders', href: '/orders', icon: FileText },
+    { name: 'Doctors', href: '/doctor-appointment', icon: Stethoscope }
   ]
 
   const isActive = (path) => location.pathname === path
