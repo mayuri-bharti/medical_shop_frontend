@@ -54,12 +54,12 @@ const Orders = () => {
           <Package size={64} className="mx-auto text-gray-400 mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders yet</h2>
           <p className="text-gray-600 mb-6">Your order history will appear here once you place an order.</p>
-          <a
-            href="/products"
+          <button
+            onClick={() => navigate('/products')}
             className="inline-block px-6 py-3 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors"
           >
             Start Shopping
-          </a>
+          </button>
         </div>
       </div>
     )
