@@ -247,7 +247,7 @@ const Home = () => {
             </SwiperSlide>
             <SwiperSlide>
               <Link 
-                to="/products?category=personal-care&subcategory=face-wash"
+                to="/products?brand=Parfum"
                 className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
                 <img
