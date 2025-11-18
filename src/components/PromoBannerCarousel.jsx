@@ -19,7 +19,7 @@ const PromoBannerCarousel = () => {
       description: 'Premium feminine hygiene products for your comfort',
       discount: 'Up to 45% OFF',
       bgColor: 'from-purple-100 to-pink-100',
-      link: '/products?category=Personal Care'
+      link: '/products?brand=Whisper'
     },
     {
       id: 2,

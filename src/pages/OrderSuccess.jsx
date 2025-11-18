@@ -1,16 +1,84 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { CheckCircle, Package, Home } from 'lucide-react'
+import { getAccessToken } from '../lib/api'
 
 const OrderSuccess = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const order = location.state?.order
+  const [order, setOrder] = useState(location.state?.order || null)
+  const [loading, setLoading] = useState(!order)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (order) return
+
+    const fetchLatestOrder = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const token = getAccessToken()
+        if (!token) {
+          navigate('/login?redirect=' + encodeURIComponent('/order-success'))
+          return
+        }
+        // Fetch user's orders and pick the most recent one
+        const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/orders/my-orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await resp.json()
+        if (!resp.ok || !data?.success) {
+          throw new Error(data?.message || 'Failed to load orders')
+        }
+        const list = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : [])
+        if (list.length > 0) {
+          // Assume server returns sorted; otherwise sort by createdAt desc
+          const latest = list[0]
+          setOrder({
+            orderNumber: latest.orderNumber || latest._id?.slice(-6) || '—',
+            orderId: latest._id || latest.id || '—',
+            status: latest.status || 'processing',
+            total: latest.total || latest.amount || 0,
+            items: (latest.items || []).map(it => ({
+              name: it.name || it.product?.name || 'Item',
+              qty: it.quantity || it.qty || 1,
+              price: it.price || 0
+            })),
+            address: {
+              name: latest.shippingAddress?.name || '—',
+              street: latest.shippingAddress?.address || latest.shippingAddress?.street || '—',
+              city: latest.shippingAddress?.city || '—',
+              state: latest.shippingAddress?.state || '—',
+              pincode: latest.shippingAddress?.pincode || '—',
+              phone: latest.shippingAddress?.phoneNumber || latest.shippingAddress?.phone || '—'
+            }
+          })
+        } else {
+          setError('No recent order found')
+        }
+      } catch (e) {
+        setError(e.message || 'Failed to fetch order')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLatestOrder()
+  }, [order, navigate])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600"></div>
+      </div>
+    )
+  }
 
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Order not found</p>
+          <p className="text-gray-600 mb-2">{error || 'Order not found'}</p>
           <button
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700"

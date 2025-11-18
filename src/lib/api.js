@@ -399,8 +399,37 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
   config.headers = headers
 
   try {
-    const response = await fetch(url, config)
-    const data = await response.json()
+    let response
+    try {
+      response = await fetch(url, config)
+    } catch (fetchError) {
+      // Fetch failed completely (network error, connection refused, etc.)
+      const networkError = new Error('Unable to connect to server. Please ensure the backend is running.')
+      networkError.isNetworkError = true
+      networkError.originalError = fetchError
+      throw networkError
+    }
+    
+    // Handle network errors (connection refused, timeout, etc.)
+    if (!response.ok && response.status === 0) {
+      throw new Error('Network error: Unable to connect to server. Please check if the backend is running.')
+    }
+    
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type')
+    let data
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        // If JSON parsing fails, it might be an HTML error page or empty response
+        throw new Error('Invalid response from server. Please check if the backend is running correctly.')
+      }
+    } else {
+      // Non-JSON response - likely server error page
+      const text = await response.text()
+      throw new Error(`Server returned non-JSON response. Status: ${response.status}`)
+    }
     
     // If 401 and we haven't retried yet, try to refresh token
     if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/')) {
@@ -422,17 +451,40 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
     }
     
     if (!response.ok) {
-      const error = new Error(data.message || 'Request failed')
+      const error = new Error(data.message || data.error || 'Request failed')
       error.status = response.status
       error.data = data
+      // Include error details from backend
+      if (data.error) {
+        error.message = data.error
+      }
+      if (data.details) {
+        error.details = data.details
+      }
       throw error
-      
     }
     
     return data
   } catch (error) {
-    console.error('API Error:', error)
-    console.log(error);
+    // Handle network errors gracefully
+    if (error.message?.includes('Failed to fetch') || 
+        error.message?.includes('ERR_CONNECTION_REFUSED') ||
+        error.message?.includes('NetworkError') ||
+        error.name === 'TypeError') {
+      const networkError = new Error('Unable to connect to server. Please ensure the backend is running.')
+      networkError.isNetworkError = true
+      networkError.originalError = error
+      // Only log in development
+      if (import.meta.env.DEV) {
+        console.warn('Network error:', error.message)
+      }
+      throw networkError
+    }
+    
+    // Log other errors
+    if (import.meta.env.DEV) {
+      console.error('API Error:', error)
+    }
     throw error
   }
 }
@@ -473,6 +525,41 @@ export const verifyOtp = async (phone, otp) => {
 }
 
 /**
+ * Login with Google OAuth
+ * @param {string} credential - Google OAuth credential token (JWT)
+ * @returns {Promise<{success: boolean, data: {user: Object, accessToken: string}}>}
+ * @throws {Error} If token is expired or verification fails
+ */
+export const loginWithGoogle = async (credential) => {
+  if (!credential || typeof credential !== 'string') {
+    throw new Error('Google credential token is required')
+  }
+
+  try {
+    const result = await apiCall('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential })
+    })
+    
+    // Store tokens if present
+    if (result.data?.accessToken) {
+      setAccessToken(result.data.accessToken)
+    }
+    if (result.data?.refreshToken) {
+      setRefreshToken(result.data.refreshToken)
+    }
+    
+    return result
+  } catch (err) {
+    // Re-throw with clear error message
+    if (err.message?.includes('TOKEN_EXPIRED') || err.message?.includes('expired')) {
+      throw new Error('TOKEN_EXPIRED')
+    }
+    throw err
+  }
+}
+
+/**
  * Get current user profile
  * @returns {Promise<{success: boolean, data: {user: Object}}>}
  */
@@ -483,12 +570,20 @@ export const getCurrentUser = async () => {
     throw new Error('No access token found')
   }
   
-  return await apiCall('/auth/me', {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
+  try {
+    return await apiCall('/auth/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+  } catch (error) {
+    // Re-throw with more context for network errors
+    if (error.isNetworkError) {
+      error.message = 'Backend server is unavailable. Please check if the server is running.'
     }
-  })
+    throw error
+  }
 }
 
 /**

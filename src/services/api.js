@@ -32,6 +32,23 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle network errors (connection refused, etc.)
+    if (error.code === 'ERR_NETWORK' || 
+        error.message?.includes('Network Error') ||
+        error.message?.includes('ERR_CONNECTION_REFUSED') ||
+        !error.response) {
+      // Don't redirect on network errors - just log a warning
+      if (import.meta.env.DEV) {
+        console.warn('Network error: Backend server may be unavailable', error.message)
+      }
+      // Create a user-friendly error
+      const networkError = new Error('Unable to connect to server. Please ensure the backend is running.')
+      networkError.isNetworkError = true
+      networkError.originalError = error
+      return Promise.reject(networkError)
+    }
+    
+    // Handle 401 unauthorized errors
     if (error.response?.status === 401) {
       const requestUrl = error.config?.url || ''
       const isAdminRequest = requestUrl.includes('/admin/')

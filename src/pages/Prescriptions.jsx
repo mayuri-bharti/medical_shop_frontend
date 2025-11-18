@@ -260,20 +260,28 @@ const Prescriptions = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-medical-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary-200 border-t-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">My Prescriptions</h1>
+    <div className="space-y-8 px-4 md:px-8 py-8">
+      <div>
+        <h1 className="section-title">My Prescriptions</h1>
+        <p className="text-gray-600">Upload and manage your prescription files</p>
+      </div>
 
       {/* Upload Section */}
-      <div className="card p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Upload New Prescription
-        </h2>
+      <div className="card p-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary-100 to-medical-100 rounded-xl flex items-center justify-center">
+            <Upload className="text-primary-600" size={24} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Upload New Prescription
+          </h2>
+        </div>
         <form onSubmit={handleFileUpload} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -322,7 +330,7 @@ const Prescriptions = () => {
             disabled={uploading || !uploadFile}
             className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Upload size={16} />
+            <Upload size={18} />
             <span>{uploading ? "Uploading..." : "Upload Prescription"}</span>
           </button>
         </form>
@@ -330,7 +338,8 @@ const Prescriptions = () => {
 
       {/* Prescriptions List */}
       <div id="prescriptions-list" className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Your Prescriptions</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Prescriptions</h2>
+        <p className="text-gray-600 mb-6">View and manage all your uploaded prescriptions</p>
 
         {!prescriptions || prescriptions.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -406,7 +415,7 @@ const Prescriptions = () => {
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-medium text-medical-600 hover:text-medical-700 hover:underline transition-colors"
+                            className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline transition-colors"
                           >
                             View File
                           </a>
@@ -467,13 +476,13 @@ const Prescriptions = () => {
 
                     {/* Linked Order */}
                     {prescription.order && (
-                      <div className="mb-4 p-3 rounded-lg border border-medical-200 bg-medical-50">
+                      <div className="mb-4 p-3 rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-medical-50">
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <p className="text-xs font-semibold text-medical-900">
+                            <p className="text-xs font-bold text-primary-900">
                               Linked Order
                             </p>
-                            <p className="text-xs text-medical-600 mt-0.5">
+                            <p className="text-xs text-primary-600 mt-0.5">
                               #{prescription.order.orderNumber}
                             </p>
                           </div>
@@ -483,17 +492,17 @@ const Prescriptions = () => {
                                 `/orders?highlight=${prescription.order._id}`
                               )
                             }
-                            className="text-xs font-medium text-medical-600 hover:text-medical-700 hover:underline transition-colors"
+                            className="text-xs font-semibold text-primary-600 hover:text-primary-700 hover:underline transition-colors"
                           >
                             View →
                           </button>
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs font-medium text-medical-700 border border-medical-200">
+                          <span className="badge badge-info">
                             {prescription.order.status}
                           </span>
                           {prescription.order.total && (
-                            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs font-medium text-medical-700 border border-medical-200">
+                            <span className="badge badge-success">
                               ₹{prescription.order.total.toLocaleString()}
                             </span>
                           )}
@@ -511,7 +520,7 @@ const Prescriptions = () => {
                           )}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-medical-600 hover:bg-medical-700 text-white text-sm font-medium rounded-lg transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
                         >
                           <Eye size={16} />
                           <span>View File</span>

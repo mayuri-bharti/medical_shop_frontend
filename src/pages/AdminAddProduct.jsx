@@ -40,23 +40,24 @@ const AdminAddProduct = () => {
       }
 
       // Prepare payload
+      const DEFAULT_IMAGE = 'https://via.placeholder.com/400?text=Product'
       const payload = {
         name: formData.name.trim(),
         price: parseFloat(formData.price),
         mrp: parseFloat(formData.price) * 1.2, // Set MRP 20% higher
         description: formData.description.trim(),
         category: formData.category,
-        images: formData.image ? [formData.image.trim()] : [],
+        images: [ (formData.image && formData.image.trim()) || DEFAULT_IMAGE ],
         stock: parseInt(formData.stock),
         brand: 'Generic', // Default brand
         sku: `SKU-${Date.now()}` // Auto-generated SKU
       }
 
-      const response = await api.post('/products', payload)
+      const response = await api.post('/admin/products', payload)
 
       if (response.data && (response.status === 201 || response.data.success)) {
         toast.success('Product added successfully!')
-        navigate('/admin/dashboard/products')
+        navigate('/admin/dashboard/manage-products')
       } else {
         throw new Error('Failed to add product')
       }

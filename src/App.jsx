@@ -1,8 +1,11 @@
-import { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useState } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
+import LoginSuccessAnimation from './components/LoginSuccessAnimation'
+import OrderSuccessAnimation from './components/OrderSuccessAnimation'
+
 
 // Lazy load components for code splitting
 const Home = lazy(() => import('./pages/Home'))
@@ -21,6 +24,11 @@ const Prescriptions = lazy(() => import('./pages/Prescriptions'))
 const Profile = lazy(() => import('./pages/Profile'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const Subcategory = lazy(() => import('./pages/Subcategory'))
+const ProductDetails = lazy(() => import('./pages/ProductDetails'))
+const MedicineDetails = lazy(() => import('./pages/MedicineDetails'))
+const DoctorAppointment = lazy(() => import('./pages/DoctorAppointment'))
+const LabTests = lazy(() => import('./pages/LabTests'))
+const HealthInsurance = lazy(() => import('./pages/HealthInsurance'))
 
 // Admin Pages - Lazy loaded
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
@@ -41,8 +49,46 @@ const LoadingFallback = () => (
 )
 
 function App() {
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false)
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (sessionStorage.getItem('loginSuccess') === '1') {
+      sessionStorage.removeItem('loginSuccess')
+      setShowLoginSuccess(true)
+    }
+    if (sessionStorage.getItem('orderSuccess') === '1') {
+      sessionStorage.removeItem('orderSuccess')
+      setShowOrderSuccess(true)
+    }
+  }, [location.key])
+
   return (
     <Layout>
+      <LoginSuccessAnimation
+        show={showLoginSuccess}
+        onClose={() => {
+          setShowLoginSuccess(false)
+          const target = sessionStorage.getItem('redirectAfterSuccess')
+          if (target) {
+            sessionStorage.removeItem('redirectAfterSuccess')
+            navigate(target)
+          }
+        }}
+      />
+      <OrderSuccessAnimation
+        show={showOrderSuccess}
+        onClose={() => {
+          setShowOrderSuccess(false)
+          const target = sessionStorage.getItem('redirectAfterSuccess')
+          if (target) {
+            sessionStorage.removeItem('redirectAfterSuccess')
+            navigate(target)
+          }
+        }}
+      />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           {/* Public Routes */}
@@ -51,7 +97,11 @@ function App() {
           <Route path="/verify" element={<VerifyOtp />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products-list" element={<ProductList />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/all-medicine" element={<AllMedicine />} />
+          <Route path="/lab-tests" element={<LabTests />} />
+          <Route path="/doctor-appointment" element={<DoctorAppointment />} />
+          <Route path="/health-insurance" element={<HealthInsurance />} />
           <Route path="/subcategory/:slug" element={<Subcategory />} />
 
           {/* Protected Routes */}
@@ -83,6 +133,11 @@ function App() {
           <Route path="/orders/:id/track" element={
             <ProtectedRoute>
               <OrderTracking />
+            </ProtectedRoute>
+          } />
+          <Route path="/medicine/:id" element={
+            <ProtectedRoute>
+              <MedicineDetails />
             </ProtectedRoute>
           } />
           <Route path="/prescriptions" element={
@@ -125,4 +180,4 @@ function App() {
   )
 }
 
-export default App
+export default App 

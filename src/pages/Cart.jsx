@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Minus, Plus, Trash2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
+import { broadcastCartUpdate, normalizeCartData } from '../lib/cartEvents'
 import PageCarousel from '../components/PageCarousel'
 import toast from 'react-hot-toast'
 
@@ -9,7 +10,9 @@ const Cart = () => {
   const navigate = useNavigate()
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedProductIds, setSelectedProductIds] = useState(new Set())
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  const getProductId = (product) => product?._id || product?.id || product
 
   useEffect(() => {
     fetchCart()
@@ -24,9 +27,27 @@ const Cart = () => {
         }
       })
       const data = await response.json()
-      if (data.success) {
-        setCart(data.data)
+      if (!response.ok || data?.success === false) {
+        throw new Error(data?.message || 'Failed to fetch cart')
       }
+      const normalized = normalizeCartData(data?.data || data)
+      setCart(normalized)
+      broadcastCartUpdate(normalized)
+      setSelectedProductIds((prev) => {
+        const productIds = new Set(
+          normalized?.items?.map((item) => getProductId(item?.product)) || []
+        )
+        if (!prev.size) {
+          return productIds
+        }
+        const preserved = new Set()
+        productIds.forEach((id) => {
+          if (prev.has(id)) {
+            preserved.add(id)
+          }
+        })
+        return preserved.size ? preserved : productIds
+      })
     } catch (error) {
       console.error('Failed to fetch cart:', error)
       toast.error('Failed to load cart')
@@ -41,11 +62,12 @@ const Cart = () => {
     // For now, just update locally
     // TODO: Implement API call to update quantity
     const updatedCart = { ...cart }
-    const item = updatedCart.items.find(item => item.product._id === productId)
+    const item = updatedCart.items.find((item) => getProductId(item.product) === productId)
     if (item) {
       item.quantity = newQuantity
     }
     setCart(updatedCart)
+    broadcastCartUpdate(updatedCart)
   }
 
   const handleRemoveItem = async (productId) => {
@@ -69,6 +91,47 @@ const Cart = () => {
       toast.error('Failed to remove item')
     }
   }
+
+  const toggleItemSelection = (productId) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(productId)) {
+        next.delete(productId)
+      } else {
+        next.add(productId)
+      }
+      return next
+    })
+  }
+
+  const handleSelectAll = (checked) => {
+    if (!cart?.items?.length) return
+    if (checked) {
+      setSelectedProductIds(new Set(cart.items.map((item) => getProductId(item.product))))
+    } else {
+      setSelectedProductIds(new Set())
+    }
+  }
+
+  const selectedItems = useMemo(() => {
+    if (!cart?.items?.length) return []
+    if (!selectedProductIds.size) return []
+    return cart.items.filter((item) => selectedProductIds.has(getProductId(item.product)))
+  }, [cart, selectedProductIds])
+
+  const selectionSummary = useMemo(() => {
+    const subtotal = selectedItems.reduce(
+      (sum, item) =>
+        sum + ((item?.price ?? item?.product?.price ?? 0) * (item?.quantity ?? 1)),
+      0
+    )
+    const baseSubtotal = cart?.subtotal || 0
+    const taxRatio = baseSubtotal > 0 ? (cart?.taxes || 0) / baseSubtotal : 0
+    const taxes = Math.round(subtotal * taxRatio)
+    const deliveryFee = subtotal === 0 ? 0 : subtotal >= 499 ? 0 : cart?.deliveryFee || 0
+    const total = subtotal + taxes + deliveryFee
+    return { subtotal, taxes, deliveryFee, total }
+  }, [selectedItems, cart])
 
   if (loading) {
     return (
@@ -139,62 +202,93 @@ const Cart = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {cart.items.map((item) => (
-              <div key={item.product._id} className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <img
-                      src={item.product.image || '/placeholder-medicine.jpg'}
-                      alt={item.product.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {item.product.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {item.product.brand}
-                    </p>
+            <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-medical-600"
+                  checked={selectedProductIds.size === cart.items.length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+                <span className="text-sm font-medium text-gray-700">Select all items</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {selectedItems.length} of {cart.items.length} selected
+              </span>
+            </div>
+            {cart.items.map((item) => {
+              const productId = getProductId(item.product)
+              const isSelected = selectedProductIds.has(productId)
+              return (
+                <div
+                  key={productId}
+                  className={`rounded-lg bg-white p-6 shadow-md transition ${
+                    !isSelected ? 'ring-1 ring-dashed ring-gray-200 opacity-80' : ''
+                  }`}
+                >
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleItemSelection(productId)}
+                        className="h-5 w-5 text-medical-600"
+                      />
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={item.product.image || '/placeholder-medicine.jpg'}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                    </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        {item.product.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {item.product.brand}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleQuantityChange(productId, item.quantity - 1)}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <button
+                            onClick={() => handleQuantityChange(productId, item.quantity + 1)}
+                            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">
+                            ₹{(item.price * item.quantity).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            ₹{item.price.toLocaleString()} each
+                          </p>
+                        </div>
+                        
                         <button
-                          onClick={() => handleQuantityChange(item.product._id, item.quantity - 1)}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          onClick={() => handleRemoveItem(productId)}
+                          className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          <Minus size={16} />
-                        </button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => handleQuantityChange(item.product._id, item.quantity + 1)}
-                          className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
-                      
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          ₹{(item.price * item.quantity).toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          ₹{item.price.toLocaleString()} each
-                        </p>
-                      </div>
-                      
-                      <button
-                        onClick={() => handleRemoveItem(item.product._id)}
-                        className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Order Summary */}
@@ -205,29 +299,52 @@ const Cart = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">₹{cart.subtotal.toLocaleString()}</span>
+                  <span className="font-semibold">
+                    ₹{selectionSummary.subtotal.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Delivery</span>
-                  <span className="font-semibold">₹{cart.deliveryFee.toLocaleString()}</span>
+                  <span className="font-semibold">
+                    {selectionSummary.deliveryFee === 0
+                      ? 'Free'
+                      : `₹${selectionSummary.deliveryFee.toLocaleString()}`}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Taxes</span>
-                  <span className="font-semibold">₹{cart.taxes.toLocaleString()}</span>
+                  <span className="font-semibold">₹{selectionSummary.taxes.toLocaleString()}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold text-gray-900">Total</span>
-                    <span className="text-lg font-bold text-gray-900">₹{cart.total.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{selectionSummary.total.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={() => navigate('/checkout')}
-                className="w-full py-3 bg-medical-600 text-white font-medium rounded-lg hover:bg-medical-700 transition-colors"
+                onClick={() => {
+                  const selectedIds = Array.from(selectedProductIds)
+                  if (!selectedIds.length) {
+                    toast.error('Please select at least one item to checkout')
+                    return
+                  }
+                  sessionStorage.setItem('checkoutSelectedProductIds', JSON.stringify(selectedIds))
+                  navigate('/checkout', {
+                    state: {
+                      selectedCartItems: selectedItems
+                    }
+                  })
+                }}
+                disabled={!selectedItems.length}
+                className="w-full py-3 bg-medical-600 text-white font-medium rounded-lg hover:bg-medical-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Proceed to Checkout
+                {selectedItems.length > 1
+                  ? `Checkout ${selectedItems.length} items`
+                  : 'Checkout this item'}
               </button>
               
               <p className="text-sm text-gray-600 text-center mt-4">

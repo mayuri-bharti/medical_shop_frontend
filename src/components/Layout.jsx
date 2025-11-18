@@ -11,12 +11,15 @@ import {
   Home
 } from 'lucide-react'
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
+import { api } from '../services/api'
+import { CART_UPDATED_EVENT, normalizeCartData, calculateCartItemCount } from '../lib/cartEvents'
 
 const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -39,6 +42,18 @@ const Layout = ({ children }) => {
             setIsAdmin(true)
           }
         } catch (error) {
+          // Handle network errors gracefully - don't break the app if backend is down
+          if (error.message?.includes('Failed to fetch') || 
+              error.message?.includes('ERR_CONNECTION_REFUSED') ||
+              error.message?.includes('NetworkError')) {
+            // Backend is unavailable - keep user as authenticated if token exists
+            // This allows the app to work in offline mode or when backend is starting
+            console.warn('Backend unavailable, using cached authentication state')
+            // Don't clear auth state if it's just a connection issue
+            return
+          }
+          
+          // For other errors (401, etc.), clear auth state
           setIsAuthenticated(false)
           setUser(null)
           setIsAdmin(false)
@@ -48,6 +63,61 @@ const Layout = ({ children }) => {
 
     checkAuth()
   }, [location])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCartCount(0)
+      return
+    }
+
+    let isMounted = true
+
+    const updateCountFromPayload = (payload) => {
+      const cartData = normalizeCartData(payload)
+      const nextCount = calculateCartItemCount(cartData)
+      if (isMounted && Number.isFinite(nextCount)) {
+        setCartCount(nextCount)
+      }
+    }
+
+    const fetchCartCount = async () => {
+      try {
+        const token = getAccessToken()
+        if (!token) {
+          setCartCount(0)
+          return
+        }
+        const response = await api.get('/cart')
+        updateCountFromPayload(response.data)
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('Failed to fetch cart count', error?.message || error)
+        }
+      }
+    }
+
+    fetchCartCount()
+
+    const handleCartUpdated = (event) => {
+      if (event?.detail) {
+        if (typeof event.detail.count === 'number') {
+          setCartCount(event.detail.count)
+          return
+        }
+        if (event.detail.cart) {
+          updateCountFromPayload(event.detail.cart)
+          return
+        }
+      }
+      fetchCartCount()
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated)
+    return () => {
+      isMounted = false
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated)
+    }
+  }, [isAuthenticated])
 
   const handleLogout = () => {
     removeAccessToken()
@@ -78,33 +148,38 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+      {/* Header - Premium Healthcare Design */}
+      <header className="bg-white shadow-soft border-b border-gray-100 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo - HealthPlus Branding */}
+            <Link to="/" className="flex items-center space-x-3 group">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-medical-500 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105">
                 <span className="text-white font-bold text-2xl">+</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">HealthPlus</span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-medical-600 bg-clip-text text-transparent">
+                  HealthPlus
+                </span>
+                <span className="text-xs text-gray-500 -mt-1">Your Health Partner</span>
+              </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            {/* Desktop Navigation - Clean & Modern */}
+            <nav className="hidden md:flex items-center space-x-2">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       isActive(item.href)
-                        ? 'text-medical-600 bg-medical-50'
-                        : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                        ? 'text-primary-600 bg-primary-50 shadow-sm'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon size={16} />
+                    <Icon size={18} />
                     <span>{item.name}</span>
                   </Link>
                 )
@@ -112,69 +187,75 @@ const Layout = ({ children }) => {
               {isAuthenticated && (
                 <Link
                   to="/prescriptions"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     isActive('/prescriptions')
-                      ? 'text-medical-600 bg-medical-50'
-                      : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                      ? 'text-primary-600 bg-primary-50 shadow-sm'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
-                  <FileText size={16} />
+                  <FileText size={18} />
                   <span>Prescriptions</span>
                 </Link>
               )}
             </nav>
 
-            {/* Right side */}
-            <div className="flex items-center space-x-4">
+            {/* Right side - User Actions */}
+            <div className="flex items-center space-x-3">
               {isAuthenticated ? (
                 <>
                   <Link
                     to="/cart"
-                    className="relative p-2 text-gray-700 hover:text-medical-600 transition-colors"
+                    className="relative p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
                   >
-                    <ShoppingCart size={20} />
+                    <ShoppingCart size={22} />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {Math.min(cartCount, 99)}
+                    </span>
                   </Link>
                   
                   <Link
                     to="/profile"
-                    className="flex items-center space-x-2 text-gray-700 hover:text-medical-600 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
                   >
-                    <User size={20} />
-                    <span className="hidden md:block">{user?.name || 'User'}</span>
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-medical-400 rounded-full flex items-center justify-center">
+                      <User size={18} className="text-white" />
+                    </div>
+                    <span className="hidden md:block font-medium">{user?.name || 'User'}</span>
                   </Link>
 
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 font-medium"
                   >
-                    <LogOut size={16} />
+                    <LogOut size={18} />
                     <span className="hidden md:block">Logout</span>
                   </button>
                 </>
               ) : (
                 <Link
                   to="/login"
-                  className="px-4 py-2 bg-medical-600 text-white rounded-md hover:bg-medical-700 transition-colors"
+                  className="btn-primary-sm flex items-center space-x-2"
                 >
-                  Login
+                  <User size={18} />
+                  <span>Login</span>
                 </Link>
               )}
 
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 text-gray-700 hover:text-medical-600 transition-colors"
+                className="md:hidden p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
               >
-                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Enhanced */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-t">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
+            <div className="px-4 pt-4 pb-6 space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
@@ -182,10 +263,10 @@ const Layout = ({ children }) => {
                     key={item.name}
                     to={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                       isActive(item.href)
-                        ? 'text-medical-600 bg-medical-50'
-                        : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                        ? 'text-primary-600 bg-primary-50 shadow-sm'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
                     <Icon size={20} />
@@ -197,10 +278,10 @@ const Layout = ({ children }) => {
                 <Link
                   to="/prescriptions"
                   onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                     isActive('/prescriptions')
-                      ? 'text-medical-600 bg-medical-50'
-                      : 'text-gray-700 hover:text-medical-600 hover:bg-gray-50'
+                      ? 'text-primary-600 bg-primary-50 shadow-sm'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
                   <FileText size={20} />
@@ -217,44 +298,53 @@ const Layout = ({ children }) => {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${isAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} mb-8`}>
+      {/* Footer - Premium Healthcare Footer */}
+      <footer className="mt-auto border-t border-gray-200 bg-gradient-to-b from-white to-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className={`grid grid-cols-2 gap-8 md:grid-cols-4 ${isAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} mb-12`}>
             {/* Company Info */}
             <div className="col-span-2 md:col-span-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">HealthPlus</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-medical-500 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-xl">+</span>
+                </div>
+                <span className="text-xl font-bold gradient-text">HealthPlus</span>
+              </div>
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
                 Your trusted health partner. Quality medicines and healthcare products delivered to your doorstep.
               </p>
+              <div className="flex items-center space-x-2">
+                <span className="badge badge-success">✓ Licensed</span>
+                <span className="badge badge-info">✓ Verified</span>
+              </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Quick Links</h4>
-              <ul className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Quick Links</h4>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Home
                   </Link>
                 </li>
                 <li>
-                  <Link to="/products" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/products" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Products
                   </Link>
                 </li>
                 <li>
-                  <Link to="/about" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/about" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link to="/contact" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/contact" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Contact Us
                   </Link>
                 </li>
                 <li>
-                  <Link to="/prescriptions" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/prescriptions" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Prescriptions
                   </Link>
                 </li>
@@ -263,30 +353,30 @@ const Layout = ({ children }) => {
 
             {/* Customer Service */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Customer Service</h4>
-              <ul className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Customer Service</h4>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/orders" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/orders" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     My Orders
                   </Link>
                 </li>
                 <li>
-                  <Link to="/shipping" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/shipping" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Shipping Info
                   </Link>
                 </li>
                 <li>
-                  <Link to="/returns" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/returns" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Returns & Refunds
                   </Link>
                 </li>
                 <li>
-                  <Link to="/faq" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/faq" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     FAQ
                   </Link>
                 </li>
                 <li>
-                  <Link to="/support" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/support" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Support
                   </Link>
                 </li>
@@ -295,31 +385,31 @@ const Layout = ({ children }) => {
 
             {/* Legal */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
-              <ul className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Legal</h4>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/privacy" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/privacy" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/terms" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/terms" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Terms & Conditions
                   </Link>
                 </li>
                 <li>
-                  <Link to="/cancellation" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/cancellation" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Cancellation Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/disclaimer" className="text-sm text-gray-600 hover:text-medical-600 transition-colors">
+                  <Link to="/disclaimer" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     Disclaimer
                   </Link>
                 </li>
                 <li>
-                  <Link to="/admin/login" className="text-sm text-medical-600 hover:text-medical-700 font-medium transition-colors">
-                    Admin Login
+                  <Link to="/admin/login" className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+                    Admin Login →
                   </Link>
                 </li>
               </ul>
@@ -327,48 +417,45 @@ const Layout = ({ children }) => {
 
             {/* Contact Info */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Contact</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>
-                  <a href="tel:+911234567890" className="hover:text-medical-600 transition-colors">
-                    📞 +91 123 456 7890
+              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Contact</h4>
+              <ul className="space-y-3 text-sm text-gray-600">
+                <li className="flex items-center space-x-2">
+                  <span className="text-primary-600">📞</span>
+                  <a href="tel:+911234567890" className="hover:text-primary-600 transition-colors font-medium">
+                    +91 123 456 7890
                   </a>
                 </li>
-                <li>
-                  <a href="mailto:support@healthplus.com" className="hover:text-medical-600 transition-colors">
-                    ✉️ healthplus@gmail.com
+                <li className="flex items-center space-x-2">
+                  <span className="text-primary-600">✉️</span>
+                  <a href="mailto:support@healthplus.com" className="hover:text-primary-600 transition-colors font-medium">
+                    healthplus@gmail.com
                   </a>
                 </li>
                 <li className="pt-2">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    <span className="font-semibold text-gray-700">Hours:</span><br />
                     Monday - Saturday<br />
                     9:00 AM - 8:00 PM
                   </p>
                 </li>
               </ul>
             </div>
-
-            {/* Admin Panel - Only visible to admins */}
-            
-
-                
-               
-                 
-                
-             
-            
           </div>
 
-          {/* Bottom Bar */}
+          {/* Bottom Bar - Enhanced */}
           <div className="border-t border-gray-200 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-gray-600 text-center md:text-left">
-                &copy; {new Date().getFullYear()} HealthPlus. All rights reserved.
-              </p>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>Licensed Pharmacy</span>
-                <span className="hidden md:inline">|</span>
-                <span>Verified Products</span>
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <p className="text-sm text-gray-600 text-center md:text-left">
+                  &copy; {new Date().getFullYear()} <span className="font-bold text-primary-600">HealthPlus</span>. All rights reserved.
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="badge badge-success text-xs">Licensed Pharmacy</span>
+                  <span className="badge badge-info text-xs">Verified Products</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-6 text-sm text-gray-500">
+                <span>Made with ❤️ for your health</span>
               </div>
             </div>
           </div>

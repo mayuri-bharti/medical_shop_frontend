@@ -1,9 +1,17 @@
-import { memo, useMemo, useCallback } from 'react'
+import { memo, useMemo, useCallback, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { getAccessToken } from '../lib/api'
+import { broadcastCartUpdate } from '../lib/cartEvents'
+import toast from 'react-hot-toast'
 
 const fallbackImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="220"%3E%3Crect width="400" height="220" fill="%23F3F4F6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239CA3AF" font-family="sans-serif" font-size="18"%3EMedicine%3C/text%3E%3C/svg%3E'
 
 const MedicineCard = memo(({ medicine, onClick }) => {
+  const navigate = useNavigate()
+  const [adding, setAdding] = useState(false)
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+
   const imageSrc = useMemo(() => {
     if (medicine?.images?.length) {
       return medicine.images[0]
@@ -17,13 +25,63 @@ const MedicineCard = memo(({ medicine, onClick }) => {
   const handleClick = useCallback(() => {
     if (typeof onClick === 'function') {
       onClick(medicine)
+      return
     }
-  }, [medicine, onClick])
+    // Default navigation: go to medicine details page
+    if (medicine?._id) {
+      navigate(`/medicine/${medicine._id}`)
+    }
+  }, [medicine, onClick, navigate])
 
   const price = useMemo(() => {
-    const value = Number(medicine?.price ?? 0)
-    return Number.isFinite(value) ? value : 0
-  }, [medicine?.price])
+    const raw = medicine?.price ?? medicine?.mrp ?? medicine?.['price(₹)'] ?? 0
+    if (typeof raw === 'number') return raw
+    if (typeof raw === 'string') {
+      const sanitized = raw.replace(/[₹$,]/g, '').replace(/\s*(per|\/).*/i, '').trim()
+      const parsed = Number(sanitized)
+      return Number.isFinite(parsed) ? parsed : 0
+    }
+    const parsed = Number(raw)
+    return Number.isFinite(parsed) ? parsed : 0
+  }, [medicine?.price, medicine?.mrp, medicine?.['price(₹)']])
+
+  const handleAddToCart = useCallback(async (event) => {
+    event.stopPropagation()
+
+    // If mapped to a product, add that product; otherwise add medicine directly
+
+    const token = getAccessToken()
+    if (!token) {
+      navigate(`/login?redirect=${encodeURIComponent('/all-medicine')}`)
+      return
+    }
+
+    setAdding(true)
+    try {
+      const payload = medicine?.productRef
+        ? { productId: medicine.productRef, quantity: 1 }
+        : { itemType: 'medicine', medicineId: medicine?._id, quantity: 1 }
+
+      const response = await fetch(`${API_BASE}/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+      const data = await response.json()
+      if (!response.ok || data?.success === false) {
+        throw new Error(data?.message || 'Failed to add to cart')
+      }
+      toast.success('Added to cart')
+      broadcastCartUpdate(data?.data || data)
+    } catch (err) {
+      toast.error(err.message || 'Failed to add to cart')
+    } finally {
+      setAdding(false)
+    }
+  }, [API_BASE, medicine?.productRef, medicine?.name, navigate])
 
   return (
     <div
@@ -85,10 +143,20 @@ const MedicineCard = memo(({ medicine, onClick }) => {
               </span>
             )}
           </div>
-          <span className="flex items-center gap-1 text-xs font-semibold text-medical-600 transition-colors duration-200 group-hover:text-medical-700">
-            View Details
-            <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={adding}
+              className="px-3 py-1.5 rounded-md bg-medical-600 hover:bg-medical-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {adding ? 'Adding…' : 'Add'}
+            </button>
+            <span className="hidden sm:flex items-center gap-1 text-xs font-semibold text-medical-600 transition-colors duration-200 group-hover:text-medical-700">
+              View Details
+              <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
+            </span>
+          </div>
         </div>
       </div>
     </div>

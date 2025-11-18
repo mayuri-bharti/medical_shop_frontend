@@ -57,9 +57,6 @@ const VerifyOtp = () => {
       if (response.success) {
         // Store access token
         setAccessToken(response.data.accessToken)
-
-        toast.success('Login successful!')
-        
         // Redirect to home
         navigate('/')
       }

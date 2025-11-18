@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { useQueryClient } from 'react-query'
+import { useNavigate } from 'react-router-dom'
 import { PackagePlus, Upload, X } from 'lucide-react'
 import { createProduct } from '../../lib/api'
 import toast from 'react-hot-toast'
 
 const AddProduct = () => {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -64,13 +68,25 @@ const AddProduct = () => {
         mrp: parseFloat(formData.mrp),
         stock: parseInt(formData.stock),
         sku: formData.sku.toUpperCase(),
-        images: formData.images.filter(img => img.trim())
+        images: formData.images.filter(img => img.trim()),
+        isActive: true  // Explicitly set isActive to true
       }
 
+      console.log('📦 Creating product with data:', productData)
+      
       const response = await createProduct(productData)
       
-      if (response.success) {
+      console.log('✅ Product creation response:', response)
+      
+      // Check for success in different response formats
+      if (response?.success || response?.data?.success || (response?.data && !response?.error)) {
         toast.success('Product created successfully!')
+        
+        // Invalidate products cache to refresh the list
+        queryClient.invalidateQueries(['products'])
+        queryClient.invalidateQueries(['home-popular-products'])
+        queryClient.invalidateQueries(['admin-products'])
+        
         // Reset form
         setFormData({
           name: '',
@@ -83,9 +99,26 @@ const AddProduct = () => {
           category: '',
           images: []
         })
+        
+        // Optional: Navigate to manage products page after 1 second
+        setTimeout(() => {
+          navigate('/admin/dashboard/manage-products')
+        }, 1000)
+      } else {
+        // Response received but not successful
+        const errorMsg = response?.message || response?.data?.message || 'Product creation failed'
+        console.error('❌ Product creation failed:', response)
+        toast.error(errorMsg)
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to create product')
+      console.error('❌ Product creation error:', error)
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        response: error.response
+      })
+      toast.error(error.message || 'Failed to create product. Please check console for details.')
     } finally {
       setLoading(false)
     }

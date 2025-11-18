@@ -1,35 +1,20 @@
-import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ArrowRight, Shield, Clock, Truck, Upload } from 'lucide-react'
-import { getAccessToken } from '../lib/api'
-import OtpModal from '../components/OtpModal'
-import PromoBannerCarousel from '../components/PromoBannerCarousel'
-import CategoryBar from '../components/CategoryBar'
-import toast from 'react-hot-toast'
+import { ArrowRight, Package } from 'lucide-react'
 import { api } from '../services/api'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay, Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
+// Apollo Pharmacy Components
+import HeroSection from '../components/home/HeroSection'
+import CategoryNav from '../components/home/CategoryNav'
+import FeatureCards from '../components/home/FeatureCards'
+import HealthConditions from '../components/home/HealthConditions'
 
 const Home = () => {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [showOtpModal, setShowOtpModal] = useState(false)
-  const [pendingFile, setPendingFile] = useState(null)
-  const fileInputRef = useRef(null)
-  const [isHeroVisible, setIsHeroVisible] = useState(false)
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setIsHeroVisible(true))
-    return () => cancelAnimationFrame(frame)
-  }, [])
-
-  // Memoize static data
-  const features = useMemo(() => [
-    { icon: Shield, title: 'Authentic Medicines', description: '100% genuine medicines from verified suppliers' },
-    { icon: Clock, title: '24/7 Availability', description: 'Order medicines anytime, anywhere' },
-    { icon: Truck, title: 'Fast Delivery', description: 'Quick and safe delivery to your doorstep' }
-  ], [])
 
   const fallbackFeaturedProducts = useMemo(
     () => [
@@ -165,274 +150,181 @@ const Home = () => {
     return fallbackFeaturedProducts
   }, [popularProductsData, fallbackFeaturedProducts])
 
-  const mockSuggestions = useMemo(() => [
-    'Paracetamol',
-    'Crocin Advance',
-    'Dolo 650',
-    'Calpol 500',
-    'Cetirizine',
-    'Azithromycin',
-    'Amoxicillin',
-    'Vitamin D3'
-  ], [])
-
-  // Memoize filtered suggestions
-  const filteredSuggestions = useMemo(() => {
-    if (searchQuery.length === 0) return []
-    return mockSuggestions.filter(item => 
-      item.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [searchQuery, mockSuggestions])
-
-  const handleSearch = useCallback((value) => {
-    setSearchQuery(value)
-    if (value.length > 0) {
-      setShowSuggestions(true)
-    } else {
-      setShowSuggestions(false)
-    }
-  }, [])
-
-  const handleSearchSubmit = useCallback((e) => {
-    e.preventDefault()
-    navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
-  }, [searchQuery, navigate])
-
-  const performUpload = useCallback(async (file) => {
-    setUploading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append('prescription', file)
-
-      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken')
-      
-      
-      if (!token) {
-        toast.error('Please login to upload prescription')
-        setShowOtpModal(true)
-        return
-      }
-
-      console.log('Uploading to:', `${API_URL}/prescriptions`)
-      console.log('File:', file.name, file.type, file.size)
-
-      const response = await fetch(
-        `${API_URL}/prescriptions`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        }
-        
-      )
-
-      const data = await response.json()
-      console.log('Upload response:', response.status, data)
-
-      if (response.ok && data.success) {
-        toast.success('Prescription uploaded successfully!')
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-        navigate('/prescriptions')
-      } else {
-        throw new Error(data.message || 'Upload failed')
-      }
-    } catch (error) {
-      console.error('Upload error:', error)
-      toast.error(error.message || 'Failed to upload prescription. Please try again.')
-    } finally {
-      setUploading(false)
-    }
-  }, [navigate])
-
-  const handlePrescriptionUpload = useCallback(async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Please upload a PDF, JPG, or PNG file')
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB')
-      return
-    }
-
-    // Check if user is authenticated
-    const token = getAccessToken()
-    
-    if (!token) {
-      // Store file and show OTP modal
-      setPendingFile(file)
-      setShowOtpModal(true)
-      return
-    }
-
-    // User is authenticated, proceed with upload
-    await performUpload(file)
-  }, [performUpload])
-
-  const handleOtpSuccess = useCallback(() => {
-    // User authenticated, upload pending file
-    if (pendingFile) {
-      performUpload(pendingFile)
-      setPendingFile(null)
-    }
-  }, [pendingFile, performUpload])
-
   return (
     <>
-      <OtpModal
-        isOpen={showOtpModal}
-        onClose={() => {
-          setShowOtpModal(false)
-          setPendingFile(null)
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-          }
-        }}
-        onSuccess={handleOtpSuccess}
-      />
-      <div className="space-y-6 px-2 pb-16 md:px-8">
-      {/* Search Section */}
-      <section
-        className="relative -mx-4 flex min-h-[260px] w-auto items-center justify-center overflow-hidden bg-[url('https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png')] bg-cover bg-center text-white md:-mx-8 md:min-h-[320px]"
-      >
-        <div className="absolute inset-0 bg-black/35"></div>
-        <div
-          className="absolute inset-0 opacity-15"
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.65) 1px, transparent 0)`,
-            backgroundSize: '38px 38px'
-          }}
-        ></div>
+      <div className="min-h-screen bg-[#F4F8F7]">
+      {/* Apollo Pharmacy Category Navigation */}
+      <CategoryNav />
 
-        <div
-          className={`relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 py-8 text-center transition-all duration-700 ease-out md:px-12 md:py-10 ${
-            isHeroVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-          }`}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">
-            Find Your Medicines
-          </h2>
-          <p className="text-base md:text-lg mb-5 opacity-90">
-            Search from thousands of authentic products
-          </p>
+      {/* Apollo Pharmacy Hero Section */}
+      <HeroSection />
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="relative w-full max-w-3xl mx-auto mb-5">
-            <div className="relative">
-              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-white/80" size={24} />
-              <input
-                type="text"
-                placeholder="Search medicines, symptoms, or health concerns..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => setShowSuggestions(searchQuery.length > 0)}
-                className="w-full rounded-lg border border-white/50 bg-transparent pl-16 pr-4 py-2.5 text-white shadow-sm backdrop-blur-sm placeholder:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/80"
-              />
-              
-              {/* Autocomplete Suggestions */}
-              {showSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute z-20 w-full mt-2 bg-white rounded-lg shadow-lg overflow-hidden">
-                  {filteredSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery(suggestion)
-                        setShowSuggestions(false)
-                        navigate(`/products?search=${encodeURIComponent(suggestion)}`)
-                      }}
-                      className="w-full px-4 py-3 text-left text-gray-900 hover:bg-gray-100 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </form>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/products"
-              className="bg-white text-medical-700 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-            >
-              <span>Shop Medicines</span>
-              <ArrowRight size={20} />
-            </Link>
-            
-            <label className="bg-white text-medical-700 hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer">
-              <Upload size={20} />
-              <span>{uploading ? 'Uploading...' : 'Upload Prescription'}</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handlePrescriptionUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-            </label>
-          </div>
-        </div>
-      </section>
-
-      <section className="-mx-4 md:-mx-8">
-        <CategoryBar />
-      </section>
-
-      {/* Promotional Banner Carousel */}
-      <section className="-mx-4 -mt-4 md:-mx-8 md:-mt-6">
-        <PromoBannerCarousel />
-      </section>
-
-      {/* Features */}
-      <section>
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-          Why Choose MediShop?
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const Icon = feature.icon
-            return (
-              <div key={index} className="bg-white rounded-lg shadow-md p-8 text-center">
-                <div className="w-16 h-16 bg-medical-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Icon className="text-medical-600" size={32} />
-                </div>
-                <h3 className="text-xl font-semibold mb-4 text-gray-900">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">
-                  {feature.description}
-                </p>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section>
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Popular Medicines
-          </h2>
-          <Link
-            to="/products"
-            className="text-sm font-semibold text-medical-600 hover:text-medical-700"
+      {/* Small Banner Image - now with autoplay slider */}
+      <section className="bg-[#F4F8F7] py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Swiper
+            modules={[Autoplay, Pagination]}
+            autoplay={{ delay: 2500, disableOnInteraction: false }}
+            loop
+            spaceBetween={16}
+            pagination={{ clickable: true }}
+            breakpoints={{
+              0: { slidesPerView: 1.1 },
+              640: { slidesPerView: 2 },
+              1024: { slidesPerView: 3 },
+              1280: { slidesPerView: 4 }
+            }}
           >
-            View all
+            <SwiperSlide>
+              <Link 
+                to="/products?brand=Sofy"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://tse1.mm.bing.net/th/id/OIP.54KllwoEr_s7xUYhlicD_gHaJQ?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3"
+                  alt="SOFY AntiBacteria - Women Care"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 1%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+            <SwiperSlide>
+              <Link 
+                to="/products?brand=Horlicks"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://th.bing.com/th/id/R.a2173d0a6e347b4bcf0227962f510733?rik=%2fJXunw6MAnSwoQ&riu=http%3a%2f%2fronnysequeira.com%2fwp-content%2fuploads%2f2018%2f03%2fadvt-21_2.jpg&ehk=dryQeZxZ1%2fN0O%2fP1eFFNfL5o4V9Ygj7lnYZBH3ORPAQ%3d&risl=&pid=ImgRaw&r=0"
+                  alt="Horlicks - Nutritional Supplements"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 15%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+            <SwiperSlide>
+              <Link 
+                to="/products?brand=Zandu"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://tse1.mm.bing.net/th/id/OIP.zbW_3E12MQHzqxD2XsqGlQHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3"
+                  alt="Horlicks - Nutritional Supplements"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 50%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+            <SwiperSlide>
+              <Link 
+                to="/products?brand=Happy"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://i.pinimg.com/736x/41/54/83/4154838ba89dfb6f5993d476433930ae.jpg"
+                  alt="Horlicks - Nutritional Supplements"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 30%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+            <SwiperSlide>
+              <Link 
+                to="/products?category=pet-care&subcategory=dog-food"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://www.grabon.in/indulge/wp-content/uploads/2022/04/Best-Dog-Food-Brands.jpg"
+                  alt="Best Dog Food Brands - Pet Care"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 15%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+            <SwiperSlide>
+              <Link 
+                to="/products?category=personal-care&subcategory=face-wash"
+                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <img
+                  src="https://denverformen.com/cdn/shop/files/AcneClearcopy_7bf7ea06-bcdc-4674-80bb-0a144f9ee874_800x.jpg?v=1718790397"
+                  alt="DENVER Face Wash - Personal Care"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 45%' }}
+                  loading="lazy"
+                />
+              </Link>
+            </SwiperSlide>
+          </Swiper>
+        </div>
+      </section>
+
+      {/* Apollo Pharmacy Feature Cards */}
+      <FeatureCards />
+
+      {/* Promotional Images (2-up) */}
+     
+
+      {/* Apollo Pharmacy Health Conditions */}
+      <HealthConditions />
+
+      {/* Himalaya Product Banner */}
+      <section className="py-6 bg-[#F4F8F7]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            to="/products?brand=Himalaya"
+            className="block w-full overflow-hidden rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
+          >
+            <img
+              src="https://asset22.ckassets.com/resources/image/staticpage_images/Brand-Himalaya-Desktop-08-12-2017.jpg"
+              alt="Himalaya Products - Ayurvedic Wellness"
+              className="w-full h-48 md:h-56 lg:h-64 object-cover"
+              loading="lazy"
+            />
           </Link>
         </div>
+      </section>
+
+      {/* Nivea Soft Product Banner */}
+      <section className="py-6 bg-[#F4F8F7]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            to="/products?brand=Nivea"
+            className="block w-full overflow-hidden rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
+          >
+            <img
+              src="https://cdn.shopify.com/s/files/1/0481/5621/3409/files/Nivea_Soft_Banner__1___1.jpg?v=1664357408"
+              alt="Nivea Soft - Personal Care"
+              className="w-full h-56 md:h-64 lg:h-72 object-cover"
+              style={{ objectPosition: 'center 28%' }}
+              loading="lazy"
+            />
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured Products - Trending Medicines */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+                Trending <span className="text-apollo-700">Medicines</span>
+              </h2>
+              <p className="text-[#6B7280] mt-2">Most popular and trusted medicines</p>
+            </div>
+            <Link
+              to="/products"
+              className="hidden md:flex items-center space-x-2 px-6 py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200"
+            >
+              <span>View All</span>
+              <ArrowRight size={18} />
+            </Link>
+          </div>
         {isPopularError && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             Unable to load featured products. Showing recommendations instead.
@@ -462,76 +354,153 @@ const Home = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {featuredProducts.map((product) => (
-              <div
-                key={product.id ?? product.name}
-                className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <button
-                  type="button"
-                  className="ml-auto text-slate-300 transition group-hover:text-medical-500"
-                  aria-label="Add to wishlist"
+            {featuredProducts.map((product) => {
+              const discount = product.mrp && product.mrp !== product.price 
+                ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+                : 0
+              
+              return (
+                <div
+                  key={product.id ?? product.name}
+                  className="medicine-card group cursor-pointer"
+                  onClick={() => {
+                    if (product.id) {
+                      navigate(`/product/${product.id}`)
+                    } else {
+                      navigate(`/products?search=${encodeURIComponent(product.name)}`)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      if (product.id) {
+                        navigate(`/product/${product.id}`)
+                      } else {
+                        navigate(`/products?search=${encodeURIComponent(product.name)}`)
+                      }
+                    }
+                  }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a7 7 0 0 1 10 0l.35.35.35-.35a7 7 0 1 1 9.9 9.9l-10.25 10.2a1 1 0 0 1-1.4 0L5 14.9A7 7 0 0 1 5 5Z" />
-                  </svg>
-                </button>
-                <div className="flex flex-1 flex-col">
-                  <div className="flex items-center justify-center">
+                  {/* Discount Badge */}
+                  {discount > 0 && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <span className="badge badge-error">
+                        {discount}% OFF
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Product Image */}
+                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-6 flex items-center justify-center min-h-[180px]">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-32 w-full object-contain"
+                      className="h-32 w-full object-contain transition-transform duration-300 group-hover:scale-110"
                       loading="lazy"
                     />
                   </div>
-                  <div className="mt-4 flex flex-col gap-2">
-                    <h3 className="min-h-[40px] text-sm font-semibold text-gray-900 line-clamp-2">
+                  
+                  {/* Product Info */}
+                  <div className="p-5 flex flex-1 flex-col">
+                    <h3 className="text-sm font-bold text-gray-900 line-clamp-2 mb-3 min-h-[40px]">
                       {product.name}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-bold text-gray-900">
+                    
+                    {/* Price */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg font-bold text-apollo-700">
                         ₹{Number(product.price ?? 0).toLocaleString()}
                       </span>
                       {product.mrp && product.mrp !== product.price && (
-                        <span className="text-xs text-gray-500 line-through">
-                          ₹{Number(product.mrp ?? 0).toLocaleString()}
-                        </span>
+                        <>
+                          <span className="text-xs text-gray-500 line-through">
+                            ₹{Number(product.mrp ?? 0).toLocaleString()}
+                          </span>
+                        </>
                       )}
                     </div>
-                    <p className="flex items-center gap-1 text-xs text-slate-600">
-                      <span className={`inline-flex h-2 w-2 rounded-full ${product.inStock ? 'bg-medical-500' : 'bg-red-500'}`}></span>
-                      {product.inStock ? product.delivery : 'Currently unavailable'}
-                    </p>
+                    
+                    {/* Stock Status */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className={`inline-flex h-2.5 w-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <p className="text-xs text-gray-600">
+                        {product.inStock ? product.delivery : 'Out of stock'}
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="mt-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!product.inStock}
+                        className={`flex-1 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+                          product.inStock
+                            ? 'bg-apollo-700 text-white hover:bg-apollo-800 shadow-md hover:shadow-lg'
+                            : 'cursor-not-allowed bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!product.inStock}
-                    className={`flex-1 rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                      product.inStock
-                        ? 'border-medical-600 text-medical-600 hover:bg-medical-600 hover:text-white'
-                        : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-                    }`}
-                  >
-                    {product.inStock ? 'Add to cart' : 'Out of stock'}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:border-medical-600 hover:text-medical-600"
-                    aria-label="View details"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
-                    </svg>
-                  </button>
+              )
+            })}
+          </div>
+        )}
+        
+          {/* View All Link for Mobile */}
+          <div className="mt-8 text-center md:hidden">
+            <Link
+              to="/products"
+              className="inline-flex items-center space-x-2 px-6 py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200"
+            >
+              <span>View All Products</span>
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
+      
+      {/* Health Packages Section */}
+      <section className="py-16 bg-[#F4F8F7]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+              Health <span className="text-apollo-700">Packages</span>
+            </h2>
+            <p className="text-lg text-[#6B7280] max-w-2xl mx-auto">
+              Curated wellness packages for your health needs
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { name: 'Immunity Booster Pack', price: '₹1,299', originalPrice: '₹1,599', savings: 'Save ₹300', query: 'immunity' },
+              { name: 'Diabetes Care Package', price: '₹2,499', originalPrice: '₹2,999', savings: 'Save ₹500', query: 'diabetes' },
+              { name: 'Senior Wellness Kit', price: '₹1,999', originalPrice: '₹2,399', savings: 'Save ₹400', query: 'senior wellness' },
+            ].map((pkg, index) => (
+              <div key={index} className="bg-white rounded-2xl p-6 shadow-soft text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="w-16 h-16 bg-apollo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Package className="text-apollo-700" size={32} />
                 </div>
+                <h3 className="text-lg font-bold mb-2 text-[#1A1A1A]">{pkg.name}</h3>
+                <div className="mb-3">
+                  <span className="text-2xl font-bold text-apollo-700">{pkg.price}</span>
+                  <span className="text-sm text-[#6B7280] line-through ml-2">{pkg.originalPrice}</span>
+                </div>
+                <p className="text-sm text-green-600 font-semibold mb-4">{pkg.savings}</p>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/products?search=${encodeURIComponent(pkg.query || pkg.name)}`)}
+                  className="w-full text-center bg-apollo-700 hover:bg-apollo-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  View Related Products
+                </button>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </section>
 
       </div>

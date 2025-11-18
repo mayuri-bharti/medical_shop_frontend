@@ -11,16 +11,18 @@ const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
+  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '')
   const [sortBy, setSortBy] = useState('name')
   const [isFilterTransitioning, setIsFilterTransitioning] = useState(false)
   const previousCategoryRef = useRef(selectedCategory)
   const previousSearchRef = useRef(searchTerm)
+  const previousBrandRef = useRef(selectedBrand)
   
   // Use deferred value for search to reduce API calls
   const deferredSearchTerm = useDeferredValue(searchTerm)
 
   const { data, isLoading, error, isFetching } = useQuery(
-    ['products', deferredSearchTerm, selectedCategory, sortBy],
+    ['products', deferredSearchTerm, selectedCategory, selectedBrand, sortBy],
     async () => {
       try {
         const fullUrl = `${api.defaults.baseURL}/products`;
@@ -28,13 +30,14 @@ const Products = () => {
           baseURL: api.defaults.baseURL,
           relativeURL: '/products',
           fullURL: fullUrl,
-          params: { search: searchTerm, category: selectedCategory, sort: sortBy }
+          params: { search: searchTerm, category: selectedCategory, brand: selectedBrand, sort: sortBy }
         });
         
         const response = await api.get('/products', {
           params: { 
             search: deferredSearchTerm || undefined, 
-            category: selectedCategory || undefined, 
+            category: selectedCategory || undefined,
+            brand: selectedBrand || undefined,
             sort: sortBy || undefined,
             page: 1,
             limit: 20
@@ -221,19 +224,23 @@ const Products = () => {
   useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
     const searchParam = searchParams.get('search') || ''
+    const brandParam = searchParams.get('brand') || ''
 
     setSelectedCategory((prev) => (prev === categoryParam ? prev : categoryParam))
     setSearchTerm((prev) => (prev === searchParam ? prev : searchParam))
+    setSelectedBrand((prev) => (prev === brandParam ? prev : brandParam))
 
     const categoryChanged = previousCategoryRef.current !== categoryParam
     const searchChanged = previousSearchRef.current !== searchParam
+    const brandChanged = previousBrandRef.current !== brandParam
 
-    if ((categoryChanged || searchChanged) && (categoryParam || searchParam)) {
+    if ((categoryChanged || searchChanged || brandChanged) && (categoryParam || searchParam || brandParam)) {
       setIsFilterTransitioning(true)
     }
 
     previousCategoryRef.current = categoryParam
     previousSearchRef.current = searchParam
+    previousBrandRef.current = brandParam
   }, [searchParams])
 
   useEffect(() => {
@@ -307,6 +314,13 @@ const Products = () => {
   ], [])
 
   const filteredProducts = useMemo(() => {
+    // If brand is selected, backend already filters by brand, so return products as-is
+    // If only category is selected, filter by category on frontend
+    if (selectedBrand) {
+      // Backend already filtered by brand, but we can do additional frontend filtering if needed
+      return products
+    }
+    
     if (!selectedCategory) return products
 
     const normalizedCategory = selectedCategory.toLowerCase()
@@ -329,12 +343,12 @@ const Products = () => {
         return false
       })
     })
-  }, [products, selectedCategory])
+  }, [products, selectedCategory, selectedBrand])
 
   // Products Page Carousel
   const productBanners = useMemo(() => [
     {
-      src: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1200&h=400&fit=crop',
+      src: 'https://res.cloudinary.com/dcu2kdrva/image/upload/v1762580905/products/id17gpdmioelovzlflvi.png',
       alt: 'Medicine Collection',
       title: 'Huge Selection of Medicines',
       description: 'Browse thousands of authentic medicines and healthcare products'
@@ -504,11 +518,18 @@ const Products = () => {
         </select>
       </div>
 
-      {selectedCategory && (
+      {(selectedCategory || selectedBrand) && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-medical-100 bg-medical-50 px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-medical-700">
-              Showing results for <span className="underline decoration-medical-400 decoration-2">{selectedCategory}</span>
+              Showing results for{' '}
+              {selectedBrand && (
+                <span className="underline decoration-medical-400 decoration-2">{selectedBrand}</span>
+              )}
+              {selectedBrand && selectedCategory && ' • '}
+              {selectedCategory && (
+                <span className="underline decoration-medical-400 decoration-2">{selectedCategory}</span>
+              )}
             </p>
             <p className="text-xs text-medical-500">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
@@ -518,8 +539,10 @@ const Products = () => {
             type="button"
             onClick={() => {
               setSelectedCategory('')
+              setSelectedBrand('')
               const params = new URLSearchParams(searchParams)
               params.delete('category')
+              params.delete('brand')
               setSearchParams(params, { replace: true })
             }}
             className="rounded-full border border-medical-200 px-3 py-1 text-xs font-medium text-medical-700 transition-colors hover:bg-white hover:text-medical-800"

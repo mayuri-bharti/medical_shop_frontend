@@ -1,13 +1,15 @@
-import { ShoppingCart, Zap } from 'lucide-react'
+import { ShoppingCart, Zap, Star, Heart } from 'lucide-react'
 import { useState, memo, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAccessToken } from '../lib/api'
+import { broadcastCartUpdate } from '../lib/cartEvents'
 import toast from 'react-hot-toast'
 
 const ProductCard = memo(({ product }) => {
   const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
   const [buying, setBuying] = useState(false)
+  const [wish, setWish] = useState(false)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
@@ -18,23 +20,50 @@ const ProductCard = memo(({ product }) => {
       : 0
   }, [product.mrp, product.price])
 
+  // Rating values if available
+  const ratingValue = Number(product.rating || product.ratings || 0)
+  const ratingCount = Number(product.ratingCount || product.reviews || 0)
+
   // Memoize image source
   const imageSrc = useMemo(() => {
     return product.images?.[0] || product.image || '/placeholder-medicine.jpg'
   }, [product.images, product.image])
 
   const handleAddToCart = useCallback(async () => {
+    const token = getAccessToken()
+    if (!token) {
+      navigate(`/login?redirect=${encodeURIComponent('/products')}`)
+      return
+    }
+
     setAdding(true)
     try {
-      // TODO: Implement add to cart API call
-      // await addToCart(product._id, 1)
+      const response = await fetch(`${API_BASE}/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || data?.success === false) {
+        throw new Error(data?.message || 'Failed to add to cart')
+      }
+
       toast.success(`${product.name} added to cart!`)
+      broadcastCartUpdate(data?.data || data)
     } catch (error) {
-      toast.error('Failed to add to cart')
+      toast.error(error.message || 'Failed to add to cart')
     } finally {
       setAdding(false)
     }
-  }, [product._id, product.name])
+  }, [API_BASE, product._id, product.name, navigate])
 
   const handleBuyNow = useCallback(async () => {
     // Check if user is authenticated
@@ -65,13 +94,12 @@ const ProductCard = memo(({ product }) => {
 
       const data = await response.json()
 
-      if (response.ok && data.success) {
-        toast.success('Product added to cart!')
-        // Navigate to checkout
-        navigate('/checkout')
-      } else {
+      if (!response.ok || data?.success === false) {
         throw new Error(data.message || 'Failed to add product to cart')
       }
+      toast.success('Product added to cart!')
+      broadcastCartUpdate(data?.data || data)
+      navigate('/checkout')
     } catch (error) {
       console.error('Buy now error:', error)
       toast.error(error.message || 'Failed to proceed with purchase')
@@ -83,17 +111,34 @@ const ProductCard = memo(({ product }) => {
   return (
     <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:border-medical-300 transition-all duration-200 flex flex-col">
       {/* Product Image */}
-      <div className="h-20 w-full bg-gray-50 relative overflow-hidden flex items-center justify-center">
+      <div
+        className="h-40 w-full bg-gray-50 relative overflow-hidden flex items-center justify-center cursor-pointer"
+        onClick={() => navigate(`/product/${product._id}`)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') navigate(`/product/${product._id}`)
+        }}
+      >
         <img
           src={imageSrc}
           alt={product.name}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-contain p-2"
           loading="lazy"
           decoding="async"
           onError={(e) => {
             e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23E5E7EB" width="400" height="400"/%3E%3Ctext fill="%239CA3AF" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EMedicine%3C/text%3E%3C/svg%3E'
           }}
         />
+        {/* Wishlist */}
+        <button
+          type="button"
+          aria-label="Add to wishlist"
+          onClick={() => setWish((w) => !w)}
+          className="absolute top-1 right-1 inline-flex items-center justify-center rounded-full bg-white/90 shadow p-1 hover:bg-white transition"
+        >
+          <Heart size={14} className={wish ? 'fill-red-500 text-red-500' : 'text-gray-600'} />
+        </button>
         {product.stock === 0 && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[10px] font-medium">
@@ -111,20 +156,42 @@ const ProductCard = memo(({ product }) => {
       </div>
 
       {/* Product Info */}
-      <div className="p-1.5 flex flex-col flex-grow">
+      <div className="p-2 flex flex-col flex-grow">
         {/* Brand */}
         {product.brand && (
-          <p className="text-[10px] text-gray-400 mb-0.5 line-clamp-1">{product.brand}</p>
+          <p className="text-[10px] text-gray-500 mb-0.5 line-clamp-1">{product.brand}</p>
         )}
         
         {/* Name */}
-        <h3 className="text-xs font-semibold text-gray-900 mb-1 line-clamp-2 leading-tight">
+        <h3
+          className="text-[13px] font-semibold text-gray-900 mb-1 line-clamp-2 leading-tight cursor-pointer hover:text-medical-700"
+          onClick={() => navigate(`/product/${product._id}`)}
+        >
           {product.name}
         </h3>
 
+        {/* Rating + Assurance */}
+        {(ratingValue > 0 || ratingCount > 0) && (
+          <div className="flex items-center gap-2 mb-1">
+            {ratingValue > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium bg-green-600 text-white">
+                {ratingValue.toFixed(1)}
+                <Star size={11} className="fill-white text-white" />
+              </span>
+            )}
+            {ratingCount > 0 && (
+              <span className="text-[10px] text-gray-500">({ratingCount.toLocaleString()})</span>
+            )}
+            <span className="ml-auto inline-flex items-center gap-1 rounded bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 text-[9px]">
+              <svg viewBox="0 0 24 24" width="12" height="12" className="text-blue-600"><path fill="currentColor" d="M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 17l-5.5 2.5 1-6.3L3 8.9 9 8z"/></svg>
+              Assured
+            </span>
+          </div>
+        )}
+
         {/* Price */}
         <div className="flex items-baseline gap-1 mb-1 flex-wrap">
-          <span className="text-sm font-bold text-gray-900">
+          <span className="text-base font-bold text-gray-900">
             ₹{product.price.toLocaleString()}
           </span>
           {product.mrp > product.price && (
@@ -133,6 +200,13 @@ const ProductCard = memo(({ product }) => {
             </span>
           )}
         </div>
+
+        {/* Offer line */}
+        {discountPercentage > 0 && (
+          <p className="text-[10px] text-green-700 font-medium mb-1">
+            Save extra {discountPercentage}% with offers
+          </p>
+        )}
 
         {/* Stock Info */}
         {product.stock > 0 && product.stock < 10 && (
@@ -143,26 +217,7 @@ const ProductCard = memo(({ product }) => {
 
         {/* Action Buttons */}
         <div className="flex flex-row gap-1.5 mt-auto">
-          {/* Buy Now Button */}
-          <button
-            onClick={handleBuyNow}
-            disabled={buying || product.stock === 0}
-            className="group flex-1 flex items-center justify-center gap-1 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[11px] font-medium rounded transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg active:scale-95 transform"
-          >
-            {buying ? (
-              <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <Zap size={11} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-                <span className="transition-all duration-300">Buy Now</span>
-              </>
-            )}
-          </button>
-
-          {/* Add to Cart Button */}
+          {/* Add to Cart Button (keep on card) */}
           <button
             onClick={handleAddToCart}
             disabled={adding || product.stock === 0}
