@@ -233,7 +233,7 @@ const Home = () => {
             </SwiperSlide>
             <SwiperSlide>
               <Link 
-                to="/products?category=pet-care&subcategory=dog-food"
+                to="/products?brand=Dog"
                 className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
                 <img
