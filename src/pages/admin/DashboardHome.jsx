@@ -221,20 +221,20 @@ const AdminDashboardHome = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-5 md:space-y-6 lg:space-y-8"
+      className="space-y-6 md:space-y-8"
     >
-      {/* Header */}
-      <motion.div variants={headerVariants} className="mb-2 flex justify-between items-start">
+      {/* Header Section */}
+      <motion.div variants={headerVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-gray-200">
         <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Welcome to the admin panel</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
+          <p className="text-gray-500 mt-2 text-sm sm:text-base">Monitor and manage your medical shop operations</p>
         </div>
         <button
           onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium text-sm"
         >
-          <UserPlus size={20} />
-          <span className="hidden sm:inline">Create Admin</span>
+          <UserPlus size={18} />
+          <span>Create Admin</span>
         </button>
       </motion.div>
 
@@ -244,11 +244,16 @@ const AdminDashboardHome = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="bg-white rounded-xl shadow-md border border-gray-100 p-5 md:p-6"
+          className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 lg:p-8"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="text-medical-600" size={24} />
-            <h2 className="text-xl font-bold text-gray-900">Create New Admin</h2>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Shield className="text-blue-600" size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Create New Admin</h2>
+              <p className="text-sm text-gray-500">Add a new administrator to the system</p>
+            </div>
           </div>
           <form onSubmit={handleCreateAdmin} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -260,7 +265,7 @@ const AdminDashboardHome = () => {
                   type="tel"
                   value={adminForm.phone}
                   onChange={(e) => setAdminForm({ ...adminForm, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   placeholder="Enter phone number"
                   required
                 />
@@ -273,7 +278,7 @@ const AdminDashboardHome = () => {
                   type="text"
                   value={adminForm.name}
                   onChange={(e) => setAdminForm({ ...adminForm, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   placeholder="Enter full name"
                   required
                 />
@@ -286,7 +291,7 @@ const AdminDashboardHome = () => {
                   type="text"
                   value={adminForm.username}
                   onChange={(e) => setAdminForm({ ...adminForm, username: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   placeholder="Enter username"
                   required
                 />
@@ -299,7 +304,7 @@ const AdminDashboardHome = () => {
                   type="email"
                   value={adminForm.email}
                   onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   placeholder="Enter email address"
                   required
                 />
@@ -312,7 +317,7 @@ const AdminDashboardHome = () => {
                   type="password"
                   value={adminForm.password}
                   onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-gray-400"
                   placeholder="Enter password (min 6 characters)"
                   minLength={6}
                   required
@@ -320,7 +325,7 @@ const AdminDashboardHome = () => {
                 <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
               </div>
             </div>
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => {
@@ -333,14 +338,14 @@ const AdminDashboardHome = () => {
                     password: ''
                   })
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 px-5 py-2.5 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={creatingAdmin}
-                className="flex-1 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 {creatingAdmin ? 'Creating...' : 'Create Admin'}
               </button>
@@ -350,85 +355,118 @@ const AdminDashboardHome = () => {
       )}
 
       {/* Stats Grid */}
-      <motion.div
-        variants={containerVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-5 lg:gap-6"
-      >
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <motion.div
-              key={stat.name}
-              variants={cardVariants}
-              whileHover={{ 
-                y: -5,
-                transition: { duration: 0.2 }
-              }}
-              onClick={stat.onClick}
-              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-5 md:p-6 lg:p-7 border border-gray-100 cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1 pr-3">
-                  <p className="text-xs md:text-sm lg:text-base font-medium text-gray-600 mb-2">{stat.name}</p>
-                  {loading ? (
-                    <div className="h-7 md:h-8 lg:h-9 w-20 md:w-24 bg-gray-200 rounded animate-pulse"></div>
-                  ) : (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 + index * 0.1 }}
-                      className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900"
-                    >
-                      {stat.value}
-                    </motion.p>
-                  )}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Key Metrics</h2>
+        <motion.div
+          variants={containerVariants}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-5"
+        >
+          {statCards.map((stat, index) => {
+            const Icon = stat.icon
+            return (
+              <motion.div
+                key={stat.name}
+                variants={cardVariants}
+                whileHover={{ 
+                  y: -4,
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
+                }}
+                onClick={stat.onClick}
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 cursor-pointer overflow-hidden relative"
+              >
+                {/* Gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                <div className="relative flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">{stat.name}</p>
+                    {loading ? (
+                      <div className="h-8 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+                    ) : (
+                      <motion.p
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 + index * 0.1 }}
+                        className="text-2xl lg:text-3xl font-bold text-gray-900"
+                      >
+                        {stat.value}
+                      </motion.p>
+                    )}
+                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    className={`${stat.bgColor} p-3 rounded-xl flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow`}
+                  >
+                    <Icon className={`${stat.color} text-white w-6 h-6`} />
+                  </motion.div>
                 </div>
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  className={`${stat.bgColor} p-3 md:p-4 rounded-xl flex-shrink-0 shadow-sm`}
-                >
-                  <Icon className={`${stat.color} text-white w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8`} />
-                </motion.div>
-              </div>
-            </motion.div>
-          )
-        })}
-      </motion.div>
+                
+                {/* Bottom accent line */}
+                <div className={`absolute bottom-0 left-0 right-0 h-1 ${stat.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+              </motion.div>
+            )
+          })}
+        </motion.div>
+      </div>
 
       {/* Quick Actions */}
       <motion.div
         variants={cardVariants}
-        className="bg-white rounded-xl shadow-md border border-gray-100 p-5 md:p-6 lg:p-8"
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8"
       >
-        <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-gray-900 mb-5 lg:mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
+            <p className="text-sm text-gray-500 mt-1">Common administrative tasks</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
-            { href: '/admin/dashboard/users', icon: Users, title: 'Manage Users', desc: 'View and manage all users' },
-            { href: '/admin/dashboard/orders', icon: ShoppingBag, title: 'Manage Orders', desc: 'View and filter orders' },
-            { href: '/admin/dashboard/add-product', icon: Package, title: 'Add Product', desc: 'Create a new product' }
+            { href: '/admin/dashboard/users', icon: Users, title: 'Manage Users', desc: 'View and manage all registered users', color: 'blue' },
+            { href: '/admin/dashboard/orders', icon: ShoppingBag, title: 'Manage Orders', desc: 'View, filter, and update order status', color: 'green' },
+            { href: '/admin/dashboard/add-product', icon: Package, title: 'Add Product', desc: 'Create and add new products to inventory', color: 'purple' }
           ].map((action, index) => {
             const Icon = action.icon
+            const colorClasses = {
+              blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
+              green: 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100',
+              purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+            }
             return (
               <motion.a
                 key={action.href}
                 href={action.href}
                 variants={cardVariants}
                 whileHover={{ 
-                  y: -5,
+                  y: -4,
                   scale: 1.02,
                   transition: { duration: 0.2 }
                 }}
                 whileTap={{ scale: 0.98 }}
-                className="group p-5 md:p-6 border-2 border-gray-200 rounded-xl hover:border-medical-500 hover:bg-medical-50 transition-all duration-300 hover:shadow-lg block"
+                className={`group relative p-6 border-2 rounded-xl transition-all duration-300 hover:shadow-lg block ${colorClasses[action.color]}`}
               >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                >
-                  <Icon className="text-medical-600 mb-3" size={28} />
-                </motion.div>
-                <h3 className="font-semibold text-gray-900 text-base md:text-lg mb-1">{action.title}</h3>
-                <p className="text-sm md:text-base text-gray-500">{action.desc}</p>
+                <div className="flex items-start gap-4">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                    className="flex-shrink-0"
+                  >
+                    <div className={`p-3 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow`}>
+                      <Icon size={24} />
+                    </div>
+                  </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-base mb-1.5 group-hover:text-gray-950">{action.title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{action.desc}</p>
+                  </div>
+                </div>
+                {/* Arrow indicator */}
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </motion.a>
             )
           })}

@@ -32,34 +32,64 @@ const DoctorBookingModal = ({ doctor, defaultDate, onClose, onSuccess }) => {
     { enabled: Boolean(doctor?._id && selectedDate) }
   )
 
+  const handleBooking = () => {
+    if (!getAccessToken()) {
+      toast.error('Please login to book an appointment')
+      navigate('/login?redirect=/doctor-appointment')
+      return
+    }
+
+    if (!selectedSlot) {
+      toast.error('Please select a time slot')
+      return
+    }
+
+    if (!selectedDate) {
+      toast.error('Please select a date')
+      return
+    }
+
+    mutation.mutate()
+  }
+
   const mutation = useMutation(
     async () => {
       if (!getAccessToken()) {
         throw new Error('LOGIN_REQUIRED')
       }
-      return api.post('/appointments', {
+      
+      const payload = {
         doctorId: doctor._id,
         date: selectedDate,
         slot: selectedSlot,
-        reason,
         mode: selectedMode
-      })
+      }
+      
+      if (reason) {
+        payload.reason = reason
+      }
+
+      const response = await api.post('/appointments', payload)
+      return response.data
     },
     {
-      onSuccess: () => {
-        toast.success('Appointment booked successfully')
+      onSuccess: (data) => {
+        toast.success('Appointment booked successfully!')
         queryClient.invalidateQueries(['my-appointments'])
         queryClient.invalidateQueries(['doctor-slots', doctor._id, selectedDate])
+        queryClient.invalidateQueries(['doctors'])
         onSuccess?.()
         onClose()
       },
       onError: (err) => {
+        console.error('Booking error:', err)
         if (err.message === 'LOGIN_REQUIRED' || err.response?.status === 401) {
           toast.error('Please login to book an appointment')
           navigate('/login?redirect=/doctor-appointment')
           return
         }
-        toast.error(err.response?.data?.message || err.message || 'Failed to book appointment')
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to book appointment'
+        toast.error(errorMessage)
       }
     }
   )
@@ -141,11 +171,12 @@ const DoctorBookingModal = ({ doctor, defaultDate, onClose, onSuccess }) => {
                       entry.slots.map((slot) => (
                         <button
                           key={slot}
+                          type="button"
                           onClick={() => setSelectedSlot(slot)}
-                          className={`px-3 py-2 rounded-lg border text-sm ${
+                          className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                             selectedSlot === slot
-                              ? 'border-medical-500 bg-medical-50 text-medical-700 font-semibold'
-                              : 'border-gray-200 text-gray-700 hover:border-medical-300'
+                              ? 'border-medical-500 bg-medical-50 text-medical-700 shadow-sm'
+                              : 'border-gray-200 text-gray-700 hover:border-medical-300 hover:bg-gray-50'
                           }`}
                         >
                           {slot}
@@ -158,7 +189,18 @@ const DoctorBookingModal = ({ doctor, defaultDate, onClose, onSuccess }) => {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-gray-500">Doctor is not available on this day. Please change the date.</p>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-sm text-amber-800 font-medium">
+                  Doctor is not available on this day. Please select a different date.
+                </p>
+              </div>
+            )}
+            {selectedSlot && (
+              <div className="mt-3 p-3 bg-medical-50 border border-medical-200 rounded-lg">
+                <p className="text-sm text-medical-700">
+                  <span className="font-semibold">Selected slot:</span> {selectedSlot}
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -170,11 +212,17 @@ const DoctorBookingModal = ({ doctor, defaultDate, onClose, onSuccess }) => {
           </div>
           <button
             disabled={!selectedSlot || mutation.isLoading}
-            onClick={() => mutation.mutate()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-medical-600 px-6 py-2.5 text-white font-semibold hover:bg-medical-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={handleBooking}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-medical-600 px-6 py-2.5 text-white font-semibold hover:bg-medical-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
           >
-            {mutation.isLoading && <Loader2 className="animate-spin" size={18} />}
-            Confirm Booking
+            {mutation.isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Booking...
+              </>
+            ) : (
+              'Confirm Booking'
+            )}
           </button>
         </div>
       </div>

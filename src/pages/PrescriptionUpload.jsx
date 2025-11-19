@@ -87,7 +87,7 @@ const PrescriptionUpload = () => {
             <div className="w-12 h-12 bg-gradient-to-br from-medical-600 to-medical-700 rounded-xl flex items-center justify-center shadow-lg">
               <Shield className="text-white" size={28} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">MediShop</h1>
+            <h1 className="text-3xl font-bold text-gray-900">HealthPlus</h1>
           </div>
           <button
             onClick={handleLogout}

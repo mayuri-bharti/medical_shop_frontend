@@ -48,7 +48,7 @@ const Dashboard = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">MediShop</h1>
+            <h1 className="text-2xl font-bold text-gray-900">HealthPlus</h1>
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
@@ -68,9 +68,6 @@ const Dashboard = () => {
             <h2 className="text-3xl font-bold mb-2">
               Welcome back! 👋
             </h2>
-            <p className="text-medical-100">
-              You have successfully logged in to MediShop
-            </p>
           </div>
 
           {/* User Info Card */}

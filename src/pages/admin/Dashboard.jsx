@@ -18,10 +18,10 @@ const AdminDashboard = () => {
   }, [])
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 md:ml-56 lg:ml-64 min-w-0 max-w-full">
+      <main className="flex-1 md:ml-56 lg:ml-64 min-w-0 max-w-full bg-transparent">
         {/* Mobile Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}

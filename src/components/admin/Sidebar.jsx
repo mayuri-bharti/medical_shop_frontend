@@ -94,23 +94,23 @@ const Sidebar = ({ isOpen, onClose }) => {
         variants={sidebarVariants}
         initial="closed"
         animate={(isOpen || isDesktop) ? 'open' : 'closed'}
-        className="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 overflow-y-auto md:static md:z-auto"
+        className="fixed top-0 left-0 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 overflow-y-auto md:static md:z-auto shadow-lg md:shadow-none"
       >
-        <div className="p-4 md:p-5 lg:p-6">
+        <div className="p-5 lg:p-6">
           {/* Logo with Close Button (Mobile) */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="flex items-center justify-between mb-6 md:mb-7 lg:mb-8"
+            className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200"
           >
-            <Link to="/admin/dashboard" className="flex items-center space-x-2" onClick={onClose}>
-              <div className="w-10 h-10 bg-gradient-to-br from-medical-600 to-medical-700 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Link to="/admin/dashboard" className="flex items-center space-x-3 group" onClick={onClose}>
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-shadow">
                 <span className="text-white font-bold text-xl">+</span>
               </div>
               <div className="min-w-0">
-                <h1 className="text-base md:text-sm lg:text-lg font-bold text-gray-900 truncate">Admin Panel</h1>
-                <p className="text-xs text-gray-500">HealthPlus</p>
+                <h1 className="text-base lg:text-lg font-bold text-gray-900 truncate">Admin Panel</h1>
+                <p className="text-xs text-gray-500 font-medium">HealthPlus</p>
               </div>
             </Link>
             <button
@@ -122,9 +122,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           </motion.div>
 
           {/* Navigation */}
-          <nav className="space-y-1.5 md:space-y-2">
+          <nav className="space-y-1">
             {menuItems.map((item, index) => {
               const Icon = item.icon
+              const isActiveItem = isActive(item.href)
               return (
                 <motion.div
                   key={item.name}
@@ -136,14 +137,27 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <Link
                     to={item.href}
                     onClick={onClose}
-                    className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-lg transition-all duration-200 text-sm md:text-base ${
-                      isActive(item.href)
-                        ? 'bg-medical-50 text-medical-700 font-medium shadow-sm'
-                        : 'text-gray-700 hover:bg-gray-50 hover:shadow-sm'
+                    className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium relative ${
+                      isActiveItem
+                        ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 shadow-sm border-l-4 border-blue-600'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon size={18} className="md:w-5 md:h-5 flex-shrink-0" />
-                    <span className="truncate">{item.name}</span>
+                    <Icon 
+                      size={20} 
+                      className={`flex-shrink-0 transition-colors ${
+                        isActiveItem ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
+                      }`} 
+                    />
+                    <span className="truncate flex-1">{item.name}</span>
+                    {isActiveItem && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="absolute right-2 w-2 h-2 bg-blue-600 rounded-full"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
                   </Link>
                 </motion.div>
               )
@@ -155,21 +169,21 @@ const Sidebar = ({ isOpen, onClose }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-gray-200 space-y-1.5 md:space-y-2"
+            className="mt-8 pt-6 border-t border-gray-200 space-y-2"
           >
             <Link
               to="/"
               onClick={onClose}
-              className="flex items-center space-x-2 md:space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:shadow-sm text-sm md:text-base"
+              className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 text-sm font-medium group"
             >
-              <Home size={18} className="md:w-5 md:h-5 flex-shrink-0" />
+              <Home size={18} className="flex-shrink-0 text-gray-500 group-hover:text-gray-700" />
               <span className="truncate">Back to Site</span>
             </Link>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200 hover:shadow-sm text-sm md:text-base"
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 text-sm font-medium group"
             >
-              <LogOut size={18} className="md:w-5 md:h-5 flex-shrink-0" />
+              <LogOut size={18} className="flex-shrink-0" />
               <span>Logout</span>
             </button>
           </motion.div>
