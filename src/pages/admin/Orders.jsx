@@ -234,6 +234,25 @@ const AdminOrders = () => {
                 ))}
               </div>
 
+              {order.status === 'cancelled' && order.cancellation && (
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="bg-red-50 border border-red-100 rounded-lg p-4 space-y-1">
+                    <p className="text-sm font-semibold text-red-700">
+                      User cancelled this order
+                    </p>
+                    {order.cancellation.reason && (
+                      <p className="text-sm text-red-600">
+                        Reason: <span className="font-medium">{order.cancellation.reason}</span>
+                      </p>
+                    )}
+                    <p className="text-xs text-red-500">
+                      Cancelled on {formatDate(order.cancellation.cancelledAt || order.updatedAt)} by{' '}
+                      {order.user?.name || order.user?.phone || 'User'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {order.shippingAddress && (
                 <div className="border-t border-gray-200 pt-4 text-sm text-gray-700">
                   <p className="text-xs font-semibold text-gray-500 mb-1">Shipping Address</p>

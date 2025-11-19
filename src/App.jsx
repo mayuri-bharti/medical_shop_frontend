@@ -30,6 +30,8 @@ const MedicineDetails = lazy(() => import('./pages/MedicineDetails'))
 const DoctorAppointment = lazy(() => import('./pages/DoctorAppointment'))
 const LabTests = lazy(() => import('./pages/LabTests'))
 const HealthInsurance = lazy(() => import('./pages/HealthInsurance'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
 
 // Admin Pages - Lazy loaded
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
@@ -44,6 +46,7 @@ const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
 const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
 const AdminDoctorManagement = lazy(() => import('./pages/admin/DoctorManagement'))
 const AdminAppointmentManagement = lazy(() => import('./pages/admin/AppointmentManagement'))
+const AdminContactRequests = lazy(() => import('./pages/admin/ContactRequests'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -160,6 +163,8 @@ function App() {
           <Route path="/doctor-appointment" element={<DoctorAppointment />} />
           <Route path="/health-insurance" element={<HealthInsurance />} />
           <Route path="/subcategory/:slug" element={<Subcategory />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Protected Routes */}
           <Route path="/checkout" element={
@@ -235,6 +240,7 @@ function App() {
             <Route path="add-product" element={<AdminAddProduct />} />
             <Route path="manage-products" element={<AdminManageProducts />} />
             <Route path="edit-product/:id" element={<AdminEditProduct />} />
+            <Route path="contact-requests" element={<AdminContactRequests />} />
           </Route>
 
           {/* Catch all */}

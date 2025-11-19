@@ -1,7 +1,44 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { X, AlertCircle } from 'lucide-react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+
+const normalizeItemId = (id) => {
+  if (!id) return ''
+  if (typeof id === 'string') return id
+  if (typeof id === 'object' && typeof id.toString === 'function') {
+    return id.toString()
+  }
+  return String(id)
+}
+
+const getReferenceId = (entity) => {
+  if (!entity) return ''
+  if (typeof entity === 'string') return entity
+  if (typeof entity === 'object') {
+    if (entity._id) return normalizeItemId(entity._id)
+    if (entity.id) return normalizeItemId(entity.id)
+  }
+  return ''
+}
+
+const getOrderItemPrimaryId = (item) => {
+  if (!item) return ''
+  const candidates = [item.orderItemId, item._id, item.id]
+  for (const candidate of candidates) {
+    const normalized = normalizeItemId(candidate)
+    if (normalized) return normalized
+  }
+  return ''
+}
+
+const getOrderItemKey = (item, index) => {
+  const primaryId = getOrderItemPrimaryId(item)
+  if (primaryId) return primaryId
+  const refId = getReferenceId(item.product) || getReferenceId(item.medicine)
+  if (refId) return `${refId}-${index}`
+  return `${item.name || 'item'}-${index}`
+}
 
 const ReturnRequestForm = ({ order, onClose }) => {
   const [selectedItems, setSelectedItems] = useState({})
@@ -20,34 +57,73 @@ const ReturnRequestForm = ({ order, onClose }) => {
     { value: 'other', label: 'Other' }
   ]
 
-  const handleItemToggle = (itemId, maxQuantity) => {
+  const orderItemMetaMap = useMemo(() => {
+    const map = {}
+    order.items?.forEach((item, index) => {
+      const key = getOrderItemKey(item, index)
+      map[key] = {
+        key,
+        item,
+        ids: {
+          orderItemId: getOrderItemPrimaryId(item),
+          orderProductId: getReferenceId(item.product),
+          orderMedicineId: getReferenceId(item.medicine)
+        }
+      }
+    })
+    return map
+  }, [order])
+
+  const handleItemToggle = (itemId, maxQuantity = 1) => {
+    const normalizedId = normalizeItemId(itemId)
+    if (!normalizedId) return
+    const initialQty = Math.min(1, Math.max(1, maxQuantity || 1))
     setSelectedItems((prev) => {
-      if (prev[itemId]) {
+      if (prev[normalizedId]) {
         const newState = { ...prev }
-        delete newState[itemId]
+        delete newState[normalizedId]
         return newState
       }
-      return { ...prev, [itemId]: maxQuantity }
+      return { ...prev, [normalizedId]: initialQty }
     })
   }
 
-  const handleQuantityChange = (itemId, quantity, maxQuantity) => {
-    const qty = Math.min(Math.max(1, parseInt(quantity) || 1), maxQuantity)
+  const handleQuantityChange = (itemId, quantity, maxQuantity = 1) => {
+    const normalizedId = normalizeItemId(itemId)
+    if (!normalizedId) return
+    const qty = Math.min(Math.max(1, parseInt(quantity, 10) || 1), maxQuantity)
     setSelectedItems((prev) => ({
       ...prev,
-      [itemId]: qty
+      [normalizedId]: qty
     }))
   }
 
-  const handleImageChange = (e) => {
+  const readFileAsDataURL = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () =>
+        resolve({
+          preview: URL.createObjectURL(file),
+          data: reader.result
+        })
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files)
     if (files.length + images.length > 5) {
       toast.error('Maximum 5 images allowed')
       return
     }
-    
-    const imageUrls = files.map(file => URL.createObjectURL(file))
-    setImages([...images, ...imageUrls])
+
+    try {
+      const processed = await Promise.all(files.map(readFileAsDataURL))
+      setImages((prev) => [...prev, ...processed])
+    } catch (error) {
+      console.error('Image processing error:', error)
+      toast.error('Failed to process images. Please try again.')
+    }
   }
 
   const removeImage = (index) => {
@@ -55,9 +131,9 @@ const ReturnRequestForm = ({ order, onClose }) => {
   }
 
   const calculateRefund = () => {
-    return Object.entries(selectedItems).reduce((total, [itemId, quantity]) => {
-      const item = order.items.find(i => i._id === itemId)
-      return total + (item ? item.price * quantity : 0)
+    return Object.entries(selectedItems).reduce((total, [itemKey, quantity]) => {
+      const orderItem = orderItemMetaMap[itemKey]?.item
+      return total + (orderItem ? orderItem.price * quantity : 0)
     }, 0)
   }
 
@@ -82,10 +158,28 @@ const ReturnRequestForm = ({ order, onClose }) => {
     setSubmitting(true)
 
     try {
-      const returnItems = Object.entries(selectedItems).map(([itemId, quantity]) => ({
-        orderItemId: itemId,
-        quantity
-      }))
+      const returnItems = Object.entries(selectedItems).map(([itemKey, quantity]) => {
+        const meta = orderItemMetaMap[itemKey] || {}
+        const payload = {
+          quantity
+        }
+
+        if (meta.ids?.orderItemId) {
+          payload.orderItemId = meta.ids.orderItemId
+        }
+        if (meta.ids?.orderProductId) {
+          payload.orderProductId = meta.ids.orderProductId
+        }
+        if (meta.ids?.orderMedicineId) {
+          payload.orderMedicineId = meta.ids.orderMedicineId
+        }
+
+        if (!payload.orderItemId && !payload.orderProductId && !payload.orderMedicineId) {
+          payload.orderItemId = itemKey
+        }
+
+        return payload
+      })
 
       await api.post('/returns', {
         orderId: order._id,
@@ -93,7 +187,7 @@ const ReturnRequestForm = ({ order, onClose }) => {
         reason,
         reasonDescription: reasonDescription.trim(),
         refundMethod,
-        images: [] // In production, upload images to cloud storage first
+        images: images.map((img) => img.data)
       })
 
       toast.success('Return request submitted successfully')
@@ -126,13 +220,14 @@ const ReturnRequestForm = ({ order, onClose }) => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Items to Return</h3>
             <div className="space-y-3">
-              {order.items?.map((item) => {
-                const isSelected = !!selectedItems[item._id]
-                const selectedQuantity = selectedItems[item._id] || 0
+              {order.items?.map((item, index) => {
+                const itemId = getOrderItemKey(item, index)
+                const isSelected = !!selectedItems[itemId]
+                const selectedQuantity = selectedItems[itemId] || 1
 
                 return (
                   <div
-                    key={item._id}
+                    key={itemId}
                     className={`border rounded-lg p-4 ${
                       isSelected ? 'border-medical-600 bg-medical-50' : 'border-gray-200'
                     }`}
@@ -141,7 +236,7 @@ const ReturnRequestForm = ({ order, onClose }) => {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleItemToggle(item._id, item.quantity)}
+                        onChange={() => handleItemToggle(itemId, item.quantity)}
                         className="mt-1 h-4 w-4 text-medical-600 focus:ring-medical-500 border-gray-300 rounded"
                       />
                       <div className="flex-1">
@@ -167,7 +262,7 @@ const ReturnRequestForm = ({ order, onClose }) => {
                                   max={item.quantity}
                                   value={selectedQuantity}
                                   onChange={(e) =>
-                                    handleQuantityChange(item._id, e.target.value, item.quantity)
+                                    handleQuantityChange(itemId, e.target.value, item.quantity)
                                   }
                                   className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                                 />
@@ -258,7 +353,7 @@ const ReturnRequestForm = ({ order, onClose }) => {
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {images.map((img, index) => (
                   <div key={index} className="relative">
-                    <img src={img} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded" />
+                    <img src={img.preview} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded" />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from 'react-query'
-import { Package, FileText, ExternalLink, MapPin, RefreshCw } from 'lucide-react'
+import { Package, FileText, ExternalLink, MapPin, RefreshCw, XCircle } from 'lucide-react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -28,8 +28,12 @@ const Orders = () => {
   const navigate = useNavigate()
   const [showReturnForm, setShowReturnForm] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [cancelOrderTarget, setCancelOrderTarget] = useState(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [isCancelling, setIsCancelling] = useState(false)
+  const cancellableStatuses = ['processing', 'out for delivery']
   
-  const { data, isLoading, error } = useQuery(
+  const { data, isLoading, error, refetch } = useQuery(
     ['my-orders'],
     async () => {
       const response = await api.get('/orders/my-orders')
@@ -43,6 +47,40 @@ const Orders = () => {
       refetchOnWindowFocus: false
     }
   )
+
+  const { data: returnsData } = useQuery(
+    ['my-returns-summary'],
+    async () => {
+      const response = await api.get('/returns/my-returns')
+      return response.data?.data || []
+    },
+    {
+      refetchOnWindowFocus: false
+    }
+  )
+
+  const returnStatusConfig = {
+    pending: { label: 'Return Pending', color: 'bg-yellow-100 text-yellow-800' },
+    approved: { label: 'Return Approved', color: 'bg-blue-100 text-blue-800' },
+    rejected: { label: 'Return Rejected', color: 'bg-red-100 text-red-800' },
+    pickup_scheduled: { label: 'Pickup Scheduled', color: 'bg-indigo-100 text-indigo-800' },
+    picked_up: { label: 'Picked Up', color: 'bg-purple-100 text-purple-800' },
+    refund_processed: { label: 'Refund Processed', color: 'bg-green-100 text-green-800' },
+    completed: { label: 'Return Completed', color: 'bg-green-100 text-green-800' },
+    cancelled: { label: 'Return Cancelled', color: 'bg-gray-100 text-gray-800' }
+  }
+
+  const returnsByOrder = useMemo(() => {
+    if (!returnsData) return {}
+    const map = {}
+    returnsData.forEach((ret) => {
+      const orderRef = ret.order?._id || ret.order
+      if (orderRef) {
+        map[orderRef.toString()] = ret
+      }
+    })
+    return map
+  }, [returnsData])
 
   if (isLoading) {
     return (
@@ -78,7 +116,12 @@ const Orders = () => {
       </div>
 
       <div className="space-y-4">
-        {data.map((order) => (
+        {data.map((order) => {
+          const orderKey = order._id?.toString?.() || order._id
+          const associatedReturn = orderKey ? returnsByOrder[orderKey] : null
+          const returnStatus = associatedReturn ? (returnStatusConfig[associatedReturn.status] || returnStatusConfig.pending) : null
+
+          return (
           <div
             key={order._id}
             className="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4"
@@ -115,6 +158,35 @@ const Orders = () => {
                 )}
               </div>
             </div>
+
+            {associatedReturn && (
+              <div className="border border-dashed border-medical-200 rounded-lg p-4 bg-medical-50">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Return Request</p>
+                    <p className="text-xs text-gray-500">
+                      Return #{associatedReturn.returnNumber} • Requested on{' '}
+                      {new Date(associatedReturn.createdAt).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${returnStatus?.color}`}>
+                      {returnStatus?.label}
+                    </span>
+                    <button
+                      onClick={() => navigate('/returns')}
+                      className="text-sm font-medium text-medical-600 hover:text-medical-700"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="border-t border-gray-200 pt-4 space-y-3">
               {order.items?.map((item, index) => (
@@ -155,6 +227,18 @@ const Orders = () => {
                     Return/Refund
                   </button>
                 )}
+                {cancellableStatuses.includes(order.status?.toLowerCase()) && (
+                  <button
+                    onClick={() => {
+                      setCancelOrderTarget(order)
+                      setCancelReason('')
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    <XCircle size={18} />
+                    Cancel Order
+                  </button>
+                )}
                 {order.prescriptionUrl && (
                   <a
                     href={order.prescriptionUrl}
@@ -181,7 +265,7 @@ const Orders = () => {
               </div>
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       {showReturnForm && selectedOrder && (
@@ -192,6 +276,88 @@ const Orders = () => {
             setSelectedOrder(null)
           }}
         />
+      )}
+
+      {cancelOrderTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Cancel Order</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Please share the reason for cancelling order{' '}
+                  <span className="font-medium">
+                    {cancelOrderTarget.orderNumber || cancelOrderTarget._id.slice(-8).toUpperCase()}
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setCancelOrderTarget(null)
+                  setCancelReason('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Cancellation Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={4}
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-gray-300 focus:ring-medical-500 focus:border-medical-500 text-sm p-3"
+                placeholder="Let us know why you are cancelling this order..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 10 characters. This helps us improve your experience.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setCancelOrderTarget(null)
+                  setCancelReason('')
+                }}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={isCancelling}
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={async () => {
+                  const reason = cancelReason.trim()
+                  if (reason.length < 10) {
+                    toast.error('Please provide at least 10 characters for the reason.')
+                    return
+                  }
+                  setIsCancelling(true)
+                  try {
+                    await api.post(`/orders/${cancelOrderTarget._id}/cancel`, { reason })
+                    toast.success('Order cancelled successfully')
+                    setCancelOrderTarget(null)
+                    setCancelReason('')
+                    await refetch()
+                  } catch (err) {
+                    console.error('Cancel order error:', err)
+                    toast.error(err?.response?.data?.message || 'Failed to cancel order')
+                  } finally {
+                    setIsCancelling(false)
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                disabled={isCancelling}
+              >
+                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
