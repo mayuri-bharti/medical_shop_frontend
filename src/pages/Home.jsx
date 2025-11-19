@@ -308,14 +308,14 @@ const Home = () => {
       </section>
 
       {/* Featured Products - Trending Medicines */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 flex items-center justify-between">
+      <section className="py-6 md:py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="mb-4 md:mb-10 flex items-center justify-between">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#1A1A1A] mb-3">
+              <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-[#1A1A1A] mb-1 md:mb-3">
                 Trending <span className="text-apollo-700">Medicines</span>
               </h2>
-              <p className="text-[#6B7280] mt-2">Most popular and trusted medicines</p>
+              <p className="text-xs md:text-base text-[#6B7280] mt-1 md:mt-2">Most popular and trusted medicines</p>
             </div>
             <Link
               to="/products"
@@ -331,29 +331,28 @@ const Home = () => {
           </div>
         )}
         {isPopularLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 md:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 // eslint-disable-next-line react/no-array-index-key
                 key={index}
-                className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                className="flex h-full flex-col rounded-lg md:rounded-2xl border border-slate-200 bg-white p-2 md:p-4 shadow-sm"
               >
-                <div className="flex flex-col gap-3 animate-pulse">
-                  <div className="ml-auto h-5 w-5 rounded-full bg-slate-200" />
-                  <div className="h-32 w-full rounded-lg bg-slate-200" />
-                  <div className="h-4 w-3/4 rounded bg-slate-200" />
-                  <div className="h-4 w-1/2 rounded bg-slate-200" />
-                  <div className="h-3 w-2/3 rounded bg-slate-200" />
-                  <div className="mt-2 flex gap-2">
-                    <div className="h-9 flex-1 rounded-full bg-slate-200" />
-                    <div className="h-9 w-9 rounded-full bg-slate-200" />
+                <div className="flex flex-col gap-2 md:gap-3 animate-pulse">
+                  <div className="ml-auto h-4 w-4 md:h-5 md:w-5 rounded-full bg-slate-200" />
+                  <div className="h-20 md:h-32 w-full rounded-lg bg-slate-200" />
+                  <div className="h-3 md:h-4 w-3/4 rounded bg-slate-200" />
+                  <div className="h-3 md:h-4 w-1/2 rounded bg-slate-200" />
+                  <div className="h-2 md:h-3 w-2/3 rounded bg-slate-200" />
+                  <div className="mt-1 md:mt-2 flex gap-1 md:gap-2">
+                    <div className="h-7 md:h-9 flex-1 rounded-full bg-slate-200" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 md:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {featuredProducts.map((product) => {
               const discount = product.mrp && product.mrp !== product.price 
                 ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -384,45 +383,45 @@ const Home = () => {
                 >
                   {/* Discount Badge */}
                   {discount > 0 && (
-                    <div className="absolute top-3 right-3 z-10">
-                      <span className="badge badge-error">
+                    <div className="absolute top-1 right-1 md:top-3 md:right-3 z-10">
+                      <span className="badge badge-error text-[8px] md:text-xs px-1 md:px-2 py-0.5 md:py-1">
                         {discount}% OFF
                       </span>
                     </div>
                   )}
                   
                   {/* Product Image */}
-                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-6 flex items-center justify-center min-h-[180px]">
+                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-2 md:p-6 flex items-center justify-center min-h-[100px] md:min-h-[180px]">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-32 w-full object-contain transition-transform duration-300 group-hover:scale-110"
+                      className="h-20 md:h-32 w-full object-contain transition-transform duration-300 md:group-hover:scale-110"
                       loading="lazy"
                     />
                   </div>
                   
                   {/* Product Info */}
-                  <div className="p-5 flex flex-1 flex-col">
-                    <h3 className="text-sm font-bold text-gray-900 line-clamp-2 mb-3 min-h-[40px]">
+                  <div className="p-2 md:p-5 flex flex-1 flex-col">
+                    <h3 className="text-[10px] md:text-sm font-bold text-gray-900 line-clamp-2 mb-1 md:mb-3 min-h-[28px] md:min-h-[40px] leading-tight">
                       {product.name}
                     </h3>
                     
                     {/* Price */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg font-bold text-apollo-700">
+                    <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+                      <span className="text-xs md:text-lg font-bold text-apollo-700">
                         ₹{Number(product.price ?? 0).toLocaleString()}
                       </span>
                       {product.mrp && product.mrp !== product.price && (
                         <>
-                          <span className="text-xs text-gray-500 line-through">
+                          <span className="text-[8px] md:text-xs text-gray-500 line-through">
                             ₹{Number(product.mrp ?? 0).toLocaleString()}
                           </span>
                         </>
                       )}
                     </div>
                     
-                    {/* Stock Status */}
-                    <div className="flex items-center gap-2 mb-4">
+                    {/* Stock Status - Hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-2 mb-4">
                       <span className={`inline-flex h-2.5 w-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
                       <p className="text-xs text-gray-600">
                         {product.inStock ? product.delivery : 'Out of stock'}
@@ -430,11 +429,11 @@ const Home = () => {
                     </div>
                     
                     {/* Action Buttons */}
-                    <div className="mt-auto flex items-center gap-2">
+                    <div className="mt-auto flex items-center gap-1 md:gap-2">
                       <button
                         type="button"
                         disabled={!product.inStock}
-                        className={`flex-1 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+                        className={`flex-1 rounded-lg md:rounded-xl px-2 md:px-4 py-1.5 md:py-2.5 text-[9px] md:text-xs font-bold transition-all ${
                           product.inStock
                             ? 'bg-apollo-700 text-white hover:bg-apollo-800 shadow-md hover:shadow-lg'
                             : 'cursor-not-allowed bg-gray-100 text-gray-400'
@@ -451,13 +450,13 @@ const Home = () => {
         )}
         
           {/* View All Link for Mobile */}
-          <div className="mt-8 text-center md:hidden">
+          <div className="mt-4 md:mt-8 text-center md:hidden">
             <Link
               to="/products"
-              className="inline-flex items-center space-x-2 px-6 py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200"
+              className="inline-flex items-center space-x-1 px-4 py-2 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200 text-sm"
             >
               <span>View All Products</span>
-              <ArrowRight size={18} />
+              <ArrowRight size={14} />
             </Link>
           </div>
         </div>

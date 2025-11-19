@@ -4,16 +4,16 @@ import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
 const categories = [
   { 
-    name: 'Apollo Products', 
-    slug: 'apollo-products', 
+    name: 'HealthPlus Products', 
+    slug: 'HealthPlus-products', 
     icon: '💊',
     subcategories: [
       {
-        title: 'Apollo Brands',
+        title: 'HealthPlus Brands',
         items: [
-          { name: 'Apollo Pharmacy', link: '/products?category=apollo-pharmacy' },
-          { name: 'Apollo Health', link: '/products?category=apollo-health' },
-          { name: 'Apollo Wellness', link: '/products?category=apollo-wellness' }
+          { name: 'HealthPlus Pharmacy', link: '/products?category=apollo-pharmacy' },
+          { name: 'HealthPlus Health', link: '/products?category=apollo-health' },
+          { name: 'HealthPlus Wellness', link: '/products?category=apollo-wellness' }
         ]
       },
       {
@@ -298,22 +298,41 @@ const categories = [
 const CategoryNav = () => {
   const [activeCategory, setActiveCategory] = useState('')
   const [hoveredCategory, setHoveredCategory] = useState(null)
+  const [clickedCategory, setClickedCategory] = useState(null)
   const [dropdownPosition, setDropdownPosition] = useState({ left: 0, top: 0, width: 0 })
   const [showLeftArrow, setShowLeftArrow] = useState(false)
   const [showRightArrow, setShowRightArrow] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const scrollContainerRef = useRef(null)
   const categoryRefs = useRef({})
   const hoverTimeoutRef = useRef(null)
   const navigate = useNavigate()
 
-  const handleCategoryClick = (slug, hasSubcategories) => {
-    if (!hasSubcategories) {
-    setActiveCategory(slug)
-    navigate(`/products?category=${encodeURIComponent(slug)}`)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const handleCategoryClick = (slug, hasSubcategories, index) => {
+    if (isMobile && hasSubcategories) {
+      // On mobile, toggle dropdown on click
+      setClickedCategory(clickedCategory === index ? null : index)
+      setHoveredCategory(null)
+    } else if (!hasSubcategories) {
+      setActiveCategory(slug)
+      navigate(`/products?category=${encodeURIComponent(slug)}`)
+      setClickedCategory(null)
     }
   }
 
   const handleMouseEnter = (index) => {
+    // Only handle hover on desktop
+    if (isMobile) return
+    
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
@@ -339,6 +358,8 @@ const CategoryNav = () => {
   }
 
   const handleMouseLeave = () => {
+    if (isMobile) return
+    
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredCategory(null)
     }, 200)
@@ -392,9 +413,33 @@ const CategoryNav = () => {
     }
   }, [])
 
-  // Update dropdown position on scroll when a category is hovered
+  // Close mobile dropdown when clicking outside
   useEffect(() => {
-    if (hoveredCategory !== null) {
+    if (!isMobile || clickedCategory === null) return
+
+    const handleClickOutside = (event) => {
+      const target = event.target
+      const isClickInsideCategoryNav = 
+        scrollContainerRef.current?.contains(target) ||
+        event.target.closest('.mobile-dropdown-menu')
+      
+      if (!isClickInsideCategoryNav) {
+        setClickedCategory(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isMobile, clickedCategory])
+
+  // Update dropdown position on scroll when a category is hovered (desktop only)
+  useEffect(() => {
+    if (hoveredCategory !== null && !isMobile) {
       const updatePosition = () => {
         const categoryElement = categoryRefs.current[hoveredCategory]
         if (categoryElement) {
@@ -418,20 +463,22 @@ const CategoryNav = () => {
         window.removeEventListener('resize', updatePosition)
       }
     }
-  }, [hoveredCategory])
+  }, [hoveredCategory, isMobile])
 
-  const hoveredCategoryData = hoveredCategory !== null ? categories[hoveredCategory] : null
+  const activeCategoryData = isMobile 
+    ? (clickedCategory !== null ? categories[clickedCategory] : null)
+    : (hoveredCategory !== null ? categories[hoveredCategory] : null)
 
   return (
     <div className="relative z-50">
-      <section className="bg-white py-2 border-b border-gray-100 relative z-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+      <section className="bg-white py-1 md:py-2 border-b border-gray-100 relative z-50">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6">
         <div className="relative">
-          {/* Left Arrow */}
+          {/* Left Arrow - Hidden on mobile */}
           {showLeftArrow && (
             <button
               onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 text-apollo-700 hover:bg-apollo-50 transition-colors"
+                className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white shadow-lg rounded-full p-2 text-apollo-700 hover:bg-apollo-50 transition-colors"
               aria-label="Scroll left"
             >
               <ChevronLeft size={24} />
@@ -441,9 +488,9 @@ const CategoryNav = () => {
           {/* Scrollable Categories */}
           <div
             ref={scrollContainerRef}
-              className={`relative flex gap-4 overflow-x-auto scrollbar-hide ${
-              showLeftArrow ? 'pl-8' : 'pl-1'
-            } ${showRightArrow ? 'pr-8' : 'pr-1'}`}
+              className={`relative flex gap-2 md:gap-4 overflow-x-auto scrollbar-hide ${
+              showLeftArrow ? 'md:pl-8 pl-1' : 'pl-1'
+            } ${showRightArrow ? 'md:pr-8 pr-1' : 'pr-1'}`}
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
@@ -452,7 +499,9 @@ const CategoryNav = () => {
             {categories.map((category, index) => {
               const hasSubcategories = category.subcategories && category.subcategories.length > 0
               const isHovered = hoveredCategory === index
+              const isClicked = clickedCategory === index
               const isActive = activeCategory === category.slug
+              const showDropdown = isMobile ? isClicked : isHovered
 
               return (
                 <div
@@ -466,44 +515,52 @@ const CategoryNav = () => {
                 >
               <button
                     type="button"
-                    onClick={() => handleCategoryClick(category.slug, hasSubcategories)}
-                    className={`flex flex-col items-center gap-1 min-w-[88px] py-2 px-3 rounded-lg transition-all duration-300 whitespace-nowrap group relative ${
+                    onClick={() => handleCategoryClick(category.slug, hasSubcategories, index)}
+                    className={`flex flex-col items-center gap-0.5 md:gap-1 min-w-[70px] md:min-w-[88px] py-1.5 md:py-2 px-2 md:px-3 rounded-lg transition-all duration-300 whitespace-nowrap group relative ${
                       isActive
                     ? 'bg-apollo-50 text-apollo-700'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    : 'text-gray-700 md:hover:bg-gray-50'
                 }`}
               >
-                <div className={`text-2xl transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`}>
+                <div className={`text-xl md:text-2xl transition-transform md:group-hover:scale-110 ${isActive ? 'scale-110' : ''}`}>
                   {category.icon}
                 </div>
-                    <div className="flex items-center gap-1">
-                <span className={`text-sm font-semibold ${
+                    <div className="flex items-center gap-0.5 md:gap-1">
+                <span className={`text-xs md:text-sm font-semibold ${
                         isActive ? 'text-apollo-700' : 'text-gray-700'
                 }`}>
                   {category.name}
                 </span>
                       {hasSubcategories && (
                         <ChevronDown 
-                          size={14} 
-                          className={`transition-transform duration-200 ${
+                          size={12}
+                          className={`hidden md:block transition-transform duration-200 ${
                             isHovered ? 'rotate-180' : ''
+                          }`}
+                        />
+                      )}
+                      {hasSubcategories && isMobile && (
+                        <ChevronDown 
+                          size={10}
+                          className={`md:hidden transition-transform duration-200 ${
+                            isClicked ? 'rotate-180' : ''
                           }`}
                         />
                       )}
                     </div>
                 {/* Active Underline */}
                     {isActive && (
-                  <div className="w-full h-1 bg-apollo-700 rounded-full mt-0.5 animate-pulse" />
+                  <div className="w-full h-0.5 md:h-1 bg-apollo-700 rounded-full mt-0.5 animate-pulse" />
                 )}
               </button>
                 </div>
               )
             })}
 
-            {/* Subcategory Dropdown Menu - Appears below specific Category */}
-            {hoveredCategoryData && hoveredCategoryData.subcategories && hoveredCategoryData.subcategories.length > 0 && (
+            {/* Desktop Subcategory Dropdown Menu - Fixed positioning */}
+            {activeCategoryData && !isMobile && activeCategoryData.subcategories && activeCategoryData.subcategories.length > 0 && (
               <div
-                className="fixed bg-white shadow-2xl border-t border-gray-200 rounded-b-lg"
+                className="hidden md:block fixed bg-white shadow-2xl border-t border-gray-200 rounded-b-lg"
                 onMouseEnter={() => {
                   if (hoverTimeoutRef.current) {
                     clearTimeout(hoverTimeoutRef.current)
@@ -525,7 +582,7 @@ const CategoryNav = () => {
               >
                 <div className="px-6 py-6">
                   <div className="grid grid-cols-2 gap-6">
-                    {hoveredCategoryData.subcategories.map((section, sectionIndex) => (
+                    {activeCategoryData.subcategories.map((section, sectionIndex) => (
                       <div key={sectionIndex} className="flex flex-col">
                         <h3 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">
                           {section.title}
@@ -536,7 +593,10 @@ const CategoryNav = () => {
                               key={itemIndex}
                               to={item.link || '#'}
                               className="text-sm text-gray-600 hover:text-apollo-700 py-1.5 transition-colors duration-150"
-                              onClick={() => setHoveredCategory(null)}
+                              onClick={() => {
+                                setHoveredCategory(null)
+                                setClickedCategory(null)
+                              }}
                             >
                               {item.name}
                             </Link>
@@ -550,11 +610,53 @@ const CategoryNav = () => {
             )}
           </div>
 
-          {/* Right Arrow */}
+          {/* Mobile Subcategory Dropdown Menu - Full width below categories */}
+          {activeCategoryData && isMobile && activeCategoryData.subcategories && activeCategoryData.subcategories.length > 0 && (
+            <div className="mobile-dropdown-menu md:hidden bg-white border-t border-gray-200 shadow-lg">
+              <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-900">{activeCategoryData.name}</h2>
+                <button
+                  onClick={() => setClickedCategory(null)}
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                  aria-label="Close menu"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="px-4 py-4 max-h-[60vh] overflow-y-auto">
+                <div className="space-y-4">
+                  {activeCategoryData.subcategories.map((section, sectionIndex) => (
+                    <div key={sectionIndex} className="flex flex-col">
+                      <h3 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                        {section.title}
+                      </h3>
+                      <div className="flex flex-col gap-1">
+                        {section.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            to={item.link || '#'}
+                            className="text-sm text-gray-600 py-2 px-2 rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150"
+                            onClick={() => {
+                              setClickedCategory(null)
+                              setHoveredCategory(null)
+                            }}
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right Arrow - Hidden on mobile */}
           {showRightArrow && (
             <button
               onClick={() => scroll('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 text-apollo-700 hover:bg-apollo-50 transition-colors"
+              className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 text-apollo-700 hover:bg-apollo-50 transition-colors"
               aria-label="Scroll right"
             >
               <ChevronRight size={24} />
