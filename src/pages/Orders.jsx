@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useQuery } from 'react-query'
-import { Package, FileText, ExternalLink, MapPin } from 'lucide-react'
+import { Package, FileText, ExternalLink, MapPin, RefreshCw } from 'lucide-react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import ReturnRequestForm from '../components/ReturnRequestForm'
 
 const statusStyles = {
   processing: 'bg-purple-100 text-purple-800',
@@ -24,6 +26,9 @@ const formatCurrency = (amount = 0) =>
 
 const Orders = () => {
   const navigate = useNavigate()
+  const [showReturnForm, setShowReturnForm] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  
   const { data, isLoading, error } = useQuery(
     ['my-orders'],
     async () => {
@@ -130,7 +135,7 @@ const Orders = () => {
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-t border-gray-200 pt-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <button
                   onClick={() => navigate(`/orders/${order._id}/track`)}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors"
@@ -138,6 +143,18 @@ const Orders = () => {
                   <MapPin size={18} />
                   Track Order
                 </button>
+                {order.status === 'delivered' && (
+                  <button
+                    onClick={() => {
+                      setSelectedOrder(order)
+                      setShowReturnForm(true)
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    <RefreshCw size={18} />
+                    Return/Refund
+                  </button>
+                )}
                 {order.prescriptionUrl && (
                   <a
                     href={order.prescriptionUrl}
@@ -166,6 +183,16 @@ const Orders = () => {
           </div>
         ))}
       </div>
+
+      {showReturnForm && selectedOrder && (
+        <ReturnRequestForm
+          order={selectedOrder}
+          onClose={() => {
+            setShowReturnForm(false)
+            setSelectedOrder(null)
+          }}
+        />
+      )}
     </div>
   )
 }

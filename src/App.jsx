@@ -18,6 +18,7 @@ const AllMedicine = lazy(() => import('./pages/AllMedicine'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Orders = lazy(() => import('./pages/Orders'))
+const Returns = lazy(() => import('./pages/Returns'))
 const OrderTracking = lazy(() => import('./pages/OrderTracking'))
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
 const Prescriptions = lazy(() => import('./pages/Prescriptions'))
@@ -36,6 +37,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminDashboardHome = lazy(() => import('./pages/admin/DashboardHome'))
 const AdminUsers = lazy(() => import('./pages/admin/Users'))
 const AdminOrders = lazy(() => import('./pages/admin/Orders'))
+const AdminReturns = lazy(() => import('./pages/admin/Returns'))
 const AdminPrescriptions = lazy(() => import('./pages/admin/Prescriptions'))
 const AdminAddProduct = lazy(() => import('./pages/admin/AddProduct'))
 const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
@@ -185,6 +187,11 @@ function App() {
               <Orders />
             </ProtectedRoute>
           } />
+          <Route path="/returns" element={
+            <ProtectedRoute>
+              <Returns />
+            </ProtectedRoute>
+          } />
           <Route path="/orders/:id/track" element={
             <ProtectedRoute>
               <OrderTracking />
@@ -221,6 +228,7 @@ function App() {
             <Route index element={<AdminDashboardHome />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="returns" element={<AdminReturns />} />
             <Route path="prescriptions" element={<AdminPrescriptions />} />
             <Route path="doctors" element={<AdminDoctorManagement />} />
             <Route path="appointments" element={<AdminAppointmentManagement />} />

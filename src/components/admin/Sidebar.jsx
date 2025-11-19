@@ -12,7 +12,8 @@ import {
   Home,
   X,
   Stethoscope,
-  CalendarClock
+  CalendarClock,
+  RefreshCw
 } from 'lucide-react'
 import { removeAccessToken } from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
@@ -40,6 +41,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/dashboard/users', icon: Users },
     { name: 'Orders', href: '/admin/dashboard/orders', icon: ShoppingBag },
+    { name: 'Returns', href: '/admin/dashboard/returns', icon: RefreshCw },
     { name: 'Prescriptions', href: '/admin/dashboard/prescriptions', icon: FileText },
     { name: 'Doctors', href: '/admin/dashboard/doctors', icon: Stethoscope },
     { name: 'Appointments', href: '/admin/dashboard/appointments', icon: CalendarClock },
