@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
 import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle } from '../lib/api'
+import { initializeGoogleAuth, cancelGoogleSignIn, validateCredential, getCurrentOrigin } from '../services/googleAuth'
 import toast from 'react-hot-toast'
 import LoginSuccessAnimation from '../components/LoginSuccessAnimation'
 
@@ -57,8 +58,6 @@ const Login = () => {
     }
   }, [])
 
-  const googleButtonRef = useRef(null)
-
   // Handle Google OAuth callback - process token immediately
   const handleGoogleLogin = useCallback(async (response) => {
     if (!response || !response.credential) {
@@ -67,7 +66,7 @@ const Login = () => {
     }
 
     // Validate credential format
-    if (typeof response.credential !== 'string' || response.credential.split('.').length !== 3) {
+    if (!validateCredential(response.credential)) {
       toast.error('Invalid Google credential format.')
       return
     }
@@ -77,8 +76,10 @@ const Login = () => {
     setError('')
 
     try {
-      // Send token to backend immediately
-      const result = await loginWithGoogle(response.credential)
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+      
+      // Send token to backend with client ID for verification
+      const result = await loginWithGoogle(response.credential, googleClientId)
       
       if (result.success) {
         handleLoginSuccess(result.data.accessToken)
@@ -92,20 +93,12 @@ const Login = () => {
         setError('')
         toast.error('Token expired. Getting a fresh token...')
         
-        // Cancel any existing prompts
-        if (window.google?.accounts?.id) {
-          window.google.accounts.id.cancel()
-        }
+        cancelGoogleSignIn()
         
         // Re-prompt Google login immediately to get fresh token
         setTimeout(() => {
           const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-          if (window.google && window.google.accounts && googleClientId) {
-            window.google.accounts.id.initialize({
-              client_id: googleClientId,
-              callback: handleGoogleLogin,
-              auto_select: false
-            })
+          if (googleClientId && window.google?.accounts?.id) {
             window.google.accounts.id.prompt()
           }
         }, 500)
@@ -122,7 +115,7 @@ const Login = () => {
   }, [navigate, redirectUrl])
 
   // Trigger Google login - ensures fresh token on each click
-  const handleGoogleButtonClick = () => {
+  const handleGoogleButtonClick = useCallback(() => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
     
     if (!googleClientId) {
@@ -130,111 +123,110 @@ const Login = () => {
       return
     }
 
-    if (!window.google || !window.google.accounts) {
-      toast.error('Google login is loading. Please wait a moment and try again.')
-      return
-    }
+    setLoading(true)
+    setError('')
 
-    try {
-      // Cancel any existing prompts to ensure fresh token
-      if (window.google.accounts.id) {
-        window.google.accounts.id.cancel()
-      }
-      
-      // Re-initialize with fresh callback to get new token
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleLogin,
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
-      
-      // Prompt One Tap - this generates a fresh token each time
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // If One Tap not shown, click the rendered button which will also generate fresh token
-          if (googleButtonRef.current) {
-            const button = googleButtonRef.current.querySelector('div[role="button"]')
-            if (button) {
-              button.click()
-            } else {
-              toast.error('Please wait for Google Sign-In to load')
+    // Cancel any existing prompts
+    cancelGoogleSignIn()
+
+    // Initialize and prompt Google Sign-In
+    initializeGoogleAuth(googleClientId, handleGoogleLogin)
+      .then(() => {
+        // Try to prompt One Tap
+        if (window.google?.accounts?.id) {
+          window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              // If One Tap can't be shown, try clicking the rendered button
+              const buttonContainer = document.querySelector('[data-google-button]')
+              if (buttonContainer) {
+                const button = buttonContainer.querySelector('div[role="button"]')
+                if (button) {
+                  button.click()
+                } else {
+                  toast.error('Google Sign-In popup blocked. Please allow popups for this site and try again.', {
+                    duration: 5000
+                  })
+                  setLoading(false)
+                }
+              } else {
+                toast.error('Google Sign-In is not available. Please refresh the page.', {
+                  duration: 5000
+                })
+                setLoading(false)
+              }
             }
-          }
+          })
+        } else {
+          setLoading(false)
         }
       })
-    } catch (err) {
-      console.error('Google login initialization error:', err)
-      toast.error('Google login is not available. Please try again.')
-    }
-  }
+      .catch((err) => {
+        console.error('Google login initialization error:', err)
+        const currentOrigin = getCurrentOrigin()
+        
+        if (err.message && err.message.includes('origin is not allowed')) {
+          toast.error(
+            `Google Sign-In Error: ${currentOrigin} is not authorized. ` +
+            'Please add this origin to Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins.',
+            { duration: 10000 }
+          )
+        } else {
+          toast.error('Google login is not available. Please try again.')
+        }
+        setLoading(false)
+      })
+  }, [handleGoogleLogin])
 
-  // Load and initialize Google OAuth script
+  // Load and initialize Google OAuth script on component mount
   useEffect(() => {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
     
     if (!googleClientId) {
+      console.warn('Google Client ID not configured. Google Sign-In will not be available.')
       return
     }
 
-    const initializeGoogle = () => {
-      if (!window.google || !window.google.accounts) {
-        return
-      }
+    // Store original console.error for error interception
+    const originalConsoleError = console.error
+    let errorInterceptor = null
 
-      // Initialize Google Sign-In - don't auto-prompt, let user click button
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleLogin,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: true
+    // Initialize Google Auth
+    initializeGoogleAuth(googleClientId, handleGoogleLogin)
+      .then(() => {
+        // Set up error interceptor for GSI logger errors
+        errorInterceptor = (...args) => {
+          const errorMsg = args.join(' ')
+          if (errorMsg.includes('origin is not allowed') || errorMsg.includes('GSI_LOGGER')) {
+            const currentOrigin = getCurrentOrigin()
+            toast.error(
+              `Google Sign-In Error: ${currentOrigin} is not authorized for this Client ID. ` +
+              'Please add this origin to Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins.',
+              { duration: 10000 }
+            )
+          }
+          originalConsoleError.apply(console, args)
+        }
+        console.error = errorInterceptor
+      })
+      .catch((err) => {
+        console.error('Google Sign-In initialization error:', err)
+        const currentOrigin = getCurrentOrigin()
+        
+        if (err.message && err.message.includes('origin is not allowed')) {
+          toast.error(
+            `Google Sign-In configuration error: Please add ${currentOrigin} to Google Cloud Console Authorized JavaScript origins.`,
+            { duration: 8000 }
+          )
+        }
       })
 
-      // Render button if ref is available
-      // Note: The rendered button will generate a fresh token on each click
-      if (googleButtonRef.current) {
-        try {
-          // Clear any existing button first
-          googleButtonRef.current.innerHTML = ''
-          
-          window.google.accounts.id.renderButton(googleButtonRef.current, {
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            locale: 'en',
-            width: 300,
-            click_listener: () => {
-              // This ensures we get a fresh token when button is clicked
-              // The callback will be called with a new credential
-            }
-          })
-        } catch (err) {
-          console.warn('Google button rendering failed:', err)
-        }
+    // Cleanup function
+    return () => {
+      // Restore original console.error
+      if (errorInterceptor && console.error === errorInterceptor) {
+        console.error = originalConsoleError
       }
-    }
-
-    // Load Google Identity Services script
-    if (!window.google) {
-      const script = document.createElement('script')
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      script.defer = true
-      script.onload = initializeGoogle
-      script.onerror = () => {
-        console.error('Failed to load Google Identity Services')
-      }
-      document.body.appendChild(script)
-
-      return () => {
-        const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
-        if (existingScript?.parentNode) {
-          existingScript.parentNode.removeChild(existingScript)
-        }
-      }
-    } else {
-      initializeGoogle()
+      cancelGoogleSignIn()
     }
   }, [handleGoogleLogin])
 
@@ -670,9 +662,6 @@ const Login = () => {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-                {/* Hidden Google button container for automatic rendering */}
-                <div ref={googleButtonRef} className="hidden"></div>
-
                 <p className="text-center text-xs text-gray-600">
                   Already have an account?{' '}
                   <button
@@ -765,8 +754,6 @@ const Login = () => {
                   {/* Google Login Button */}
                   {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
                     <div className="w-full">
-                      {/* Hide the auto-rendered Google button to avoid duplicate */}
-                      <div ref={googleButtonRef} className="hidden"></div>
                       <button
                         type="button"
                         onClick={handleGoogleButtonClick}
@@ -958,9 +945,6 @@ const Login = () => {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-                {/* Hidden Google button container for automatic rendering */}
-                <div ref={googleButtonRef} className="hidden"></div>
-                
                 <p className="text-center text-xs text-gray-600">
                   Don't have account?{' '}
                   <button

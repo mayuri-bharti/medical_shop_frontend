@@ -527,18 +527,27 @@ export const verifyOtp = async (phone, otp) => {
 /**
  * Login with Google OAuth
  * @param {string} credential - Google OAuth credential token (JWT)
+ * @param {string} clientId - Google OAuth Client ID (optional, for backend verification)
  * @returns {Promise<{success: boolean, data: {user: Object, accessToken: string}}>}
  * @throws {Error} If token is expired or verification fails
  */
-export const loginWithGoogle = async (credential) => {
+export const loginWithGoogle = async (credential, clientId = null) => {
   if (!credential || typeof credential !== 'string') {
     throw new Error('Google credential token is required')
   }
 
   try {
+    const payload = { credential }
+    
+    // Use provided clientId or fallback to env variable
+    const finalClientId = clientId || import.meta.env.VITE_GOOGLE_CLIENT_ID
+    if (finalClientId) {
+      payload.clientId = finalClientId
+    }
+
     const result = await apiCall('/auth/google', {
       method: 'POST',
-      body: JSON.stringify({ credential })
+      body: JSON.stringify(payload)
     })
     
     // Store tokens if present
