@@ -141,10 +141,14 @@ const Login = () => {
   // Trigger Google login - redirect to backend OAuth endpoint
   const handleGoogleButtonClick = useCallback(() => {
     const backendUrl = getBackendUrl()
+    const isLocalhost = window.location.hostname === 'localhost'
+    
+    // Use /api/auth/google for Vercel (serverless), /auth/google for local
+    const oauthPath = isLocalhost ? '/auth/google' : '/api/auth/google'
     
     // Simply redirect to backend OAuth endpoint
     // The backend will handle the Google OAuth flow and redirect back
-    window.location.href = `${backendUrl}/auth/google`
+    window.location.href = `${backendUrl}${oauthPath}`
   }, [getBackendUrl])
 
   const handleSendOtp = async (e) => {
