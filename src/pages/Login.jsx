@@ -57,6 +57,13 @@ const Login = () => {
     }
   }, [])
 
+  // Helper function to get backend URL
+  const getBackendUrl = useCallback(() => {
+    const isLocalhost = window.location.hostname === 'localhost'
+    return import.meta.env.VITE_API_URL || 
+      (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+  }, [])
+
   // Handle Google OAuth callback - check URL params after redirect from backend
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -100,9 +107,7 @@ const Login = () => {
         setLoading(false)
       } else {
         // Fallback: try to get token from session endpoint
-        const isLocalhost = window.location.hostname === 'localhost'
-        const backendUrl = import.meta.env.VITE_API_URL || 
-          (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+        const backendUrl = getBackendUrl()
         
         fetch(`${backendUrl}/auth/me`, {
           method: 'GET',
@@ -131,18 +136,16 @@ const Login = () => {
           })
       }
     }
-  }, [navigate, getRedirectTarget, redirectUrl])
+  }, [navigate, getRedirectTarget, redirectUrl, getBackendUrl])
 
   // Trigger Google login - redirect to backend OAuth endpoint
   const handleGoogleButtonClick = useCallback(() => {
-    const isLocalhost = window.location.hostname === 'localhost'
-    const backendUrl = import.meta.env.VITE_API_URL || 
-      (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+    const backendUrl = getBackendUrl()
     
     // Simply redirect to backend OAuth endpoint
     // The backend will handle the Google OAuth flow and redirect back
     window.location.href = `${backendUrl}/auth/google`
-  }, [])
+  }, [getBackendUrl])
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
