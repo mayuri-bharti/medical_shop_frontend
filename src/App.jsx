@@ -5,6 +5,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
 import LoginSuccessAnimation from './components/LoginSuccessAnimation'
 import OrderSuccessAnimation from './components/OrderSuccessAnimation'
+import { setAccessToken, setRefreshToken } from './lib/api'
+import toast from 'react-hot-toast'
 
 
 // Lazy load components for code splitting
@@ -60,6 +62,40 @@ function App() {
   const [showOrderSuccess, setShowOrderSuccess] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  // Handle Google OAuth callback tokens globally (from any page)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const accessToken = params.get('accessToken')
+    const refreshToken = params.get('refreshToken')
+    const name = params.get('name')
+    const email = params.get('email')
+    const avatar = params.get('avatar')
+
+    // If we have Google OAuth callback params, handle the login
+    if (accessToken && (name || email)) {
+      // Store tokens
+      setAccessToken(accessToken)
+      if (refreshToken) {
+        setRefreshToken(refreshToken)
+      }
+
+      // Set success flag for animation
+      sessionStorage.setItem('loginSuccess', '1')
+      
+      // Clean up URL params
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, document.title, cleanUrl)
+
+      // Show success message
+      toast.success('Google login successful!')
+
+      // Navigate to dashboard
+      const redirectTarget = sessionStorage.getItem('redirectAfterSuccess') || '/dashboard'
+      sessionStorage.setItem('redirectAfterSuccess', redirectTarget)
+      navigate(redirectTarget, { replace: true })
+    }
+  }, [location.search, navigate])
 
   // Check for success flags on mount and location changes
   useEffect(() => {

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
-import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle } from '../lib/api'
-import { initializeGoogleAuth, cancelGoogleSignIn, validateCredential, getCurrentOrigin } from '../services/googleAuth'
+import { sendOtp, verifyOtp, setAccessToken, setRefreshToken, getAccessToken, loginWithPassword, registerUser } from '../lib/api'
 import toast from 'react-hot-toast'
 import LoginSuccessAnimation from '../components/LoginSuccessAnimation'
 
@@ -58,177 +57,92 @@ const Login = () => {
     }
   }, [])
 
-  // Handle Google OAuth callback - process token immediately
-  const handleGoogleLogin = useCallback(async (response) => {
-    if (!response || !response.credential) {
-      toast.error('Google login failed. No credential received.')
+  // Handle Google OAuth callback - check URL params after redirect from backend
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const error = params.get('error')
+    const name = params.get('name')
+    const email = params.get('email')
+    const avatar = params.get('avatar')
+    const accessToken = params.get('accessToken')
+    const refreshToken = params.get('refreshToken')
+
+    // Check for error first
+    if (error) {
+      const errorMessage = decodeURIComponent(error)
+      console.error('Google login error:', errorMessage)
+      setError(errorMessage)
+      toast.error(errorMessage)
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname)
       return
     }
 
-    // Validate credential format
-    if (!validateCredential(response.credential)) {
-      toast.error('Invalid Google credential format.')
-      return
-    }
-
-    // Process immediately to avoid token expiration
-    setLoading(true)
-    setError('')
-
-    try {
-      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    // If we have Google OAuth callback params, handle the login
+    if (name || email) {
+      setLoading(true)
       
-      // Send token to backend with client ID for verification
-      const result = await loginWithGoogle(response.credential, googleClientId)
-      
-      if (result.success) {
-        handleLoginSuccess(result.data.accessToken)
-      }
-    } catch (err) {
-      const errorMessage = err.message || 'Google login failed'
-      const errorData = err.data || {}
-      
-      // Check if token expired - automatically re-prompt with fresh token
-      if (errorMessage.includes('TOKEN_EXPIRED') || errorMessage.includes('expired') || errorMessage.includes('used too late')) {
-        setError('')
-        toast.error('Token expired. Getting a fresh token...')
+      if (accessToken) {
+        // Store tokens
+        setAccessToken(accessToken)
+        if (refreshToken) {
+          setRefreshToken(refreshToken)
+        }
         
-        cancelGoogleSignIn()
+        toast.success('Google login successful!')
         
-        // Re-prompt Google login immediately to get fresh token
-        setTimeout(() => {
-          const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-          if (googleClientId && window.google?.accounts?.id) {
-            window.google.accounts.id.prompt()
-          }
-        }, 500)
+        // Clean up URL params
+        const cleanUrl = window.location.pathname + (redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : '')
+        window.history.replaceState({}, document.title, cleanUrl)
+        
+        // Navigate to dashboard
+        navigate(getRedirectTarget(), { replace: true })
+        setLoading(false)
       } else {
-        // Show detailed error message
-        const detailedError = errorData.error || errorMessage
-        setError(detailedError)
-        toast.error(detailedError)
-        console.error('Google login error:', { errorMessage, errorData, err })
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [navigate, redirectUrl])
-
-  // Trigger Google login - ensures fresh token on each click
-  const handleGoogleButtonClick = useCallback(() => {
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-    
-    if (!googleClientId) {
-      toast.error('Google login is not configured. Please contact support.')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    // Cancel any existing prompts
-    cancelGoogleSignIn()
-
-    // Initialize and prompt Google Sign-In
-    initializeGoogleAuth(googleClientId, handleGoogleLogin)
-      .then(() => {
-        // Try to prompt One Tap
-        if (window.google?.accounts?.id) {
-          window.google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // If One Tap can't be shown, try clicking the rendered button
-              const buttonContainer = document.querySelector('[data-google-button]')
-              if (buttonContainer) {
-                const button = buttonContainer.querySelector('div[role="button"]')
-                if (button) {
-                  button.click()
-                } else {
-                  toast.error('Google Sign-In popup blocked. Please allow popups for this site and try again.', {
-                    duration: 5000
-                  })
-                  setLoading(false)
-                }
-              } else {
-                toast.error('Google Sign-In is not available. Please refresh the page.', {
-                  duration: 5000
-                })
-                setLoading(false)
-              }
+        // Fallback: try to get token from session endpoint
+        const isLocalhost = window.location.hostname === 'localhost'
+        const backendUrl = import.meta.env.VITE_API_URL || 
+          (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+        
+        fetch(`${backendUrl}/auth/me`, {
+          method: 'GET',
+          credentials: 'include'
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.data) {
+              toast.success('Google login successful!')
+              // Clean up URL params
+              const cleanUrl = window.location.pathname + (redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : '')
+              window.history.replaceState({}, document.title, cleanUrl)
+              navigate(getRedirectTarget(), { replace: true })
+            } else {
+              throw new Error('Failed to get user data')
             }
           })
-        } else {
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        console.error('Google login initialization error:', err)
-        const currentOrigin = getCurrentOrigin()
-        
-        if (err.message && err.message.includes('origin is not allowed')) {
-          toast.error(
-            `Google Sign-In Error: ${currentOrigin} is not authorized. ` +
-            'Please add this origin to Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins.',
-            { duration: 10000 }
-          )
-        } else {
-          toast.error('Google login is not available. Please try again.')
-        }
-        setLoading(false)
-      })
-  }, [handleGoogleLogin])
-
-  // Load and initialize Google OAuth script on component mount
-  useEffect(() => {
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-    
-    if (!googleClientId) {
-      console.warn('Google Client ID not configured. Google Sign-In will not be available.')
-      return
-    }
-
-    // Store original console.error for error interception
-    const originalConsoleError = console.error
-    let errorInterceptor = null
-
-    // Initialize Google Auth
-    initializeGoogleAuth(googleClientId, handleGoogleLogin)
-      .then(() => {
-        // Set up error interceptor for GSI logger errors
-        errorInterceptor = (...args) => {
-          const errorMsg = args.join(' ')
-          if (errorMsg.includes('origin is not allowed') || errorMsg.includes('GSI_LOGGER')) {
-            const currentOrigin = getCurrentOrigin()
-            toast.error(
-              `Google Sign-In Error: ${currentOrigin} is not authorized for this Client ID. ` +
-              'Please add this origin to Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins.',
-              { duration: 10000 }
-            )
-          }
-          originalConsoleError.apply(console, args)
-        }
-        console.error = errorInterceptor
-      })
-      .catch((err) => {
-        console.error('Google Sign-In initialization error:', err)
-        const currentOrigin = getCurrentOrigin()
-        
-        if (err.message && err.message.includes('origin is not allowed')) {
-          toast.error(
-            `Google Sign-In configuration error: Please add ${currentOrigin} to Google Cloud Console Authorized JavaScript origins.`,
-            { duration: 8000 }
-          )
-        }
-      })
-
-    // Cleanup function
-    return () => {
-      // Restore original console.error
-      if (errorInterceptor && console.error === errorInterceptor) {
-        console.error = originalConsoleError
+          .catch(err => {
+            console.error('Google callback error:', err)
+            toast.error('Google login failed. Please try again.')
+            // Clean up URL params
+            window.history.replaceState({}, document.title, window.location.pathname)
+          })
+          .finally(() => {
+            setLoading(false)
+          })
       }
-      cancelGoogleSignIn()
     }
-  }, [handleGoogleLogin])
+  }, [navigate, getRedirectTarget, redirectUrl])
+
+  // Trigger Google login - redirect to backend OAuth endpoint
+  const handleGoogleButtonClick = useCallback(() => {
+    const isLocalhost = window.location.hostname === 'localhost'
+    const backendUrl = import.meta.env.VITE_API_URL || 
+      (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+    
+    // Simply redirect to backend OAuth endpoint
+    // The backend will handle the Google OAuth flow and redirect back
+    window.location.href = `${backendUrl}/auth/google`
+  }, [])
 
   const handleSendOtp = async (e) => {
     e.preventDefault()

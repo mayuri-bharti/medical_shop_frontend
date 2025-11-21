@@ -503,6 +503,12 @@ const Home = () => {
       </section>
 
       </div>
+
+      {/* for our checking is client id working in frontend
+      <button onClick={() => alert(import.meta.env.VITE_GOOGLE_CLIENT_ID)}>
+  Show Google Client ID
+</button> */}
+
     </>
   )
 }
