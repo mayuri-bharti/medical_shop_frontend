@@ -1,20 +1,23 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Heart, Brain, Circle, Pill, Droplet, Smile, Wind, User, Thermometer } from 'lucide-react'
 
-const conditions = [
-  { name: 'Diabetes', slug: 'diabetes', targetSlug: 'diabetes-care', icon: Droplet, color: 'text-red-600', bgColor: 'bg-red-50' },
-  { name: 'Cardiac', slug: 'cardiac', targetSlug: 'cardiology-meds', icon: Heart, color: 'text-red-600', bgColor: 'bg-red-50' },
-  { name: 'Stomach', slug: 'stomach', targetSlug: 'stomach-care', icon: Circle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
-  { name: 'Pain Relief', slug: 'pain-relief', targetSlug: 'pain-relief', icon: Pill, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  { name: 'Liver', slug: 'liver', targetSlug: 'liver-support', icon: Droplet, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-  { name: 'Oral Care', slug: 'oral-care', targetSlug: 'oral-care', icon: Smile, color: 'text-teal-600', bgColor: 'bg-teal-50' },
-  { name: 'Respiratory', slug: 'respiratory', targetSlug: 'respiratory-care', icon: Wind, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
-  { name: 'Elderly Care', slug: 'elderly-care', targetSlug: 'elderly-care', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-  { name: 'Cold & Immunity', slug: 'cold-immunity', targetSlug: 'cold-immunity', icon: Thermometer, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+const getConditions = (t) => [
+  { name: t('healthConditions.diabetes'), slug: 'diabetes', targetSlug: 'diabetes-care', icon: Droplet, color: 'text-red-600', bgColor: 'bg-red-50' },
+  { name: t('healthConditions.cardiac'), slug: 'cardiac', targetSlug: 'cardiology-meds', icon: Heart, color: 'text-red-600', bgColor: 'bg-red-50' },
+  { name: t('healthConditions.stomach'), slug: 'stomach', targetSlug: 'stomach-care', icon: Circle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  { name: t('healthConditions.painRelief'), slug: 'pain-relief', targetSlug: 'pain-relief', icon: Pill, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  { name: t('healthConditions.liver'), slug: 'liver', targetSlug: 'liver-support', icon: Droplet, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+  { name: t('healthConditions.oralCare'), slug: 'oral-care', targetSlug: 'oral-care', icon: Smile, color: 'text-teal-600', bgColor: 'bg-teal-50' },
+  { name: t('healthConditions.respiratory'), slug: 'respiratory', targetSlug: 'respiratory-care', icon: Wind, color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+  { name: t('healthConditions.elderlyCare'), slug: 'elderly-care', targetSlug: 'elderly-care', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+  { name: t('healthConditions.coldImmunity'), slug: 'cold-immunity', targetSlug: 'cold-immunity', icon: Thermometer, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
 ]
 
 const HealthConditions = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
+  const conditions = getConditions(t)
 
   const handleConditionClick = (condition) => {
     const destination = condition.targetSlug || condition.slug
@@ -27,10 +30,10 @@ const HealthConditions = () => {
         {/* Section Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1A1A1A] mb-2">
-            Shop by Health Conditions
+            {t('healthConditions.title')}
           </h2>
           <p className="text-base text-[#6B7280] max-w-2xl mx-auto">
-            Find medicines and products for your specific health needs
+            {t('healthConditions.description')}
           </p>
         </div>
 

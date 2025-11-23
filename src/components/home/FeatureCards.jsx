@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { MapPin, Upload, Stethoscope, Shield, TestTube, ArrowRight } from 'lucide-react'
 
-const features = [
+const getFeatures = (t) => [
   {
-    title: 'Pharmacy Near Me',
-    subtitle: 'Find nearest store',
+    title: t('features.pharmacyNearMe'),
+    subtitle: t('features.findNearestStore'),
     icon: MapPin,
     link: '/near-me',
     gradient: 'from-blue-500 to-blue-600',
@@ -12,8 +13,8 @@ const features = [
     iconColor: 'text-blue-600',
   },
   {
-    title: 'Get 20% Off',
-    subtitle: 'Upload Prescription',
+    title: t('features.get20Off'),
+    subtitle: t('features.uploadPrescription'),
     icon: Upload,
     link: '/prescriptions',
     gradient: 'from-apollo-500 to-apollo-600',
@@ -21,8 +22,8 @@ const features = [
     iconColor: 'text-apollo-600',
   },
   {
-    title: 'Health Insurance',
-    subtitle: 'Compare plans',
+    title: t('features.healthInsurance'),
+    subtitle: t('features.comparePlans'),
     icon: Shield,
     link: '/health-insurance',
     gradient: 'from-green-500 to-green-600',
@@ -30,8 +31,8 @@ const features = [
     iconColor: 'text-green-600',
   },
   {
-    title: 'Doctor Appointment',
-    subtitle: 'Book consultation',
+    title: t('features.doctorAppointment'),
+    subtitle: t('features.bookConsultation'),
     icon: Stethoscope,
     link: '/doctor-appointment',
     gradient: 'from-purple-500 to-purple-600',
@@ -39,8 +40,8 @@ const features = [
     iconColor: 'text-purple-600',
   },
   {
-    title: 'Lab Tests',
-    subtitle: 'Book test online',
+    title: t('features.labTests'),
+    subtitle: t('features.bookTestOnline'),
     icon: TestTube,
     link: '/lab-tests',
     gradient: 'from-orange-500 to-orange-600',
@@ -50,6 +51,8 @@ const features = [
 ]
 
 const FeatureCards = () => {
+  const { t } = useTranslation()
+  const features = getFeatures(t)
   return (
     <section className="bg-[#F4F8F7] py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

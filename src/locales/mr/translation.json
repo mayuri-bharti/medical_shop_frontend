@@ -250,6 +250,31 @@
     "chronicConditions": "क्रोनिक स्थिती",
     "commonAilments": "सामान्य आजार",
     "specialtyCare": "विशेष काळजी"
+  },
+  "features": {
+    "pharmacyNearMe": "जवळची फार्मसी",
+    "findNearestStore": "जवळचा स्टोर शोधा",
+    "get20Off": "20% सूट मिळवा",
+    "uploadPrescription": "प्रिस्क्रिप्शन अपलोड करा",
+    "healthInsurance": "आरोग्य विमा",
+    "comparePlans": "प्लॅन तुलना करा",
+    "doctorAppointment": "डॉक्टर अपॉइंटमेंट",
+    "bookConsultation": "सल्ला बुक करा",
+    "labTests": "लॅब टेस्ट",
+    "bookTestOnline": "ऑनलाइन टेस्ट बुक करा"
+  },
+  "healthConditions": {
+    "title": "आरोग्य स्थितीनुसार खरेदी करा",
+    "description": "तुमच्या विशिष्ट आरोग्य गरजांसाठी औषधे आणि उत्पादने शोधा",
+    "diabetes": "मधुमेह",
+    "cardiac": "हृदय",
+    "stomach": "पोट",
+    "painRelief": "वेदना आराम",
+    "liver": "यकृत",
+    "oralCare": "ओरल केयर",
+    "respiratory": "श्वसन",
+    "elderlyCare": "वृद्ध काळजी",
+    "coldImmunity": "सर्दी आणि प्रतिकारशक्ती"
   }
 }
 

@@ -251,6 +251,31 @@
     "chronicConditions": "Chronic Conditions",
     "commonAilments": "Common Ailments",
     "specialtyCare": "Specialty Care"
+  },
+  "features": {
+    "pharmacyNearMe": "Pharmacy Near Me",
+    "findNearestStore": "FIND NEAREST STORE",
+    "get20Off": "Get 20% Off",
+    "uploadPrescription": "UPLOAD PRESCRIPTION",
+    "healthInsurance": "Health Insurance",
+    "comparePlans": "COMPARE PLANS",
+    "doctorAppointment": "Doctor Appointment",
+    "bookConsultation": "BOOK CONSULTATION",
+    "labTests": "Lab Tests",
+    "bookTestOnline": "BOOK TEST ONLINE"
+  },
+  "healthConditions": {
+    "title": "Shop by Health Conditions",
+    "description": "Find medicines and products for your specific health needs",
+    "diabetes": "Diabetes",
+    "cardiac": "Cardiac",
+    "stomach": "Stomach",
+    "painRelief": "Pain Relief",
+    "liver": "Liver",
+    "oralCare": "Oral Care",
+    "respiratory": "Respiratory",
+    "elderlyCare": "Elderly Care",
+    "coldImmunity": "Cold & Immunity"
   }
 }
 
