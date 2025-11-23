@@ -121,13 +121,24 @@ const Checkout = () => {
 
         const data = await response.json()
         if (!response.ok || data?.success === false) {
-          throw new Error(data.message || 'Failed to add product to cart')
+          let errorMessage = data?.message || 'Failed to add product to cart'
+          if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            const errorMessages = data.errors.map(err => err.msg || err.message).filter(Boolean)
+            if (errorMessages.length > 0) {
+              errorMessage = errorMessages.join(', ')
+            }
+          }
+          throw new Error(errorMessage)
         }
         toast.success('Product added to cart!')
         broadcastCartUpdate(data?.data || data)
       } catch (error) {
         console.error('Add to cart error:', error)
-        toast.error(error.message || 'Failed to add product to cart')
+        const errorMsg = error?.response?.data?.message || 
+                        error?.response?.data?.errors?.[0]?.msg ||
+                        error?.message || 
+                        'Failed to add product to cart'
+        toast.error(errorMsg)
       }
     },
     [navigate]
@@ -431,10 +442,49 @@ const Checkout = () => {
       if (!response.ok || data.success === false) {
         throw new Error(data.message || 'Order failed')
       }
+      
+      // Extract order data from response
+      const orderData = data.data || data.order || data
+      
+      // Get selected address for fallback
+      const currentSelectedAddress = addresses.find((addr) => addr._id === selectedAddressId) || selectedAddress
+      
+      // Format order data for OrderSuccess page
+      const formattedOrder = {
+        orderNumber: orderData.orderNumber || orderData._id?.slice(-8).toUpperCase() || '—',
+        orderId: orderData._id || orderData.id || '—',
+        status: orderData.status || 'processing',
+        total: orderData.totalAmount || orderData.total || orderData.amount || 0,
+        items: (orderData.items || []).map(item => ({
+          name: item.name || item.product?.name || 'Item',
+          qty: item.quantity || item.qty || 1,
+          price: item.price || item.product?.price || 0
+        })),
+        address: {
+          name: orderData.shippingAddress?.name || currentSelectedAddress?.name || '—',
+          street: orderData.shippingAddress?.address || orderData.shippingAddress?.street || currentSelectedAddress?.address || '—',
+          city: orderData.shippingAddress?.city || currentSelectedAddress?.city || '—',
+          state: orderData.shippingAddress?.state || currentSelectedAddress?.state || '—',
+          pincode: orderData.shippingAddress?.pincode || currentSelectedAddress?.pincode || '—',
+          phone: orderData.shippingAddress?.phoneNumber || orderData.shippingAddress?.phone || currentSelectedAddress?.phoneNumber || '—'
+        }
+      }
+      
       toast.success('Order placed successfully!')
-      sessionStorage.setItem('orderSuccess', '1')
-      sessionStorage.setItem('redirectAfterSuccess', '/order-success')
+      
+      // Store order in sessionStorage as backup (in case of page refresh)
+      sessionStorage.setItem('lastPlacedOrder', JSON.stringify(formattedOrder))
+      
+      // Navigate immediately with order data - no delay
+      navigate('/order-success', {
+        state: { order: formattedOrder },
+        replace: true
+      })
+      
+      // Clear session storage
       sessionStorage.removeItem('checkoutSelectedProductIds')
+      sessionStorage.removeItem('orderSuccess')
+      sessionStorage.removeItem('redirectAfterSuccess')
     } catch (error) {
       console.error('Order error:', error)
       toast.error(error.message || 'Failed to place order')

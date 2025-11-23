@@ -72,12 +72,25 @@ const MedicineCard = memo(({ medicine, onClick }) => {
       })
       const data = await response.json()
       if (!response.ok || data?.success === false) {
-        throw new Error(data?.message || 'Failed to add to cart')
+        // Extract detailed error message from validation errors
+        let errorMessage = data?.message || 'Failed to add to cart'
+        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          const errorMessages = data.errors.map(err => err.msg || err.message).filter(Boolean)
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join(', ')
+          }
+        }
+        throw new Error(errorMessage)
       }
       toast.success('Added to cart')
       broadcastCartUpdate(data?.data || data)
     } catch (err) {
-      toast.error(err.message || 'Failed to add to cart')
+      // Show user-friendly error message
+      const errorMsg = err?.response?.data?.message || 
+                      err?.response?.data?.errors?.[0]?.msg ||
+                      err?.message || 
+                      'Failed to add to cart'
+      toast.error(errorMsg)
     } finally {
       setAdding(false)
     }

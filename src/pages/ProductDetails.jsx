@@ -57,12 +57,23 @@ const ProductDetails = () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (resp?.data?.success === false) {
-        throw new Error(resp?.data?.message || 'Failed to add to cart')
+        let errorMessage = resp?.data?.message || 'Failed to add to cart'
+        if (resp?.data?.errors && Array.isArray(resp.data.errors) && resp.data.errors.length > 0) {
+          const errorMessages = resp.data.errors.map(err => err.msg || err.message).filter(Boolean)
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join(', ')
+          }
+        }
+        throw new Error(errorMessage)
       }
       toast.success('Added to cart')
       broadcastCartUpdate(resp?.data)
     } catch (e) {
-      toast.error(e.message || 'Failed to add to cart')
+      const errorMsg = e?.response?.data?.message || 
+                      e?.response?.data?.errors?.[0]?.msg ||
+                      e?.message || 
+                      'Failed to add to cart'
+      toast.error(errorMsg)
     } finally {
       setAdding(false)
     }

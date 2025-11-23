@@ -27,7 +27,8 @@
     "addedToCart": "added to cart!",
     "failedToAdd": "Failed to add to cart",
     "saveExtra": "Save extra",
-    "withOffers": "with offers"
+    "withOffers": "with offers",
+    "cancel": "Cancel"
   },
   "home": {
     "title": "HealthPlus - Your Trusted Health Partner",
@@ -106,7 +107,36 @@
     "free": "Free",
     "taxes": "Taxes",
     "selectItemError": "Please select at least one item to checkout",
-    "freeDelivery": "Free delivery on orders above ₹499"
+    "freeDelivery": "Free delivery on orders above ₹499",
+    "invalidProduct": "Invalid product. Please try again.",
+    "demoProductMessage": "This is a demo product. Please search for the actual product in our catalog to add it to cart."
+  },
+  "address": {
+    "addNewAddress": "Add New Address",
+    "editAddress": "Edit Address",
+    "saveDeliveryAddress": "Save delivery address",
+    "updateDeliveryAddress": "Update delivery address",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "streetAddress": "Street Address",
+    "streetAddressPlaceholder": "Enter street address",
+    "city": "City",
+    "state": "State",
+    "pincode": "Pincode",
+    "label": "Label",
+    "saveAddress": "Save Address",
+    "saving": "Saving...",
+    "useMyLocation": "Use My Location",
+    "gettingLocation": "Getting Location...",
+    "locationNotSupported": "Geolocation is not supported by your browser",
+    "locationError": "Failed to get your location",
+    "locationPermissionDenied": "Location access denied. Please enable location permissions.",
+    "locationUnavailable": "Location information unavailable.",
+    "locationTimeout": "Location request timed out. Please try again.",
+    "locationFetchError": "Failed to fetch address. Please enter manually.",
+    "locationIncomplete": "Address found but incomplete. Please fill the remaining fields manually.",
+    "locationSuccess": "Address filled successfully! Please verify and edit if needed.",
+    "locationVerify": "📍 Address filled from your location. Please verify and edit if needed."
   },
   "checkout": {
     "title": "Checkout",

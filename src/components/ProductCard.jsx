@@ -40,6 +40,26 @@ const ProductCard = memo(({ product }) => {
 
     setAdding(true)
     try {
+      // Validate product ID before sending
+      const productId = product._id || product.id
+      if (!productId) {
+        toast.error(t('cart.invalidProduct'))
+        setAdding(false)
+        return
+      }
+
+      // Check if this is a demo product (IDs starting with 'demo-' are not valid MongoDB ObjectIds)
+      const isDemoProduct = typeof productId === 'string' && (
+        productId.startsWith('demo-') || 
+        !productId.match(/^[0-9a-fA-F]{24}$/)
+      )
+
+      if (isDemoProduct) {
+        toast.error(t('cart.demoProductMessage') || 'This is a demo product. Please search for the actual product in our catalog to add it to cart.')
+        setAdding(false)
+        return
+      }
+
       const response = await fetch(`${API_BASE}/cart/items`, {
         method: 'POST',
         headers: {
@@ -47,7 +67,7 @@ const ProductCard = memo(({ product }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          productId: product._id,
+          productId: productId,
           quantity: 1
         })
       })
@@ -55,17 +75,27 @@ const ProductCard = memo(({ product }) => {
       const data = await response.json()
 
       if (!response.ok || data?.success === false) {
-        throw new Error(data?.message || 'Failed to add to cart')
+        // Extract detailed error message from validation errors
+        let errorMessage = data?.message || 'Failed to add to cart'
+        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          errorMessage = data.errors.map(err => err.msg || err.message).join(', ') || errorMessage
+        }
+        throw new Error(errorMessage)
       }
 
       toast.success(`${product.name} ${t('common.addedToCart')}`)
       broadcastCartUpdate(data?.data || data)
     } catch (error) {
-      toast.error(error.message || t('common.failedToAdd'))
+      // Show user-friendly error message
+      const errorMsg = error?.response?.data?.message || 
+                      error?.response?.data?.errors?.[0]?.msg ||
+                      error?.message || 
+                      t('common.failedToAdd')
+      toast.error(errorMsg)
     } finally {
       setAdding(false)
     }
-  }, [API_BASE, product._id, product.name, navigate])
+  }, [API_BASE, product._id, product.id, product.name, navigate, t])
 
   const handleBuyNow = useCallback(async () => {
     // Check if user is authenticated

@@ -11,9 +11,28 @@ const OrderSuccess = () => {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (order) return
+    // If order is already passed via state, use it immediately
+    if (order) {
+      setLoading(false)
+      return
+    }
 
-    const fetchLatestOrder = async () => {
+    // Fallback: Try to fetch from sessionStorage first (in case of page refresh)
+    const storedOrder = sessionStorage.getItem('lastPlacedOrder')
+    if (storedOrder) {
+      try {
+        const parsedOrder = JSON.parse(storedOrder)
+        setOrder(parsedOrder)
+        setLoading(false)
+        sessionStorage.removeItem('lastPlacedOrder')
+        return
+      } catch (e) {
+        console.error('Failed to parse stored order:', e)
+      }
+    }
+
+    // Last resort: Fetch from API (with retry logic for eventual consistency)
+    const fetchLatestOrder = async (retries = 3) => {
       setLoading(true)
       setError('')
       try {
@@ -22,6 +41,7 @@ const OrderSuccess = () => {
           navigate('/login?redirect=' + encodeURIComponent('/order-success'))
           return
         }
+        
         // Fetch user's orders and pick the most recent one
         const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/orders/my-orders`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -31,18 +51,24 @@ const OrderSuccess = () => {
           throw new Error(data?.message || 'Failed to load orders')
         }
         const list = Array.isArray(data?.orders) ? data.orders : (Array.isArray(data?.data) ? data.data : [])
+        
         if (list.length > 0) {
-          // Assume server returns sorted; otherwise sort by createdAt desc
-          const latest = list[0]
+          // Sort by createdAt desc to get the most recent
+          const sorted = [...list].sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.created_at || 0)
+            const dateB = new Date(b.createdAt || b.created_at || 0)
+            return dateB - dateA
+          })
+          const latest = sorted[0]
           setOrder({
-            orderNumber: latest.orderNumber || latest._id?.slice(-6) || '—',
+            orderNumber: latest.orderNumber || latest._id?.slice(-8).toUpperCase() || '—',
             orderId: latest._id || latest.id || '—',
             status: latest.status || 'processing',
-            total: latest.total || latest.amount || 0,
+            total: latest.totalAmount || latest.total || latest.amount || 0,
             items: (latest.items || []).map(it => ({
               name: it.name || it.product?.name || 'Item',
               qty: it.quantity || it.qty || 1,
-              price: it.price || 0
+              price: it.price || it.product?.price || 0
             })),
             address: {
               name: latest.shippingAddress?.name || '—',
@@ -53,13 +79,22 @@ const OrderSuccess = () => {
               phone: latest.shippingAddress?.phoneNumber || latest.shippingAddress?.phone || '—'
             }
           })
+          setLoading(false)
+        } else if (retries > 0) {
+          // Retry after a short delay if no orders found (eventual consistency)
+          setTimeout(() => fetchLatestOrder(retries - 1), 1000)
         } else {
           setError('No recent order found')
+          setLoading(false)
         }
       } catch (e) {
-        setError(e.message || 'Failed to fetch order')
-      } finally {
-        setLoading(false)
+        if (retries > 0) {
+          // Retry on error
+          setTimeout(() => fetchLatestOrder(retries - 1), 1000)
+        } else {
+          setError(e.message || 'Failed to fetch order')
+          setLoading(false)
+        }
       }
     }
 
