@@ -34,6 +34,7 @@ const LabTests = lazy(() => import('./pages/LabTests'))
 const HealthInsurance = lazy(() => import('./pages/HealthInsurance'))
 const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 
 // Admin Pages - Lazy loaded
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
@@ -201,6 +202,7 @@ function App() {
           <Route path="/subcategory/:slug" element={<Subcategory />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
 
           {/* Protected Routes */}
           <Route path="/checkout" element={
