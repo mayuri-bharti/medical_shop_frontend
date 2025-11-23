@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 
-const categories = [
+const getCategories = (t) => [
   { 
-    name: 'HealthPlus Products', 
+    name: t('categories.healthPlusProducts'), 
     slug: 'HealthPlus-products', 
     icon: '💊',
     subcategories: [
       {
-        title: 'HealthPlus Brands',
+        title: t('categories.healthPlusBrands'),
         items: [
           { name: 'HealthPlus Pharmacy', link: '/products?category=apollo-pharmacy' },
           { name: 'HealthPlus Health', link: '/products?category=apollo-health' },
@@ -17,7 +18,7 @@ const categories = [
         ]
       },
       {
-        title: 'Product Types',
+        title: t('categories.productTypes'),
         items: [
           { name: 'Medicines', link: '/products?category=medicines' },
           { name: 'Health Supplements', link: '/products?category=health-supplements' },
@@ -27,19 +28,19 @@ const categories = [
     ]
   },
   { 
-    name: 'Baby Care', 
+    name: t('categories.babyCare'), 
     slug: 'baby-care', 
     icon: '👶',
     subcategories: [
       {
-        title: 'Diapering',
+        title: t('categories.diapering'),
         items: [
           { name: 'Diapers', link: '/products?category=diapers' },
           { name: 'Wipes', link: '/products?category=wipes' }
         ]
       },
       {
-        title: 'Diaper By Weight',
+        title: t('categories.diaperByWeight'),
         items: [
           { name: '0 to 7 Kg', link: '/products?category=diapers-0-7kg' },
           { name: '7 to 14 Kg', link: '/products?category=diapers-7-14kg' },
@@ -48,14 +49,14 @@ const categories = [
         ]
       },
       {
-        title: 'Baby Food',
+        title: t('categories.babyFood'),
         items: [
           { name: 'Baby Cereals', link: '/products?category=baby-cereals' },
           { name: 'Formula Milk', link: '/products?category=formula-milk' }
         ]
       },
       {
-        title: 'Baby Skin Care',
+        title: t('categories.babySkinCare'),
         items: [
           { name: 'Baby Creams', link: '/products?category=baby-creams' },
           { name: 'Baby Lotions', link: '/products?category=baby-lotions' },
@@ -65,7 +66,7 @@ const categories = [
         ]
       },
       {
-        title: 'Baby Food By Age',
+        title: t('categories.babyFoodByAge'),
         items: [
           { name: '0 to 6 Months', link: '/products?category=baby-food-0-6months' },
           { name: '6 to 12 Months', link: '/products?category=baby-food-6-12months' },
@@ -75,14 +76,14 @@ const categories = [
         ]
       },
       {
-        title: 'Baby Hair Care',
+        title: t('categories.babyHairCare'),
         items: [
           { name: 'Baby Shampoos', link: '/products?category=baby-shampoos' },
           { name: 'Baby Hair Oils', link: '/products?category=baby-hair-oils' }
         ]
       },
       {
-        title: 'Baby Bath',
+        title: t('categories.babyBath'),
         items: [
           { name: 'Soaps & Bars', link: '/products?category=baby-soaps' },
           { name: 'Body Wash', link: '/products?category=baby-body-wash' }
@@ -91,12 +92,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Supplements', 
+    name: t('categories.supplements'), 
     slug: 'supplements', 
     icon: '💊',
     subcategories: [
       {
-        title: 'Daily Vitamins',
+        title: t('categories.dailyVitamins'),
         items: [
           { name: 'Multivitamins', link: '/products?category=multivitamins' },
           { name: 'Vitamin D & C', link: '/products?category=vitamin-d-c' },
@@ -104,7 +105,7 @@ const categories = [
         ]
       },
       {
-        title: 'Fitness & Body',
+        title: t('categories.fitnessBody'),
         items: [
           { name: 'Protein Powder', link: '/products?category=protein-powder' },
           { name: 'Weight Management', link: '/products?category=weight-management' },
@@ -112,7 +113,7 @@ const categories = [
         ]
       },
       {
-        title: 'Specialty Supplements',
+        title: t('categories.specialtySupplements'),
         items: [
           { name: 'Omega-3 & Fish Oil', link: '/products?category=omega-3' },
           { name: 'Probiotics', link: '/products?category=probiotics' },
@@ -122,12 +123,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Personal Care', 
+    name: t('categories.personalCare'), 
     slug: 'personal-care', 
     icon: '🧴',
     subcategories: [
       {
-        title: 'Skincare Essentials',
+        title: t('categories.skincareEssentials'),
         items: [
           { name: 'Moisturizers', link: '/products?category=moisturizers' },
           { name: 'Serums & Toners', link: '/products?category=serums-toners' },
@@ -136,7 +137,7 @@ const categories = [
         ]
       },
       {
-        title: 'Hair & Hygiene',
+        title: t('categories.hairHygiene'),
         items: [
           { name: 'Shampoos & Conditioners', link: '/products?category=shampoos-conditioners' },
           { name: 'Deodorants & Perfumes', link: '/products?category=deodorants-perfumes' },
@@ -144,7 +145,7 @@ const categories = [
         ]
       },
       {
-        title: 'Oral Care',
+        title: t('categories.oralCare'),
         items: [
           { name: 'Toothpaste', link: '/products?category=toothpaste' },
           { name: 'Toothbrushes', link: '/products?category=toothbrushes' },
@@ -154,12 +155,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Home Essentials', 
+    name: t('categories.homeEssentials'), 
     slug: 'home-essentials', 
     icon: '🏠',
     subcategories: [
       {
-        title: 'Cleaning Supplies',
+        title: t('categories.cleaningSupplies'),
         items: [
           { name: 'Disinfectants', link: '/products?category=disinfectants' },
           { name: 'Cleaning Wipes', link: '/products?category=cleaning-wipes' },
@@ -167,7 +168,7 @@ const categories = [
         ]
       },
       {
-        title: 'Health & Safety',
+        title: t('categories.healthSafety'),
         items: [
           { name: 'First Aid Kits', link: '/products?category=first-aid-kits' },
           { name: 'Thermometers', link: '/products?category=thermometers' },
@@ -177,12 +178,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Health Devices', 
+    name: t('categories.healthDevices'), 
     slug: 'health-devices', 
     icon: '🩺',
     subcategories: [
       {
-        title: 'Monitoring Devices',
+        title: t('categories.monitoringDevices'),
         items: [
           { name: 'Blood Pressure Monitors', link: '/products?category=blood-pressure-monitors' },
           { name: 'Glucose Meters', link: '/products?category=glucose-meters' },
@@ -190,7 +191,7 @@ const categories = [
         ]
       },
       {
-        title: 'Fitness Trackers',
+        title: t('categories.fitnessTrackers'),
         items: [
           { name: 'Smart Watches', link: '/products?category=smart-watches' },
           { name: 'Fitness Bands', link: '/products?category=fitness-bands' },
@@ -198,7 +199,7 @@ const categories = [
         ]
       },
       {
-        title: 'Therapy Devices',
+        title: t('categories.therapyDevices'),
         items: [
           { name: 'Nebulizers', link: '/products?category=nebulizers' },
           { name: 'CPAP Machines', link: '/products?category=cpap-machines' },
@@ -208,12 +209,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Ayurveda', 
+    name: t('categories.ayurveda'), 
     slug: 'ayurveda', 
     icon: '🌿',
     subcategories: [
       {
-        title: 'Ayurvedic Medicines',
+        title: t('categories.ayurvedicMedicines'),
         items: [
           { name: 'Digestive Health', link: '/products?category=ayurvedic-digestive' },
           { name: 'Immunity Boosters', link: '/products?category=ayurvedic-immunity' },
@@ -221,7 +222,7 @@ const categories = [
         ]
       },
       {
-        title: 'Herbal Products',
+        title: t('categories.herbalProducts'),
         items: [
           { name: 'Herbal Teas', link: '/products?category=herbal-teas' },
           { name: 'Ayurvedic Oils', link: '/products?category=ayurvedic-oils' },
@@ -231,12 +232,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Women Care', 
+    name: t('categories.womenCare'), 
     slug: 'women-care', 
     icon: '👩',
     subcategories: [
       {
-        title: 'Feminine Hygiene',
+        title: t('categories.feminineHygiene'),
         items: [
           { name: 'Sanitary Pads', link: '/products?category=sanitary-pads' },
           { name: 'Tampons', link: '/products?category=tampons' },
@@ -244,7 +245,7 @@ const categories = [
         ]
       },
       {
-        title: 'Pregnancy & Nursing',
+        title: t('categories.pregnancyNursing'),
         items: [
           { name: 'Pregnancy Tests', link: '/products?category=pregnancy-tests' },
           { name: 'Prenatal Vitamins', link: '/products?category=prenatal-vitamins' },
@@ -252,7 +253,7 @@ const categories = [
         ]
       },
       {
-        title: 'Women\'s Health',
+        title: t('categories.womensHealth'),
         items: [
           { name: 'Hormonal Care', link: '/products?category=hormonal-care' },
           { name: 'Menopause Support', link: '/products?category=menopause-support' },
@@ -262,12 +263,12 @@ const categories = [
     ]
   },
   { 
-    name: 'Health Conditions', 
+    name: t('categories.healthConditions'), 
     slug: 'health-conditions', 
     icon: '❤️',
     subcategories: [
       {
-        title: 'Chronic Conditions',
+        title: t('categories.chronicConditions'),
         items: [
           { name: 'Diabetes Care', link: '/products?category=diabetes-care' },
           { name: 'Cardiac Care', link: '/products?category=cardiac-care' },
@@ -275,7 +276,7 @@ const categories = [
         ]
       },
       {
-        title: 'Common Ailments',
+        title: t('categories.commonAilments'),
         items: [
           { name: 'Pain Relief', link: '/products?category=pain-relief' },
           { name: 'Stomach Care', link: '/products?category=stomach-care' },
@@ -284,7 +285,7 @@ const categories = [
         ]
       },
       {
-        title: 'Specialty Care',
+        title: t('categories.specialtyCare'),
         items: [
           { name: 'Skin Conditions', link: '/products?category=skin-conditions' },
           { name: 'Eye Care', link: '/products?category=eye-care' },
@@ -296,6 +297,7 @@ const categories = [
 ]
 
 const CategoryNav = () => {
+  const { t } = useTranslation()
   const [activeCategory, setActiveCategory] = useState('')
   const [hoveredCategory, setHoveredCategory] = useState(null)
   const [clickedCategory, setClickedCategory] = useState(null)
@@ -307,6 +309,8 @@ const CategoryNav = () => {
   const categoryRefs = useRef({})
   const hoverTimeoutRef = useRef(null)
   const navigate = useNavigate()
+  
+  const categories = getCategories(t)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -620,7 +624,7 @@ const CategoryNav = () => {
                   className="text-gray-500 hover:text-gray-700 text-sm font-medium"
                   aria-label="Close menu"
                 >
-                  Close
+                  {t('categories.close')}
                 </button>
               </div>
               <div className="px-4 py-4 max-h-[60vh] overflow-y-auto">

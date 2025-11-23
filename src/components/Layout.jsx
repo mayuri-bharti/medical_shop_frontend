@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
   Menu, 
   X, 
@@ -14,8 +15,10 @@ import {
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 import { api } from '../services/api'
 import { CART_UPDATED_EVENT, normalizeCartData, calculateCartItemCount } from '../lib/cartEvents'
+import LanguageSelector from './LanguageSelector'
 
 const Layout = ({ children }) => {
+  const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
@@ -136,10 +139,10 @@ const Layout = ({ children }) => {
   }
 
   const navigation = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Products', href: '/products', icon: Package },
-    { name: 'Orders', href: '/orders', icon: FileText },
-    { name: 'Doctors', href: '/doctor-appointment', icon: Stethoscope }
+    { name: t('common.home'), href: '/', icon: Home },
+    { name: t('common.products'), href: '/products', icon: Package },
+    { name: t('common.orders'), href: '/orders', icon: FileText },
+    { name: t('common.doctors'), href: '/doctor-appointment', icon: Stethoscope }
   ]
 
   const isActive = (path) => location.pathname === path
@@ -156,7 +159,7 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Premium Healthcare Design */}
-      <header className="bg-white shadow-soft border-b border-gray-100 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+      <header className="bg-white shadow-soft border-b border-gray-100 sticky top-0 z-[100] backdrop-blur-sm bg-white/95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo - HealthPlus Branding */}
@@ -201,13 +204,14 @@ const Layout = ({ children }) => {
                   }`}
                 >
                   <FileText size={18} />
-                  <span>Prescriptions</span>
+                  <span>{t('common.prescriptions')}</span>
                 </Link>
               )}
             </nav>
 
             {/* Right side - User Actions */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3" style={{ zIndex: 1000 }}>
+              <LanguageSelector />
               {isAuthenticated ? (
                 <>
                   <Link
@@ -219,23 +223,13 @@ const Layout = ({ children }) => {
                       {Math.min(cartCount, 99)}
                     </span>
                   </Link>
-                  
-                  <Link
-                    to="/profile"
-                    className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-medical-400 rounded-full flex items-center justify-center">
-                      <User size={18} className="text-white" />
-                    </div>
-                    <span className="hidden md:block font-medium">{user?.name || 'User'}</span>
-                  </Link>
 
                   <button
                     onClick={handleLogout}
                     className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 font-medium"
                   >
                     <LogOut size={18} />
-                    <span className="hidden md:block">Logout</span>
+                    <span className="hidden md:block">{t('common.logout')}</span>
                   </button>
                 </>
               ) : (
@@ -244,7 +238,7 @@ const Layout = ({ children }) => {
                   className="btn-primary-sm flex items-center space-x-2"
                 >
                   <User size={18} />
-                  <span>Login</span>
+                  <span>{t('common.login')}</span>
                 </Link>
               )}
 
@@ -292,7 +286,7 @@ const Layout = ({ children }) => {
                   }`}
                 >
                   <FileText size={20} />
-                  <span>Prescriptions</span>
+                  <span>{t('common.prescriptions')}</span>
                 </Link>
               )}
             </div>
@@ -318,41 +312,41 @@ const Layout = ({ children }) => {
                 <span className="text-xl font-bold gradient-text">HealthPlus</span>
               </div>
               <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                Your trusted health partner. Quality medicines and healthcare products delivered to your doorstep.
+                {t('footer.trustedPartner')}
               </p>
               <div className="flex items-center space-x-2">
-                <span className="badge badge-success">✓ Licensed</span>
-                <span className="badge badge-info">✓ Verified</span>
+                <span className="badge badge-success">✓ {t('footer.licensed')}</span>
+                <span className="badge badge-info">✓ {t('footer.verified')}</span>
               </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Quick Links</h4>
+              <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">{t('footer.quickLinks')}</h4>
               <ul className="space-y-3">
                 <li>
                   <Link to="/" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
-                    Home
+                    {t('common.home')}
                   </Link>
                 </li>
                 <li>
                   <Link to="/products" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
-                    Products
+                    {t('common.products')}
                   </Link>
                 </li>
                 <li>
                   <Link to="/about" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
-                    About Us
+                    {t('footer.aboutUs')}
                   </Link>
                 </li>
                 <li>
                   <Link to="/contact" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
-                    Contact Us
+                    {t('footer.contact')}
                   </Link>
                 </li>
                 <li>
                   <Link to="/prescriptions" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
-                    Prescriptions
+                    {t('common.prescriptions')}
                   </Link>
                 </li>
               </ul>

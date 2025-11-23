@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from 'react-query'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Package } from 'lucide-react'
 import { api } from '../services/api'
@@ -14,6 +15,7 @@ import FeatureCards from '../components/home/FeatureCards'
 import HealthConditions from '../components/home/HealthConditions'
 
 const Home = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const fallbackFeaturedProducts = useMemo(
@@ -24,7 +26,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1582719478250-428daf0c0d4b?w=640&q=80&auto=format&fit=crop',
         price: 92,
         mrp: 110,
-        delivery: 'Delivery within 1 day',
+        delivery: `${t('home.delivery')} 1 day`,
         inStock: true
       },
       {
@@ -33,7 +35,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1578302758068-22308e6e4daf?w=640&q=80&auto=format&fit=crop',
         price: 189,
         mrp: 210,
-        delivery: 'Delivery within 2 hrs',
+        delivery: `${t('home.delivery')} 2 hrs`,
         inStock: true
       },
       {
@@ -42,7 +44,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1586374579358-93e04d95ccf5?w=640&q=80&auto=format&fit=crop',
         price: 287,
         mrp: 320,
-        delivery: 'Delivery within 2 hrs',
+        delivery: `${t('home.delivery')} 2 hrs`,
         inStock: true
       },
       {
@@ -51,7 +53,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1580281658170-3f03f0c5fa1f?w=640&q=80&auto=format&fit=crop',
         price: 170,
         mrp: 195,
-        delivery: 'Delivery within 2 hrs',
+        delivery: `${t('home.delivery')} 2 hrs`,
         inStock: true
       },
       {
@@ -60,7 +62,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=640&q=80&auto=format&fit=crop',
         price: 98,
         mrp: 115,
-        delivery: 'Delivery within 1 day',
+        delivery: `${t('home.delivery')} 1 day`,
         inStock: true
       },
       {
@@ -69,7 +71,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1612632576808-1e655d60dddf?w=640&q=80&auto=format&fit=crop',
         price: 110,
         mrp: 125,
-        delivery: 'Delivery within 1 day',
+        delivery: `${t('home.delivery')} 1 day`,
         inStock: true
       },
       {
@@ -78,7 +80,7 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1502740479091-635887520276?w=640&q=80&auto=format&fit=crop',
         price: 180,
         mrp: 215,
-        delivery: 'Delivery within 2 hrs',
+        delivery: `${t('home.delivery')} 2 hrs`,
         inStock: true
       },
       {
@@ -87,11 +89,11 @@ const Home = () => {
         image: 'https://images.unsplash.com/photo-1584017911766-d451b5cdae67?w=640&q=80&auto=format&fit=crop',
         price: 75,
         mrp: 90,
-        delivery: 'Delivery within 1 day',
+        delivery: `${t('home.delivery')} 1 day`,
         inStock: true
       }
     ],
-    []
+    [t]
   )
 
   const {
@@ -143,7 +145,7 @@ const Home = () => {
         image: product.images?.[0] || product.image || '/placeholder-medicine.jpg',
         price: product.price,
         mrp: product.mrp ?? product.price,
-        delivery: product.deliveryInfo || 'Delivery within 2 days',
+        delivery: product.deliveryInfo || `${t('home.delivery')} 2 days`,
         inStock: product.stock > 0
       }))
     }
@@ -313,21 +315,21 @@ const Home = () => {
           <div className="mb-4 md:mb-10 flex items-center justify-between">
             <div>
               <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-[#1A1A1A] mb-1 md:mb-3">
-                Trending <span className="text-apollo-700">Medicines</span>
+                {t('home.trendingMedicines')}
               </h2>
-              <p className="text-xs md:text-base text-[#6B7280] mt-1 md:mt-2">Most popular and trusted medicines</p>
+              <p className="text-xs md:text-base text-[#6B7280] mt-1 md:mt-2">{t('home.mostPopular')}</p>
             </div>
             <Link
               to="/products"
               className="hidden md:flex items-center space-x-2 px-6 py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200"
             >
-              <span>View All</span>
+              <span>{t('home.viewAll')}</span>
               <ArrowRight size={18} />
             </Link>
           </div>
         {isPopularError && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Unable to load featured products. Showing recommendations instead.
+            {t('home.unableToLoad')}
           </div>
         )}
         {isPopularLoading ? (
@@ -424,7 +426,7 @@ const Home = () => {
                     <div className="hidden md:flex items-center gap-2 mb-4">
                       <span className={`inline-flex h-2.5 w-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
                       <p className="text-xs text-gray-600">
-                        {product.inStock ? product.delivery : 'Out of stock'}
+                        {product.inStock ? product.delivery : t('home.outOfStock')}
                       </p>
                     </div>
                     
@@ -439,7 +441,7 @@ const Home = () => {
                             : 'cursor-not-allowed bg-gray-100 text-gray-400'
                         }`}
                       >
-                        {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                        {product.inStock ? t('common.addToCart') : t('home.outOfStock')}
                       </button>
                     </div>
                   </div>
@@ -455,7 +457,7 @@ const Home = () => {
               to="/products"
               className="inline-flex items-center space-x-1 px-4 py-2 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200 text-sm"
             >
-              <span>View All Products</span>
+              <span>{t('home.viewAllProducts')}</span>
               <ArrowRight size={14} />
             </Link>
           </div>

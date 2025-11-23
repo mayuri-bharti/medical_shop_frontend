@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useDeferredValue, useEffect, useRef } from 'react'
 import { useQuery } from 'react-query'
+import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
 import { Search } from 'lucide-react'
@@ -8,6 +9,7 @@ import ProductCard from '../components/ProductCard'
 import SearchResultCard from '../components/SearchResultCard'
 
 const Products = () => {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
@@ -499,7 +501,7 @@ const Products = () => {
             }
           }}
         >
-          <option value="">All Categories</option>
+          <option value="">{t('products.allCategories')}</option>
           {categories.map(category => (
             <option key={category} value={category}>{category}</option>
           ))}
@@ -511,10 +513,10 @@ const Products = () => {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
         >
-          <option value="name">Sort by Name</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-          <option value="rating">Sort by Rating</option>
+          <option value="name">{t('products.sortByName')}</option>
+          <option value="price_asc">{t('products.priceLowToHigh')}</option>
+          <option value="price_desc">{t('products.priceHighToLow')}</option>
+          <option value="rating">{t('products.sortByRating')}</option>
         </select>
       </div>
 
@@ -522,7 +524,7 @@ const Products = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-medical-100 bg-medical-50 px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-medical-700">
-              Showing results for{' '}
+              {t('products.showingResults')}{' '}
               {selectedBrand && (
                 <span className="underline decoration-medical-400 decoration-2">{selectedBrand}</span>
               )}
@@ -532,7 +534,7 @@ const Products = () => {
               )}
             </p>
             <p className="text-xs text-medical-500">
-              {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+              {filteredProducts.length} {filteredProducts.length === 1 ? t('products.productFound') : t('products.productsFound')}
             </p>
           </div>
           <button
@@ -547,7 +549,7 @@ const Products = () => {
             }}
             className="rounded-full border border-medical-200 px-3 py-1 text-xs font-medium text-medical-700 transition-colors hover:bg-white hover:text-medical-800"
           >
-            Clear filter
+            {t('products.clearFilter')}
           </button>
         </div>
       )}
@@ -568,7 +570,7 @@ const Products = () => {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-600">No products found matching your criteria.</p>
+          <p className="text-gray-600">{t('products.noProductsMatching')}</p>
         </div>
       )}
 

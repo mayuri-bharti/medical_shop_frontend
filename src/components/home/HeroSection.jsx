@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SearchBar from './SearchBar'
 
 const HeroSection = () => {
+  const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -44,17 +46,17 @@ const HeroSection = () => {
         <div className={`text-center transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           {/* Title */}
           <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-1 drop-shadow-lg">
-            Buy Medicines and Essentials
+            {t('home.buyMedicines')}
           </h1>
           
           {/* Subtitle */}
           <p className="text-xs md:text-sm text-white/90 mb-3 max-w-2xl mx-auto drop-shadow-md line-clamp-2">
-            Your trusted pharmacy for authentic medicines, health products, and wellness essentials
+            {t('home.trustedPharmacy')}
           </p>
 
           {/* Search Bar */}
           <div className="max-w-xl mx-auto mb-3">
-            <SearchBar placeholder="Search for medicines, health products, or symptoms..." />
+            <SearchBar placeholder={t('home.searchPlaceholder')} />
           </div>
 
           {/* CTA Buttons */}
@@ -63,7 +65,7 @@ const HeroSection = () => {
               to="/products"
               className="bg-white text-apollo-700 hover:bg-gray-50 font-semibold py-1.5 px-3 rounded-full transition-all duration-200 flex items-center space-x-1.5 shadow-md hover:shadow-lg text-xs"
             >
-              <span>Shop Now</span>
+              <span>{t('home.shopNow')}</span>
               <ArrowRight size={16} />
             </Link>
             
@@ -71,7 +73,7 @@ const HeroSection = () => {
               to="/prescriptions"
               className="bg-white/90 backdrop-blur-sm text-apollo-700 hover:bg-white font-semibold py-1.5 px-3 rounded-full transition-all duration-200 flex items-center space-x-1.5 shadow-md hover:shadow-lg text-xs border border-white/50"
             >
-              <span>Upload Prescription</span>
+              <span>{t('home.uploadPrescription')}</span>
             </Link>
           </div>
         </div>

@@ -84,7 +84,7 @@ describe('VerifyOtp Component', () => {
     
     await waitFor(() => {
       expect(verifyOtp).toHaveBeenCalledWith('9876543210', '123456')
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+      expect(mockNavigate).toHaveBeenCalledWith('/')
     })
   })
 

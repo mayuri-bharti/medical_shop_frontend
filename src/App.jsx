@@ -13,7 +13,6 @@ import toast from 'react-hot-toast'
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const VerifyOtp = lazy(() => import('./pages/VerifyOtp'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Products = lazy(() => import('./pages/Products'))
 const ProductList = lazy(() => import('./pages/ProductList'))
 const AllMedicine = lazy(() => import('./pages/AllMedicine'))
@@ -24,7 +23,6 @@ const Returns = lazy(() => import('./pages/Returns'))
 const OrderTracking = lazy(() => import('./pages/OrderTracking'))
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
 const Prescriptions = lazy(() => import('./pages/Prescriptions'))
-const Profile = lazy(() => import('./pages/Profile'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const Subcategory = lazy(() => import('./pages/Subcategory'))
 const ProductDetails = lazy(() => import('./pages/ProductDetails'))
@@ -91,8 +89,8 @@ function App() {
       // Show success message
       toast.success('Google login successful!')
 
-      // Navigate to dashboard
-      const redirectTarget = sessionStorage.getItem('redirectAfterSuccess') || '/dashboard'
+      // Navigate to home page
+      const redirectTarget = sessionStorage.getItem('redirectAfterSuccess') || '/'
       sessionStorage.setItem('redirectAfterSuccess', redirectTarget)
       navigate(redirectTarget, { replace: true })
     }
@@ -215,11 +213,6 @@ function App() {
               <OrderSuccess />
             </ProtectedRoute>
           } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
           <Route path="/cart" element={
             <ProtectedRoute>
               <Cart />
@@ -250,11 +243,7 @@ function App() {
               <Prescriptions />
             </ProtectedRoute>
           } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
+          
           <Route path="/admin/products" element={
             <ProtectedRoute>
               <AdminProducts />

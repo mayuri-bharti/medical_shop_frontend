@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Minus, Plus, Trash2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
 import { broadcastCartUpdate, normalizeCartData } from '../lib/cartEvents'
@@ -7,6 +8,7 @@ import PageCarousel from '../components/PageCarousel'
 import toast from 'react-hot-toast'
 
 const Cart = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [cart, setCart] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -50,7 +52,7 @@ const Cart = () => {
       })
     } catch (error) {
       console.error('Failed to fetch cart:', error)
-      toast.error('Failed to load cart')
+      toast.error(t('cart.failedToLoad'))
     } finally {
       setLoading(false)
     }
@@ -81,14 +83,14 @@ const Cart = () => {
       })
       
       if (response.ok) {
-        toast.success('Item removed from cart')
+        toast.success(t('cart.itemRemoved'))
         fetchCart()
       } else {
-        throw new Error('Failed to remove item')
+        throw new Error(t('cart.failedToRemove'))
       }
     } catch (error) {
       console.error('Remove item error:', error)
-      toast.error('Failed to remove item')
+      toast.error(t('cart.failedToRemove'))
     }
   }
 
@@ -146,13 +148,13 @@ const Cart = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div className="text-center max-w-md">
           <ShoppingBag size={64} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Add some medicines to get started!</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('cart.empty')}</h2>
+          <p className="text-gray-600 mb-6">{t('cart.addMedicines')}</p>
           <button
             onClick={() => navigate('/products')}
             className="px-6 py-3 bg-medical-600 text-white font-medium rounded-lg hover:bg-medical-700 transition-colors"
           >
-            Shop Now
+            {t('home.shopNow')}
           </button>
         </div>
       </div>
@@ -196,7 +198,7 @@ const Cart = () => {
 
         <div className="flex items-center space-x-2 mb-8">
           <ShoppingCart className="text-medical-600" size={32} />
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('cart.title')}</h1>
         </div>
         
         <div className="grid lg:grid-cols-3 gap-8">
@@ -210,10 +212,10 @@ const Cart = () => {
                   checked={selectedProductIds.size === cart.items.length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
-                <span className="text-sm font-medium text-gray-700">Select all items</span>
+                <span className="text-sm font-medium text-gray-700">{t('cart.selectAll')}</span>
               </div>
               <span className="text-sm text-gray-500">
-                {selectedItems.length} of {cart.items.length} selected
+                {selectedItems.length} {t('common.of')} {cart.items.length} {t('cart.selected')}
               </span>
             </div>
             {cart.items.map((item) => {
@@ -273,7 +275,7 @@ const Cart = () => {
                             ₹{(item.price * item.quantity).toLocaleString()}
                           </p>
                           <p className="text-sm text-gray-600">
-                            ₹{item.price.toLocaleString()} each
+                            ₹{item.price.toLocaleString()} {t('common.each')}
                           </p>
                         </div>
                         
@@ -294,30 +296,30 @@ const Cart = () => {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">{t('checkout.orderSummary')}</h2>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-gray-600">{t('cart.subtotal')}</span>
                   <span className="font-semibold">
                     ₹{selectionSummary.subtotal.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery</span>
+                  <span className="text-gray-600">{t('cart.delivery')}</span>
                   <span className="font-semibold">
                     {selectionSummary.deliveryFee === 0
-                      ? 'Free'
+                      ? t('cart.free')
                       : `₹${selectionSummary.deliveryFee.toLocaleString()}`}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Taxes</span>
+                  <span className="text-gray-600">{t('cart.taxes')}</span>
                   <span className="font-semibold">₹{selectionSummary.taxes.toLocaleString()}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
-                    <span className="text-lg font-bold text-gray-900">Total</span>
+                    <span className="text-lg font-bold text-gray-900">{t('cart.grandTotal')}</span>
                     <span className="text-lg font-bold text-gray-900">
                       ₹{selectionSummary.total.toLocaleString()}
                     </span>
@@ -329,7 +331,7 @@ const Cart = () => {
                 onClick={() => {
                   const selectedIds = Array.from(selectedProductIds)
                   if (!selectedIds.length) {
-                    toast.error('Please select at least one item to checkout')
+                    toast.error(t('cart.selectItemError'))
                     return
                   }
                   sessionStorage.setItem('checkoutSelectedProductIds', JSON.stringify(selectedIds))
@@ -343,12 +345,12 @@ const Cart = () => {
                 className="w-full py-3 bg-medical-600 text-white font-medium rounded-lg hover:bg-medical-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {selectedItems.length > 1
-                  ? `Checkout ${selectedItems.length} items`
-                  : 'Checkout this item'}
+                  ? `${t('cart.checkoutItems')} ${selectedItems.length} ${t('cart.items')}`
+                  : t('cart.checkoutItems')}
               </button>
               
               <p className="text-sm text-gray-600 text-center mt-4">
-                Free delivery on orders above ₹499
+                {t('cart.freeDelivery')}
               </p>
             </div>
           </div>

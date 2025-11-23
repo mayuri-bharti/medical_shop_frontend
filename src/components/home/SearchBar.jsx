@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Search } from 'lucide-react'
 import { api } from '../../services/api'
 
-const SearchBar = ({ onSearch, placeholder = "Search for medicines, health products..." }) => {
+const SearchBar = ({ onSearch, placeholder }) => {
+  const { t } = useTranslation()
+  const defaultPlaceholder = placeholder || t('search.placeholder')
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [open, setOpen] = useState(false)
@@ -83,14 +86,14 @@ const SearchBar = ({ onSearch, placeholder = "Search for medicines, health produ
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => suggestions.length && setOpen(true)}
-            placeholder={placeholder}
+            placeholder={defaultPlaceholder}
             className="w-full pl-10 pr-20 py-2 rounded-full border-0 bg-white text-sm text-gray-900 shadow-md placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apollo-500/20 transition-all"
           />
           <button
             type="submit"
             className="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-apollo-700 hover:bg-apollo-800 text-white px-3 py-1.5 rounded-full font-semibold text-xs transition-colors shadow-sm hover:shadow-md"
           >
-            Search
+            {t('common.search')}
           </button>
         </div>
       </form>

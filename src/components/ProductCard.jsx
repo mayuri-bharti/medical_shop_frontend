@@ -1,11 +1,13 @@
 import { ShoppingCart, Zap, Star, Heart } from 'lucide-react'
 import { useState, memo, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getAccessToken } from '../lib/api'
 import { broadcastCartUpdate } from '../lib/cartEvents'
 import toast from 'react-hot-toast'
 
 const ProductCard = memo(({ product }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
   const [buying, setBuying] = useState(false)
@@ -56,10 +58,10 @@ const ProductCard = memo(({ product }) => {
         throw new Error(data?.message || 'Failed to add to cart')
       }
 
-      toast.success(`${product.name} added to cart!`)
+      toast.success(`${product.name} ${t('common.addedToCart')}`)
       broadcastCartUpdate(data?.data || data)
     } catch (error) {
-      toast.error(error.message || 'Failed to add to cart')
+      toast.error(error.message || t('common.failedToAdd'))
     } finally {
       setAdding(false)
     }
@@ -142,7 +144,7 @@ const ProductCard = memo(({ product }) => {
         {product.stock === 0 && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="bg-red-600 text-white px-1 py-0.5 md:px-1.5 md:py-0.5 rounded text-[8px] md:text-[10px] font-medium">
-              Out of Stock
+              {t('home.outOfStock')}
             </span>
           </div>
         )}
@@ -204,7 +206,7 @@ const ProductCard = memo(({ product }) => {
         {/* Offer line - Hidden on mobile */}
         {discountPercentage > 0 && (
           <p className="hidden md:block text-[10px] text-green-700 font-medium mb-1">
-            Save extra {discountPercentage}% with offers
+            {t('common.saveExtra')} {discountPercentage}% {t('common.withOffers')}
           </p>
         )}
 
@@ -231,7 +233,7 @@ const ProductCard = memo(({ product }) => {
             ) : (
               <>
                 <ShoppingCart className="w-[8px] h-[8px] md:w-[11px] md:h-[11px] transition-transform duration-300 md:group-hover:scale-110 md:group-hover:-translate-y-0.5" />
-                <span className="transition-all duration-300">Add to Cart</span>
+                <span className="transition-all duration-300">{t('common.addToCart')}</span>
               </>
             )}
           </button>
@@ -241,7 +243,7 @@ const ProductCard = memo(({ product }) => {
         <div className="hidden md:flex items-center justify-between mt-1 text-[10px] text-gray-500">
           <span className="truncate">{product.category || 'Product'}</span>
           {product.stock > 0 && (
-            <span className="text-green-600 font-medium ml-1">In Stock</span>
+            <span className="text-green-600 font-medium ml-1">{t('home.inStock')}</span>
           )}
         </div>
       </div>

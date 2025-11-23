@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
 import { sendOtp, verifyOtp, setAccessToken, setRefreshToken, getAccessToken, loginWithPassword, registerUser } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -7,6 +8,7 @@ import LoginSuccessAnimation from '../components/LoginSuccessAnimation'
 
 
 const Login = () => {
+  const { t } = useTranslation()
   const [mode, setMode] = useState('login') // 'login' or 'register'
   const [loginMethod, setLoginMethod] = useState('otp') // 'otp' or 'password'
   const [step, setStep] = useState('identifier') // 'identifier' or 'otp' for OTP method
@@ -28,7 +30,7 @@ const Login = () => {
   const [searchParams] = useSearchParams()
   const redirectUrl = searchParams.get('redirect')
   const getRedirectTarget = useCallback(() => {
-    return redirectUrl ? decodeURIComponent(redirectUrl) : '/dashboard'
+    return redirectUrl ? decodeURIComponent(redirectUrl) : '/'
   }, [redirectUrl])
 
   const handleLoginSuccess = useCallback((accessToken) => {
@@ -207,7 +209,7 @@ const Login = () => {
     setError('')
     
     if (!identifier || !password) {
-      setError('Please enter your phone/email/username and password')
+      setError(t('login.invalidCredentials'))
       return
     }
 
@@ -398,10 +400,10 @@ const Login = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome</h2>
               <p className="text-base font-semibold text-gray-700">
                 {mode === 'register' 
-                  ? 'Create your account' 
+                  ? t('login.register')
                   : loginMethod === 'otp' 
-                    ? (step === 'identifier' ? 'Login to your account' : 'Verify OTP')
-                    : 'Login to your account'}
+                    ? (step === 'identifier' ? t('login.title') : t('login.verifyOtp'))
+                    : t('login.title')}
               </p>
             </div>
 
@@ -417,7 +419,7 @@ const Login = () => {
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  Login with OTP
+                  {t('login.loginWithOtp')}
                 </button>
                 <button
                   type="button"
@@ -428,7 +430,7 @@ const Login = () => {
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  Login with Password
+                  {t('login.loginWithPassword')}
                 </button>
               </div>
             )}
@@ -439,13 +441,13 @@ const Login = () => {
               <form onSubmit={handleRegister} className="space-y-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Name
+                    {t('login.name')}
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder={t('login.name')}
                     className="block w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                     disabled={loading}
                   />
@@ -453,13 +455,13 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email
+                    {t('login.email')}
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder={t('login.email')}
                     className="block w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                     disabled={loading}
                   />
@@ -467,13 +469,13 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Phone
+                    {t('login.phoneNumber')}
                   </label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit phone number"
+                    placeholder={t('login.enterPhone')}
                     className="block w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                     disabled={loading}
                     maxLength={10}
@@ -485,14 +487,14 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password
+                    {t('login.password')}
                   </label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password (min 6 characters)"
+                      placeholder={t('login.enterPassword')}
                       className="block w-full px-2 pr-9 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                       disabled={loading}
                       required
@@ -510,14 +512,14 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Confirm Password
+                    {t('login.confirmPassword')}
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm your password"
+                      placeholder={t('login.confirmPassword')}
                       className="block w-full px-2 pr-9 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                       disabled={loading}
                       required
@@ -551,11 +553,11 @@ const Login = () => {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                      <span>Creating Account...</span>
+                      <span>{t('login.creatingAccount')}</span>
                     </>
                   ) : (
                     <>
-                      <span>CREATE ACCOUNT</span>
+                      <span>{t('login.createAccountButton')}</span>
                       <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
@@ -584,7 +586,7 @@ const Login = () => {
                   <span>Continue with Google</span>
                 </button>
                 <p className="text-center text-xs text-gray-600">
-                  Already have an account?{' '}
+                  {t('login.alreadyHaveAccount')}{' '}
                   <button
                     type="button"
                     onClick={() => {
@@ -600,7 +602,7 @@ const Login = () => {
                     }}
                     className="text-primary-600 hover:text-primary-700 font-semibold underline"
                   >
-                    Login
+                    {t('login.loginButton')}
                   </button>
                 </p>
               </form>
@@ -609,14 +611,14 @@ const Login = () => {
                 <form onSubmit={handleSendOtp} className="space-y-2">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Enter Mobile Number
+                      {t('login.enterMobileNumber')}
                     </label>
                     <div className="relative">
                       <input
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                        placeholder="Enter 10-digit mobile number"
+                        placeholder={t('login.enterPhone')}
                         className="block w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                         disabled={loading}
                         maxLength={10}
@@ -713,7 +715,7 @@ const Login = () => {
                 <form onSubmit={handleVerifyOtp} className="space-y-2">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Enter 6-Digit OTP
+                      {t('login.enterOtpCode')}
                     </label>
                     <input
                       type="text"
@@ -727,7 +729,7 @@ const Login = () => {
                       autoFocus
                     />
                     <p className="mt-1.5 text-xs text-gray-500 text-center">
-                      Enter the 6-digit code sent to your phone
+                      {t('login.otpCodeSent')}
                     </p>
                   </div>
 
@@ -746,11 +748,11 @@ const Login = () => {
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                        <span>Verifying...</span>
+                        <span>{t('login.verifying')}</span>
                       </>
                     ) : (
                       <>
-                        <span>VERIFY OTP</span>
+                        <span>{t('login.verifyOtpButton')}</span>
                         <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
@@ -761,7 +763,7 @@ const Login = () => {
                     onClick={() => setStep('identifier')}
                     className="w-full text-primary-600 hover:text-primary-700 text-xs font-medium transition-colors"
                   >
-                    ← Change phone number
+                    {t('login.changePhoneNumber')}
                   </button>
                 </form>
               )
@@ -769,13 +771,13 @@ const Login = () => {
               <form onSubmit={handlePasswordLogin} className="space-y-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Phone, Email, or Username
+                    {t('login.phoneEmailUsername')}
                   </label>
                   <input
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Enter phone, email, or username"
+                    placeholder={t('login.enterPhoneEmailUsername')}
                     className="block w-full px-2 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                     disabled={loading || rateLimitError}
                     required
@@ -784,14 +786,14 @@ const Login = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password
+                    {t('login.password')}
                   </label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
+                      placeholder={t('login.enterPassword')}
                       className="block w-full px-2 pr-9 py-1.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-gray-50 hover:bg-white transition-colors"
                       disabled={loading || rateLimitError}
                       required
@@ -834,12 +836,12 @@ const Login = () => {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Logging in...</span>
+                      <span>{t('login.loggingIn')}</span>
                     </>
                   ) : (
                     <>
                       <Lock size={16} />
-                      <span>Login</span>
+                      <span>{t('login.loginButton')}</span>
                     </>
                   )}
                 </button>
@@ -864,10 +866,10 @@ const Login = () => {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  <span>Continue with Google</span>
+                  <span>{t('login.continueWithGoogle')}</span>
                 </button>
                 <p className="text-center text-xs text-gray-600">
-                  Don't have account?{' '}
+                  {t('login.dontHaveAccount')}{' '}
                   <button
                     type="button"
                     onClick={() => {
@@ -882,7 +884,7 @@ const Login = () => {
                     }}
                     className="text-primary-600 hover:text-primary-700 font-semibold underline"
                   >
-                    Create new account
+                    {t('login.createAccount')}
                   </button>
                 </p>
               </form>
