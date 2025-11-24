@@ -32,7 +32,6 @@ const LabTests = lazy(() => import('./pages/LabTests'))
 const HealthInsurance = lazy(() => import('./pages/HealthInsurance'))
 const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 
 // Admin Pages - Lazy loaded
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
@@ -89,7 +88,7 @@ function App() {
       // Show success message
       toast.success('Google login successful!')
 
-      // Navigate to home page
+      // Navigate to profile
       const redirectTarget = sessionStorage.getItem('redirectAfterSuccess') || '/'
       sessionStorage.setItem('redirectAfterSuccess', redirectTarget)
       navigate(redirectTarget, { replace: true })
@@ -200,7 +199,6 @@ function App() {
           <Route path="/subcategory/:slug" element={<Subcategory />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
 
           {/* Protected Routes */}
           <Route path="/checkout" element={
@@ -211,6 +209,11 @@ function App() {
           <Route path="/order-success" element={
             <ProtectedRoute>
               <OrderSuccess />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Navigate to="/" replace />
             </ProtectedRoute>
           } />
           <Route path="/cart" element={
@@ -243,7 +246,7 @@ function App() {
               <Prescriptions />
             </ProtectedRoute>
           } />
-          
+          <Route path="/profile" element={<Navigate to="/" replace />} />
           <Route path="/admin/products" element={
             <ProtectedRoute>
               <AdminProducts />

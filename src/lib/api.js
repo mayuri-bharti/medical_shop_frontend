@@ -83,6 +83,13 @@ export const getAdminToken = () => {
 }
 
 /**
+ * Get user role from storage
+ */
+export const getUserRole = () => {
+  return sessionStorage.getItem('userRole') || localStorage.getItem('userRole')
+}
+
+/**
  * Send OTP to admin phone number
  */
 export const sendAdminOtp = async (phone) => {

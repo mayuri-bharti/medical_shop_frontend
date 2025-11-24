@@ -98,9 +98,9 @@ const Sidebar = ({ isOpen, onClose }) => {
         variants={sidebarVariants}
         initial="closed"
         animate={(isOpen || isDesktop) ? 'open' : 'closed'}
-        className="fixed top-0 left-0 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 overflow-y-auto md:static md:z-auto shadow-lg md:shadow-none"
+        className="fixed top-0 left-0 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 md:static md:z-auto shadow-lg md:shadow-none flex flex-col"
       >
-        <div className="p-5 lg:p-6">
+        <div className="p-5 lg:p-6 flex-1 flex flex-col overflow-hidden">
           {/* Logo with Close Button (Mobile) */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -126,7 +126,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           </motion.div>
 
           {/* Navigation */}
-          <nav className="space-y-1">
+          <nav className="space-y-1 flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
             {menuItems.map((item, index) => {
               const Icon = item.icon
               const isActiveItem = isActive(item.href)
@@ -173,7 +173,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-8 pt-6 border-t border-gray-200 space-y-2"
+            className="mt-auto pt-6 border-t border-gray-200 space-y-2 flex-shrink-0"
           >
             <Link
               to="/"

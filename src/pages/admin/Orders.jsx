@@ -93,13 +93,13 @@ const AdminOrders = () => {
     }).format(amount)
 
   return (
-    <div className="space-y-5 md:space-y-6 lg:space-y-8">
+    <div className="space-y-6">
       <div className="pb-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Orders Management</h1>
-        <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">View and manage pharmacy orders</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders Management</h1>
+        <p className="text-gray-600 mt-1.5 text-sm sm:text-base">View and manage pharmacy orders</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 md:p-5">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-5">
         <div className="flex flex-col gap-3">
           {/* Date Filter Indicator */}
           {searchParams.get('startDate') && searchParams.get('endDate') && (
@@ -136,7 +136,7 @@ const AdminOrders = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 text-sm md:text-base font-medium"
+              className="flex-1 sm:flex-none px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white hover:border-gray-400 transition-colors"
             >
               <option value="all">All Orders</option>
               {statusOptions.map((status) => (
@@ -149,33 +149,33 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      <div className="space-y-4 md:space-y-5">
+      <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sm:p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-medical-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading orders...</p>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading orders...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sm:p-12 text-center">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <ShoppingBag className="mx-auto text-gray-400" size={48} />
-            <p className="mt-4 text-gray-600 text-sm sm:text-base">No orders found</p>
+            <p className="mt-4 text-gray-600">No orders found</p>
           </div>
         ) : (
           orders.map((order) => (
             <div
               key={order._id}
-              className="bg-white rounded-xl shadow-md border border-gray-100 p-5 md:p-6 lg:p-7 hover:shadow-lg transition-shadow duration-200 space-y-4"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 md:p-6 hover:shadow-md transition-all duration-200 space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900">
                       Order #{order.orderNumber || order._id.slice(-8).toUpperCase()}
                     </h3>
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium"
+                      className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -208,11 +208,11 @@ const AdminOrders = () => {
                     )}
                   </div>
                 </div>
-                <div className="text-left sm:text-right">
-                  <div className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+                <div className="text-left sm:text-right flex-shrink-0">
+                  <div className="text-xl md:text-2xl font-bold text-gray-900">
                     {formatCurrency(order.totalAmount || order.total)}
                   </div>
-                  <div className="text-sm md:text-base text-gray-500 mt-1">
+                  <div className="text-sm text-gray-500 mt-1">
                     {order.items?.length || 0} item(s)
                   </div>
                 </div>
@@ -220,14 +220,14 @@ const AdminOrders = () => {
 
               <div className="border-t border-gray-200 pt-4 space-y-3">
                 {order.items?.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                      <p className="text-xs text-gray-500">
+                  <div key={index} className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 break-words">{item.name}</p>
+                      <p className="text-xs text-gray-500 mt-1">
                         Qty: {item.quantity} × {formatCurrency(item.price)}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 flex-shrink-0">
                       {formatCurrency(item.price * item.quantity)}
                     </p>
                   </div>
@@ -254,9 +254,9 @@ const AdminOrders = () => {
               )}
 
               {order.shippingAddress && (
-                <div className="border-t border-gray-200 pt-4 text-sm text-gray-700">
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Shipping Address</p>
-                  <p>
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Shipping Address</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">
                     {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} -{' '}
                     {order.shippingAddress.pincode}
                   </p>
