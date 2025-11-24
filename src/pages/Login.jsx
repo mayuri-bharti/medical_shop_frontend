@@ -61,9 +61,22 @@ const Login = () => {
 
   // Helper function to get backend URL
   const getBackendUrl = useCallback(() => {
-    const isLocalhost = window.location.hostname === 'localhost'
-    return import.meta.env.VITE_API_URL || 
-      (isLocalhost ? 'http://localhost:4000' : 'https://medical-shop-backend.vercel.app')
+    // Check for explicit API URL first
+    if (import.meta.env.VITE_API_BASE_URL) {
+      // Remove /api suffix if present, we'll add it back when needed
+      const baseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, '')
+      return baseUrl
+    }
+    
+    // Detect environment
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1'
+    
+    // For Vercel/production, use production backend
+    // For localhost, use local backend
+    return isLocalhost 
+      ? 'http://localhost:4000' 
+      : 'https://medical-shop-backend.vercel.app'
   }, [])
 
   // Handle Google OAuth callback - check URL params after redirect from backend
@@ -142,15 +155,30 @@ const Login = () => {
 
   // Trigger Google login - redirect to backend OAuth endpoint
   const handleGoogleButtonClick = useCallback(() => {
-    const backendUrl = getBackendUrl()
-    const isLocalhost = window.location.hostname === 'localhost'
-    
-    // Use /api/auth/google for Vercel (serverless), /auth/google for local
-    const oauthPath = isLocalhost ? '/auth/google' : '/api/auth/google'
-    
-    // Simply redirect to backend OAuth endpoint
-    // The backend will handle the Google OAuth flow and redirect back
-    window.location.href = `${backendUrl}${oauthPath}`
+    try {
+      const backendUrl = getBackendUrl()
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1'
+      
+      // Use /api/auth/google for Vercel (serverless), /auth/google for local
+      const oauthPath = isLocalhost ? '/auth/google' : '/api/auth/google'
+      
+      const oauthUrl = `${backendUrl}${oauthPath}`
+      
+      console.log('🔍 Google OAuth Debug:')
+      console.log('   Backend URL:', backendUrl)
+      console.log('   OAuth Path:', oauthPath)
+      console.log('   Full URL:', oauthUrl)
+      console.log('   Is Localhost:', isLocalhost)
+      console.log('   Current Hostname:', window.location.hostname)
+      
+      // Simply redirect to backend OAuth endpoint
+      // The backend will handle the Google OAuth flow and redirect back
+      window.location.href = oauthUrl
+    } catch (error) {
+      console.error('❌ Error initiating Google login:', error)
+      toast.error('Failed to start Google login. Please try again.')
+    }
   }, [getBackendUrl])
 
   const handleSendOtp = async (e) => {
