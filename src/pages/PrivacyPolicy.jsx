@@ -71,29 +71,14 @@ const PrivacyPolicy = () => {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">5. Google OAuth Authentication</h2>
-              <p className="mb-4">
-                When you choose to sign in with Google, we collect and store:
-              </p>
-              <ul className="list-disc list-inside mb-4 space-y-1 ml-4">
-                <li>Your Google account email address</li>
-                <li>Your name and profile picture (if available)</li>
-                <li>Your Google account ID (for authentication purposes)</li>
-              </ul>
-              <p className="mb-4">
-                This information is used solely for authentication and account management. We do not access or store your Google password or other Google account data beyond what is necessary for authentication.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">6. Data Security</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">5. Data Security</h2>
               <p className="mb-4">
                 We implement appropriate technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">7. Your Rights</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">6. Your Rights</h2>
               <p className="mb-3">You have the right to:</p>
               <ul className="list-disc list-inside mb-4 space-y-1 ml-4">
                 <li>Access and receive a copy of your personal data</li>
@@ -107,35 +92,35 @@ const PrivacyPolicy = () => {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">8. Cookies and Tracking Technologies</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">7. Cookies and Tracking Technologies</h2>
               <p className="mb-4">
                 We use cookies and similar tracking technologies to enhance your experience on our website. You can control cookie preferences through your browser settings. However, disabling cookies may affect the functionality of our website.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">9. Third-Party Links</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">8. Third-Party Links</h2>
               <p className="mb-4">
                 Our website may contain links to third-party websites. We are not responsible for the privacy practices or content of these external sites. We encourage you to review the privacy policies of any third-party sites you visit.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">10. Children's Privacy</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">9. Children's Privacy</h2>
               <p className="mb-4">
                 Our services are not intended for individuals under the age of 18. We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us immediately.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">11. Changes to This Privacy Policy</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">10. Changes to This Privacy Policy</h2>
               <p className="mb-4">
                 We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. You are advised to review this Privacy Policy periodically.
               </p>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">12. Contact Us</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">11. Contact Us</h2>
               <p className="mb-4">
                 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
               </p>

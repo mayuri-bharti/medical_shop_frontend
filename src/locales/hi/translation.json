@@ -84,8 +84,7 @@
     "loginButton": "लॉगिन",
     "createAccount": "नया खाता बनाएं",
     "createAccountButton": "खाता बनाएं",
-    "creatingAccount": "खाता बनाया जा रहा है...",
-    "continueWithGoogle": "Google के साथ जारी रखें"
+    "creatingAccount": "खाता बनाया जा रहा है..."
   },
   "cart": {
     "title": "शॉपिंग कार्ट",

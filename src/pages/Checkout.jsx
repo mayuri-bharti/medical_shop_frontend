@@ -440,7 +440,19 @@ const Checkout = () => {
       })
       const data = await response.json()
       if (!response.ok || data.success === false) {
-        throw new Error(data.message || 'Order failed')
+        const validationMessage = Array.isArray(data?.errors)
+          ? data.errors
+              .map((err) => err?.msg || err?.message)
+              .filter(Boolean)
+              .join(', ')
+          : ''
+        const backendMessage =
+          validationMessage ||
+          data?.details ||
+          data?.message ||
+          data?.error ||
+          'Order failed'
+        throw new Error(backendMessage)
       }
       
       // Extract order data from response

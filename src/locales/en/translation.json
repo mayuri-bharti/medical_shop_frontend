@@ -84,8 +84,7 @@
     "loginButton": "Login",
     "createAccount": "Create new account",
     "createAccountButton": "CREATE ACCOUNT",
-    "creatingAccount": "Creating Account...",
-    "continueWithGoogle": "Continue with Google"
+    "creatingAccount": "Creating Account..."
   },
   "cart": {
     "title": "Shopping Cart",
