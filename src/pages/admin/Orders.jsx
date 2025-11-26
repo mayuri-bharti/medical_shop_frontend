@@ -19,12 +19,14 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const startDateParam = searchParams.get('startDate')
+  const endDateParam = searchParams.get('endDate')
 
   useEffect(() => {
-    fetchOrders()
-  }, [statusFilter, searchParams])
+    fetchOrders({ startDate: startDateParam, endDate: endDateParam })
+  }, [statusFilter, startDateParam, endDateParam])
 
-  const fetchOrders = async () => {
+  const fetchOrders = async ({ startDate, endDate } = {}) => {
     setLoading(true)
     try {
       const params = {}
@@ -32,9 +34,6 @@ const AdminOrders = () => {
         params.status = statusFilter
       }
       
-      // Handle date filtering from URL params
-      const startDate = searchParams.get('startDate')
-      const endDate = searchParams.get('endDate')
       if (startDate) {
         params.startDate = startDate
       }
@@ -93,21 +92,20 @@ const AdminOrders = () => {
     }).format(amount)
 
   return (
-    <div className="space-y-6">
-      <div className="pb-2">
+    <div className="px-6 sm:px-8 py-6 max-w-screen-xl mx-auto w-full space-y-6 pb-10">
+      <header>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders Management</h1>
         <p className="text-gray-600 mt-1.5 text-sm sm:text-base">View and manage pharmacy orders</p>
-      </div>
+      </header>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-5">
+      <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
         <div className="flex flex-col gap-3">
-          {/* Date Filter Indicator */}
-          {searchParams.get('startDate') && searchParams.get('endDate') && (
+          {startDateParam && endDateParam && (
             <div className="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
                 <Calendar size={18} className="text-indigo-600" />
                 <span className="text-sm font-medium text-indigo-800">
-                  Showing orders from {new Date(searchParams.get('startDate')).toLocaleDateString('en-IN', {
+                  Showing orders from {new Date(startDateParam).toLocaleDateString('en-IN', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
@@ -127,7 +125,7 @@ const AdminOrders = () => {
               </button>
             </div>
           )}
-          
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center space-x-2">
               <Filter size={20} className="text-gray-400 flex-shrink-0" />
@@ -147,24 +145,28 @@ const AdminOrders = () => {
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-4">
-        {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+      <section className="space-y-5">
+        {loading && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading orders...</p>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        )}
+
+        {!loading && orders.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <ShoppingBag className="mx-auto text-gray-400" size={48} />
             <p className="mt-4 text-gray-600">No orders found</p>
           </div>
-        ) : (
+        )}
+
+        {!loading && orders.length > 0 &&
           orders.map((order) => (
-            <div
+            <article
               key={order._id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 md:p-6 hover:shadow-md transition-all duration-200 space-y-4"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6 hover:shadow-lg transition-shadow duration-200 space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -262,10 +264,9 @@ const AdminOrders = () => {
                   </p>
                 </div>
               )}
-            </div>
-          ))
-        )}
-      </div>
+            </article>
+          ))}
+      </section>
     </div>
   )
 }

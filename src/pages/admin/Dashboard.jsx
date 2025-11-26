@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import Sidebar from '../../components/admin/Sidebar'
@@ -7,6 +7,20 @@ import Sidebar from '../../components/admin/Sidebar'
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const location = useLocation()
+
+  const navItems = [
+    { name: 'Dashboard', href: '/admin/dashboard' },
+    { name: 'Users', href: '/admin/dashboard/users' },
+    { name: 'Orders', href: '/admin/dashboard/orders' },
+    { name: 'Returns', href: '/admin/dashboard/returns' },
+    { name: 'Contact', href: '/admin/dashboard/contact-requests' },
+    { name: 'Prescriptions', href: '/admin/dashboard/prescriptions' },
+    { name: 'Doctors', href: '/admin/dashboard/doctors' },
+    { name: 'Appointments', href: '/admin/dashboard/appointments' },
+    { name: 'Add Product', href: '/admin/dashboard/add-product' },
+    { name: 'Products', href: '/admin/dashboard/manage-products' }
+  ]
 
   useEffect(() => {
     const checkMobile = () => {
@@ -18,39 +32,60 @@ const AdminDashboard = () => {
   }, [])
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <main className="flex-1 md:ml-56 lg:ml-64 min-w-0 max-w-full bg-transparent">
-        {/* Mobile Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm"
-        >
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="md:hidden">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </div>
+
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-3 flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
+            className="md:hidden p-2 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"
+            aria-label="Open navigation"
           >
-            <Menu size={24} />
+            <Menu size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">Admin Panel</h1>
-          <div className="w-10" /> {/* Spacer for centering */}
-        </motion.div>
 
-        {/* Content */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10 max-w-full overflow-x-hidden"
-        >
-          <div className="max-w-[1600px] mx-auto">
-            <Outlet />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-semibold">
+              +
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Admin Panel</p>
+              <p className="text-lg font-semibold text-gray-900 leading-tight">HealthPlus</p>
+            </div>
           </div>
-        </motion.div>
-      </main>
+
+          <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 pl-4">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+      </header>
+
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="flex-1 px-3 sm:px-5 md:px-6 lg:px-10 xl:px-12 py-6 max-w-screen-2xl w-full mx-auto"
+      >
+        <Outlet />
+      </motion.main>
     </div>
   )
 }
