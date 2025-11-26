@@ -39,10 +39,19 @@ const AdminDashboardHome = () => {
       const endOfToday = new Date()
       endOfToday.setHours(23, 59, 59, 999) // End of today
 
-      const [usersRes, ordersRes, productsRes, todayOrdersRes] = await Promise.all([
-        getUsers({ limit: 1 }),
-        getOrders({ limit: 1 }),
-        getAdminProducts({ limit: 1 }),
+      const [usersRes, ordersRes, productsRes, todayOrdersRes] = await Promise.allSettled([
+        getUsers({ limit: 1 }).catch(err => {
+          console.error('Failed to fetch users:', err)
+          return { pagination: { total: 0 } }
+        }),
+        getOrders({ limit: 1 }).catch(err => {
+          console.error('Failed to fetch orders:', err)
+          return { pagination: { total: 0 }, orders: [] }
+        }),
+        getAdminProducts({ limit: 1 }).catch(err => {
+          console.error('Failed to fetch products:', err)
+          return { data: { pagination: { total: 0 } } }
+        }),
         // Fetch today's orders
         api.get('/admin/orders', {
           params: {
@@ -56,17 +65,26 @@ const AdminDashboardHome = () => {
         })
       ])
 
-      const totalRevenue = ordersRes.orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
+      // Extract values from Promise.allSettled results
+      const usersData = usersRes.status === 'fulfilled' ? usersRes.value : { pagination: { total: 0 } }
+      const ordersData = ordersRes.status === 'fulfilled' ? ordersRes.value : { pagination: { total: 0 }, orders: [] }
+      const productsData = productsRes.status === 'fulfilled' ? productsRes.value : { data: { pagination: { total: 0 } } }
+      const todayOrdersData = todayOrdersRes.status === 'fulfilled' ? todayOrdersRes.value : { data: { pagination: { total: 0 } } }
+
+      const totalRevenue = ordersData.orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
 
       setStats({
-        users: usersRes.pagination?.total || 0,
-        orders: ordersRes.pagination?.total || 0,
-        products: productsRes.data?.pagination?.total || 0,
+        users: usersData.pagination?.total || 0,
+        orders: ordersData.pagination?.total || 0,
+        products: productsData.data?.pagination?.total || 0,
         totalRevenue,
-        todayOrders: todayOrdersRes?.data?.pagination?.total || 0
+        todayOrders: todayOrdersData?.data?.pagination?.total || 0
       })
     } catch (error) {
       console.error('Failed to fetch stats:', error)
+      toast.error(error.isNetworkError 
+        ? 'Unable to connect to server. Please check your connection.' 
+        : 'Failed to load dashboard statistics')
     } finally {
       setLoading(false)
     }

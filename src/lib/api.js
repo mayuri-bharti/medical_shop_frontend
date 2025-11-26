@@ -4,19 +4,21 @@
 
 import axios from "axios";
 
-const isLocalhost = window.location.hostname === "localhost";
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === "localhost";
 
+// Use environment variable if available, otherwise fallback to localhost or production URL
+const API_BASE_URL = 
+  import.meta.env.VITE_API_BASE_URL ||
+  (isLocalhost
+    ? "http://localhost:4000/api"
+    : "https://medical-shop-backend.vercel.app/api");
 
 const api = axios.create({
-  // Prefer environment variable; then local; then deployed backend
-  baseURL : isLocalhost
-    ? "http://localhost:4000/api"
-    : "https://medical-shop-backend.vercel.app/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
-const API_BASE_URL = api.defaults.baseURL;
 /**
  * Get stored access token
  */
