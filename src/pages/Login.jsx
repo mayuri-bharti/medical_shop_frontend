@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
-import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser } from '../lib/api'
+import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle } from '../lib/api'
 import toast from 'react-hot-toast'
 
 
@@ -57,6 +57,180 @@ const Login = () => {
       }
     }
   }, [])
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    if (mode === 'register' || loginMethod !== 'otp' || step !== 'identifier') return
+
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+    
+    if (!googleClientId) {
+      console.warn('⚠️ VITE_GOOGLE_CLIENT_ID not configured. Google Sign-In will not work.')
+      return
+    }
+
+    const initializeGoogleSignIn = () => {
+      if (window.google && window.google.accounts) {
+        try {
+          const buttonContainer = document.getElementById('google-signin-button')
+          if (!buttonContainer) return
+
+          // Clear any existing button content to prevent reusing old tokens
+          buttonContainer.innerHTML = ''
+
+          // Initialize Google Sign-In with fresh callback
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleSignIn,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+            use_fedcm_for_prompt: true // Use modern FedCM API
+          })
+
+          // Render fresh button
+          window.google.accounts.id.renderButton(
+            buttonContainer,
+            {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'signin_with',
+              locale: 'en',
+              type: 'standard' // Ensure standard flow (not one-tap)
+            }
+          )
+
+          console.log('✅ Google Sign-In button initialized')
+        } catch (error) {
+          console.error('Error initializing Google Sign-In:', error)
+        }
+      }
+    }
+
+    // Wait for Google script to load
+    if (window.google && window.google.accounts) {
+      // Small delay to ensure DOM is ready
+      setTimeout(initializeGoogleSignIn, 100)
+    } else {
+      const checkGoogle = setInterval(() => {
+        if (window.google && window.google.accounts) {
+          clearInterval(checkGoogle)
+          setTimeout(initializeGoogleSignIn, 100)
+        }
+      }, 100)
+
+      // Cleanup after 10 seconds if Google doesn't load
+      setTimeout(() => clearInterval(checkGoogle), 10000)
+    }
+
+    // Cleanup function
+    return () => {
+      const buttonContainer = document.getElementById('google-signin-button')
+      if (buttonContainer) {
+        buttonContainer.innerHTML = ''
+      }
+    }
+  }, [mode, loginMethod, step])
+
+  const handleGoogleSignIn = async (response) => {
+    if (!response || !response.credential) {
+      console.error('Google sign-in response missing credential:', response)
+      toast.error('Google sign-in failed: No credential received')
+      return
+    }
+
+    // Use token immediately to prevent expiration
+    const token = response.credential
+    const receivedAt = Date.now()
+    
+    // Decode token to check expiration (JWT has 3 parts separated by dots)
+    try {
+      const tokenParts = token.split('.')
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1]))
+        const now = Math.floor(Date.now() / 1000)
+        const tokenAge = now - (payload.iat || 0)
+        const expiresIn = (payload.exp || 0) - now
+        
+        console.log('✅ Google token received, sending immediately to backend...', {
+          tokenLength: token.length,
+          timestamp: new Date().toISOString(),
+          tokenAge: `${tokenAge} seconds (${Math.round(tokenAge / 60)} minutes)`,
+          expiresIn: `${expiresIn} seconds`,
+          email: payload.email
+        })
+        
+        if (expiresIn < 0) {
+          console.error('❌ Token already expired!', { expiresIn, tokenAge })
+          toast.error('Token expired. Please click "Sign in with Google" again.')
+          setLoading(false)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Could not decode token for debugging:', e)
+    }
+
+    // Clear any previous errors
+    setError('')
+    setLoading(true)
+
+    // Send token immediately - no delays
+
+    try {
+      // Send token immediately - don't delay
+      const result = await loginWithGoogle(token)
+      
+      if (result.success && result.data?.accessToken) {
+        handleLoginSuccess(result.data.accessToken)
+        toast.success('Login successful!')
+      } else {
+        throw new Error(result.message || 'Google login failed')
+      }
+    } catch (err) {
+      console.error('Google login error:', err)
+      console.error('Error details:', {
+        message: err.message,
+        status: err.status,
+        response: err.response?.data,
+        hint: err.hint
+      })
+      
+      let errorMessage = err.response?.data?.message || err.message || 'Google login failed'
+      const shouldRetry = err.response?.data?.shouldRetry
+      
+      // If token expired, provide clear instructions
+      if (shouldRetry || errorMessage.includes('expired') || errorMessage.includes('too late')) {
+        errorMessage = 'Token expired. Please click "Sign in with Google" again to get a fresh token.'
+        toast.error(errorMessage, { 
+          duration: 6000,
+          action: {
+            label: 'Try Again',
+            onClick: () => {
+              // Clear the error and let user try again
+              setError('')
+            }
+          }
+        })
+      } else {
+        // Add hint if available
+        if (err.response?.data?.hint) {
+          errorMessage = `${errorMessage} - ${err.response.data.hint}`
+        }
+        
+        // Add details in development
+        if (import.meta.env.DEV && err.response?.data?.details) {
+          console.warn('Backend error details:', err.response.data.details)
+        }
+        
+        toast.error(errorMessage, { duration: 5000 })
+      }
+      
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Helper function to get backend URL
   const handleSendOtp = async (e) => {
@@ -338,6 +512,21 @@ const Login = () => {
                 >
                   {t('login.loginWithPassword')}
                 </button>
+              </div>
+            )}
+
+            {/* Google Sign-In Button */}
+            {mode === 'login' && loginMethod === 'otp' && step === 'identifier' && import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+              <div className="mb-4">
+                <div id="google-signin-button" className="w-full"></div>
+                <div className="relative my-3">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-white text-gray-500">OR</span>
+                  </div>
+                </div>
               </div>
             )}
 

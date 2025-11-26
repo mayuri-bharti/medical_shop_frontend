@@ -139,6 +139,26 @@ export const loginWithPassword = async (identifier, password) => {
 }
 
 /**
+ * Login with Google OAuth
+ */
+export const loginWithGoogle = async (idToken) => {
+  const result = await apiCall('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken })
+  })
+  
+  // Store tokens if present
+  if (result.data?.accessToken) {
+    setAccessToken(result.data.accessToken)
+  }
+  if (result.data?.refreshToken) {
+    setRefreshToken(result.data.refreshToken)
+  }
+  
+  return result
+}
+
+/**
  * Login admin with password (phone/email/username/name + password)
  */
 export const loginAdminWithPassword = async (identifier, password) => {
@@ -462,13 +482,18 @@ const apiCall = async (endpoint, options = {}, retryCount = 0) => {
     if (!response.ok) {
       const error = new Error(data.message || data.error || 'Request failed')
       error.status = response.status
+      error.response = { data } // Add response for better error handling
       error.data = data
       // Include error details from backend
       if (data.error) {
         error.message = data.error
       }
       if (data.details) {
+        error.message = `${error.message} (${data.details})`
         error.details = data.details
+      }
+      if (data.hint) {
+        error.hint = data.hint
       }
       throw error
     }
