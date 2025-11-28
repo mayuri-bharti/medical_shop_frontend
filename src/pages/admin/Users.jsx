@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Search, Phone, Mail, Calendar, Edit, Trash2, Ban, CheckCircle } from 'lucide-react'
+import { Users, Search, Phone, Mail, Calendar, Edit, Trash2, Ban, CheckCircle, UserPlus, X, Eye, Package, FileText, ChevronRight } from 'lucide-react'
 import { getUsers } from '../../lib/api'
 import { api } from '../../services/api'
 import toast from 'react-hot-toast'
@@ -11,6 +11,7 @@ const AdminUsers = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [editForm, setEditForm] = useState({
     name: '',
@@ -18,9 +19,22 @@ const AdminUsers = () => {
     phone: '',
     password: ''
   })
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: ''
+  })
   const [updating, setUpdating] = useState(false)
+  const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [blocking, setBlocking] = useState(null)
+  const [createdUser, setCreatedUser] = useState(null)
+  const [showUserDetails, setShowUserDetails] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [userOrders, setUserOrders] = useState([])
+  const [userPrescriptions, setUserPrescriptions] = useState([])
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -162,6 +176,37 @@ const AdminUsers = () => {
     }
   }
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault()
+    
+    if (!createForm.name || !createForm.phone) {
+      toast.error('Name and phone are required')
+      return
+    }
+
+    if (createForm.password && createForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const response = await api.post('/admin/users/create', createForm)
+      
+      if (response.data.success) {
+        toast.success('User account created successfully!')
+        setCreatedUser(response.data.data)
+        setCreateForm({ name: '', email: '', phone: '', password: '' })
+        fetchUsers() // Refresh users list
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to create user'
+      toast.error(message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -170,13 +215,173 @@ const AdminUsers = () => {
     })
   }
 
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const handleViewUserDetails = async (user) => {
+    setSelectedUser(user)
+    setShowUserDetails(true)
+    setLoadingUserDetails(true)
+    setUserOrders([])
+    setUserPrescriptions([])
+
+    try {
+      const response = await api.get(`/admin/users/${user._id}/orders-prescriptions`)
+      if (response.data.success) {
+        setUserOrders(response.data.data.orders || [])
+        setUserPrescriptions(response.data.data.prescriptions || [])
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fetch user details')
+    } finally {
+      setLoadingUserDetails(false)
+    }
+  }
+
   return (
     <div className="space-y-5 md:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="pb-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Users Management</h1>
-        <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Manage all registered users</p>
+      <div className="pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Users Management</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base lg:text-lg">Manage all registered users</p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center gap-2"
+        >
+          <UserPlus size={18} />
+          Create User
+        </button>
       </div>
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Create User Account</h2>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setCreateForm({ name: '', email: '', phone: '', password: '' })
+                  setCreatedUser(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            {createdUser ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-semibold mb-2">✓ User created successfully!</p>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Name:</strong> {createdUser.user.name}</p>
+                    <p><strong>Email:</strong> {createdUser.user.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> {createdUser.user.phone}</p>
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="text-yellow-800 font-semibold">Account Password:</p>
+                      <p className="text-lg font-mono font-bold text-yellow-900">{createdUser.password}</p>
+                      <p className="text-xs text-yellow-700 mt-1">Share this password with the user. They can change it after login.</p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false)
+                    setCreatedUser(null)
+                    setCreateForm({ name: '', email: '', phone: '', password: '' })
+                  }}
+                  className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={createForm.phone}
+                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    pattern="[0-9]{10}"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (Optional - will be auto-generated if not provided)
+                  </label>
+                  <input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Min 6 characters"
+                    minLength={6}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate a secure password</p>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false)
+                      setCreateForm({ name: '', email: '', phone: '', password: '' })
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {creating ? 'Creating...' : 'Create User'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
@@ -393,6 +598,13 @@ const AdminUsers = () => {
                       <td className="px-4 md:px-5 lg:px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={() => handleViewUserDetails(user)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="View User Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
                             onClick={() => handleEdit(user)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Edit User"
@@ -493,6 +705,13 @@ const AdminUsers = () => {
                   </div>
                   <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                     <button
+                      onClick={() => handleViewUserDetails(user)}
+                      className="flex-1 px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <Eye size={16} className="inline mr-1" />
+                      View
+                    </button>
+                    <button
                       onClick={() => handleEdit(user)}
                       className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                     >
@@ -548,6 +767,155 @@ const AdminUsers = () => {
           </>
         )}
       </div>
+
+      {/* User Details Sidebar */}
+      {showUserDetails && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex">
+          <div className="bg-white w-full max-w-4xl ml-auto h-full overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">User Details</h2>
+                <p className="text-gray-600 mt-1">{selectedUser.name || 'User'}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowUserDetails(false)
+                  setSelectedUser(null)
+                  setUserOrders([])
+                  setUserPrescriptions([])
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* User Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">User Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Name</p>
+                    <p className="font-medium text-gray-900">{selectedUser.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Phone</p>
+                    <p className="font-medium text-gray-900">{selectedUser.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="font-medium text-gray-900">{selectedUser.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Joined</p>
+                    <p className="font-medium text-gray-900">{formatDate(selectedUser.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {loadingUserDetails ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                </div>
+              ) : (
+                <>
+                  {/* Orders Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <Package size={20} />
+                        Orders ({userOrders.length})
+                      </h3>
+                    </div>
+                    {userOrders.length === 0 ? (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <Package size={48} className="mx-auto text-gray-400 mb-2" />
+                        <p className="text-gray-600">No orders found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {userOrders.map((order) => (
+                          <div key={order._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <p className="font-semibold text-gray-900">Order #{order.orderNumber || order._id.slice(-8)}</p>
+                                <p className="text-sm text-gray-600">{formatDateTime(order.createdAt)}</p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                order.status === 'out for delivery' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {order.status || 'Processing'}
+                              </span>
+                            </div>
+                            <div className="mt-2">
+                              <p className="text-sm text-gray-600">Total: <span className="font-semibold text-gray-900">₹{order.total?.toLocaleString() || '0'}</span></p>
+                              {order.items && order.items.length > 0 && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Prescriptions Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <FileText size={20} />
+                        Prescriptions ({userPrescriptions.length})
+                      </h3>
+                    </div>
+                    {userPrescriptions.length === 0 ? (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <FileText size={48} className="mx-auto text-gray-400 mb-2" />
+                        <p className="text-gray-600">No prescriptions found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {userPrescriptions.map((prescription) => (
+                          <div key={prescription._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <p className="font-semibold text-gray-900">
+                                  {prescription.originalName || `Prescription ${prescription._id.slice(-8)}`}
+                                </p>
+                                <p className="text-sm text-gray-600">{formatDateTime(prescription.createdAt)}</p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                prescription.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                prescription.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                prescription.status === 'fulfilled' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {prescription.status || 'Pending'}
+                              </span>
+                            </div>
+                            {prescription.order && (
+                              <div className="mt-2">
+                                <p className="text-sm text-gray-600">
+                                  Linked to Order: <span className="font-semibold text-gray-900">#{prescription.order.orderNumber || prescription.order._id?.slice(-8)}</span>
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { api } from '../../services/api'
 import { getAccessToken, getAdminToken } from '../../lib/api'
-import { FileText, Search, Filter, User, Calendar, CheckCircle, Clock, Eye, X } from 'lucide-react'
+import { FileText, Search, Filter, User, Calendar, CheckCircle, Clock, Eye, X, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Helper to get file URL with Cloudinary optimization
@@ -93,6 +93,55 @@ const AdminPrescriptions = () => {
     setNewStatus(prescription.status || 'Pending')
     setStatusNotes(prescription.notes || '')
     setShowStatusModal(true)
+  }
+
+  const handleDownloadPrescription = async (prescriptionId, originalName) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const token = getAdminToken() || getAccessToken()
+      
+      if (!token) {
+        toast.error('Authentication required to download')
+        return
+      }
+
+      // Fetch the file as blob
+      const response = await fetch(
+        `${apiBaseUrl}/admin/prescriptions/${prescriptionId}/download?token=${encodeURIComponent(token)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to download prescription')
+      }
+
+      // Get the blob from response
+      const blob = await response.blob()
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create a temporary anchor element and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = originalName || `prescription-${prescriptionId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Clean up
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('Prescription downloaded successfully')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Failed to download prescription')
+    }
   }
 
   const formatDate = (dateString) => {
@@ -335,6 +384,13 @@ const AdminPrescriptions = () => {
                         >
                           <Eye size={16} />
                         </a>
+                        <button
+                          onClick={() => handleDownloadPrescription(prescription._id, prescription.originalName)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          title="Download prescription"
+                        >
+                          <Download size={16} />
+                        </button>
                         <button
                           onClick={() => openStatusModal(prescription)}
                           className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"

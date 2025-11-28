@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
-import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle } from '../lib/api'
+import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle, loginWithFacebook } from '../lib/api'
 import toast from 'react-hot-toast'
 
 
@@ -84,8 +84,13 @@ const Login = () => {
             callback: handleGoogleSignIn,
             auto_select: false,
             cancel_on_tap_outside: true,
-            use_fedcm_for_prompt: true // Use modern FedCM API
+            use_fedcm_for_prompt: true, // Use modern FedCM API
+            ux_mode: 'popup' // Explicitly set popup mode
           })
+          
+          // Log current origin for debugging
+          console.log('🔍 Google OAuth initialized with origin:', window.location.origin)
+          console.log('🔍 Client ID:', googleClientId)
 
           // Render fresh button
           window.google.accounts.id.renderButton(
@@ -129,6 +134,49 @@ const Login = () => {
       if (buttonContainer) {
         buttonContainer.innerHTML = ''
       }
+    }
+  }, [mode, loginMethod, step])
+
+  // Initialize Facebook SDK
+  useEffect(() => {
+    if (mode === 'register' || loginMethod !== 'otp' || step !== 'identifier') return
+
+    const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID
+    
+    if (!facebookAppId) {
+      console.warn('⚠️ VITE_FACEBOOK_APP_ID not configured. Facebook Sign-In will not work.')
+      return
+    }
+
+    const initializeFacebookSDK = () => {
+      if (window.FB) {
+        try {
+          window.FB.init({
+            appId: facebookAppId,
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+          })
+          console.log('✅ Facebook SDK initialized')
+        } catch (error) {
+          console.error('Error initializing Facebook SDK:', error)
+        }
+      }
+    }
+
+    // Wait for Facebook script to load
+    if (window.FB) {
+      initializeFacebookSDK()
+    } else {
+      const checkFacebook = setInterval(() => {
+        if (window.FB) {
+          clearInterval(checkFacebook)
+          initializeFacebookSDK()
+        }
+      }, 100)
+
+      // Cleanup after 10 seconds if Facebook doesn't load
+      setTimeout(() => clearInterval(checkFacebook), 10000)
     }
   }, [mode, loginMethod, step])
 
@@ -228,6 +276,71 @@ const Login = () => {
       
       setError(errorMessage)
     } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFacebookSignIn = async () => {
+    const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID
+    
+    if (!facebookAppId) {
+      toast.error('Facebook login is not configured')
+      return
+    }
+
+    if (!window.FB) {
+      toast.error('Facebook SDK not loaded. Please refresh the page.')
+      return
+    }
+
+    setError('')
+    setLoading(true)
+
+    try {
+      // Request Facebook login
+      window.FB.login(async (response) => {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken
+          
+          console.log('✅ Facebook login successful, sending token to backend...')
+          
+          try {
+            const result = await loginWithFacebook(accessToken)
+            
+            if (result.success && result.data?.accessToken) {
+              handleLoginSuccess(result.data.accessToken)
+              toast.success('Login successful!')
+            } else {
+              throw new Error(result.message || 'Facebook login failed')
+            }
+          } catch (err) {
+            console.error('Facebook login error:', err)
+            
+            let errorMessage = err.response?.data?.message || err.message || 'Facebook login failed'
+            
+            if (err.response?.data?.shouldRetry) {
+              errorMessage = 'Token expired. Please try again.'
+            }
+            
+            toast.error(errorMessage, { duration: 5000 })
+            setError(errorMessage)
+            setLoading(false)
+          }
+        } else {
+          // User cancelled or didn't authorize
+          console.log('Facebook login cancelled or failed')
+          setError('Facebook login was cancelled')
+          toast.error('Facebook login was cancelled')
+          setLoading(false)
+        }
+      }, {
+        scope: 'email,public_profile',
+        return_scopes: true
+      })
+    } catch (err) {
+      console.error('Facebook login error:', err)
+      toast.error('Facebook login failed. Please try again.')
+      setError(err.message || 'Facebook login failed')
       setLoading(false)
     }
   }
@@ -515,18 +628,49 @@ const Login = () => {
               </div>
             )}
 
-            {/* Google Sign-In Button */}
-            {mode === 'login' && loginMethod === 'otp' && step === 'identifier' && import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-              <div className="mb-4">
-                <div id="google-signin-button" className="w-full"></div>
-                <div className="relative my-3">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+            {/* Social Login Buttons */}
+            {(mode === 'login' && loginMethod === 'otp' && step === 'identifier' && 
+              (import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_FACEBOOK_APP_ID)) && (
+              <div className="mb-4 space-y-3">
+                {/* Google Sign-In Button */}
+                {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+                  <div id="google-signin-button" className="w-full"></div>
+                )}
+                
+                {/* Facebook Sign-In Button */}
+                {import.meta.env.VITE_FACEBOOK_APP_ID && (
+                  <button
+                    type="button"
+                    onClick={handleFacebookSignIn}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-md hover:shadow-lg"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Signing in...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        <span>Continue with Facebook</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                
+                {(import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_FACEBOOK_APP_ID) && (
+                  <div className="relative my-3">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-2 bg-white text-gray-500">OR</span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-white text-gray-500">OR</span>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 

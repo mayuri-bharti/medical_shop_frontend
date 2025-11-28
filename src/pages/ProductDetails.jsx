@@ -5,6 +5,7 @@ import { Star, Zap, ShoppingCart } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
 import { broadcastCartUpdate } from '../lib/cartEvents'
 import toast from 'react-hot-toast'
+import { getSubcategoryData } from '../data/subcategoryProducts'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -16,23 +17,73 @@ const ProductDetails = () => {
   const [adding, setAdding] = useState(false)
   const [buying, setBuying] = useState(false)
 
+  // Check if ID is a demo product
+  const isDemoProduct = useMemo(() => {
+    return typeof id === 'string' && (
+      id.startsWith('demo-') || 
+      !id.match(/^[0-9a-fA-F]{24}$/)
+    )
+  }, [id])
+
+  // Find demo product in subcategory data
+  const findDemoProduct = useCallback((productId) => {
+    const subcategories = [
+      'pain-relief', 'antibiotics', 'vitamins', 'skincare', 
+      'digestive', 'respiratory', 'diabetes', 'elderly-care', 
+      'cold-immunity'
+    ]
+    
+    for (const slug of subcategories) {
+      const subcategory = getSubcategoryData(slug)
+      if (subcategory?.products) {
+        const foundProduct = subcategory.products.find(p => p._id === productId)
+        if (foundProduct) {
+          return foundProduct
+        }
+      }
+    }
+    return null
+  }, [])
+
   useEffect(() => {
     let isMounted = true
     const fetchProduct = async () => {
       setLoading(true)
       setError('')
+      
       try {
+        // If it's a demo product, try to find it in frontend data first
+        if (isDemoProduct) {
+          const demoProduct = findDemoProduct(id)
+          if (demoProduct) {
+            if (isMounted) {
+              setProduct(demoProduct)
+              setLoading(false)
+            }
+            return
+          }
+          // If demo product not found in frontend data, try API as fallback
+        }
+        
+        // Try to fetch from API
         const { data } = await api.get(`/products/${id}`)
         if (isMounted) setProduct(data)
       } catch (e) {
-        if (isMounted) setError(e?.response?.data?.message || 'Failed to load product')
+        if (isMounted) {
+          // If it's a demo product and API failed, show helpful message
+          if (isDemoProduct) {
+            setError('This is a demo product. Please search for similar products in our catalog.')
+          } else {
+            setError(e?.response?.data?.message || 'Failed to load product')
+          }
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
     }
     fetchProduct()
     return () => { isMounted = false }
-  }, [id])
+  }, [id, isDemoProduct, findDemoProduct])
 
   const priceInfo = useMemo(() => {
     if (!product) return { discount: 0 }
@@ -42,6 +93,12 @@ const ProductDetails = () => {
   }, [product])
 
   const handleAddToCart = useCallback(async () => {
+    // Check if this is a demo product
+    if (isDemoProduct) {
+      toast.error('This is a demo product. Please search for the actual product in our catalog to add it to cart.')
+      return
+    }
+    
     const token = getAccessToken()
     if (!token) {
       const returnUrl = encodeURIComponent(`/product/${id}`)
@@ -77,9 +134,15 @@ const ProductDetails = () => {
     } finally {
       setAdding(false)
     }
-  }, [id, qty, navigate])
+  }, [id, qty, navigate, isDemoProduct])
 
   const handleBuyNow = useCallback(async () => {
+    // Check if this is a demo product
+    if (isDemoProduct) {
+      toast.error('This is a demo product. Please search for the actual product in our catalog to purchase.')
+      return
+    }
+    
     const token = getAccessToken()
     if (!token) {
       const returnUrl = encodeURIComponent(`/checkout?productId=${id}&quantity=${qty}`)
@@ -98,7 +161,7 @@ const ProductDetails = () => {
     } finally {
       setBuying(false)
     }
-  }, [id, qty, navigate])
+  }, [id, qty, navigate, isDemoProduct])
 
   if (loading) {
     return (

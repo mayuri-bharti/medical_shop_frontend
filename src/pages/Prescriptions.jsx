@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Image,
   Calendar,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import prescriptionPlaceholder from "../images/prescription.webp";
@@ -232,6 +233,55 @@ const Prescriptions = () => {
   const handleDeletePrescription = (prescriptionId) => {
     if (window.confirm("Are you sure you want to delete this prescription?")) {
       deletePrescriptionMutation.mutate(prescriptionId);
+    }
+  };
+
+  const handleDownloadPrescription = async (prescriptionId, originalName) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const token = getAccessToken()
+      
+      if (!token) {
+        toast.error('Authentication required to download')
+        return
+      }
+
+      // Fetch the file as blob
+      const response = await fetch(
+        `${apiBaseUrl}/prescriptions/${prescriptionId}/download?token=${encodeURIComponent(token)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to download prescription')
+      }
+
+      // Get the blob from response
+      const blob = await response.blob()
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create a temporary anchor element and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = originalName || `prescription-${prescriptionId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Clean up
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('Prescription downloaded successfully')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Failed to download prescription')
     }
   };
 
@@ -525,6 +575,14 @@ const Prescriptions = () => {
                           <Eye size={16} />
                           <span>View File</span>
                         </a>
+                        <button
+                          onClick={() => handleDownloadPrescription(prescription._id, prescription.originalName)}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
+                          title="Download prescription"
+                        >
+                          <Download size={16} />
+                          <span className="hidden sm:inline">Download</span>
+                        </button>
                         <button
                           onClick={() =>
                             handleDeletePrescription(prescription._id)

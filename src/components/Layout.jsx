@@ -17,6 +17,15 @@ import { api } from '../services/api'
 import { CART_UPDATED_EVENT, normalizeCartData, calculateCartItemCount } from '../lib/cartEvents'
 import LanguageSelector from './LanguageSelector'
 
+// Helper to get full avatar URL
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return null
+  if (avatar.startsWith('http')) return avatar
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+  const baseUrl = apiBaseUrl.replace('/api', '')
+  return `${baseUrl}${avatar.startsWith('/') ? avatar : '/' + avatar}`
+}
+
 const Layout = ({ children }) => {
   const { t } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -38,12 +47,24 @@ const Layout = ({ children }) => {
       
       if (token) {
         try {
-          const userData = await getCurrentUser()
-          const userObj = userData.data?.user
-          setUser(userObj)
-          // Also check role from user object
-          if (userObj?.role === 'ADMIN') {
-            setIsAdmin(true)
+          // Try to fetch profile first (has avatar)
+          try {
+            const profileResponse = await api.get('/profile')
+            const profileData = profileResponse.data?.data || profileResponse.data
+            if (profileData) {
+              setUser(profileData)
+              if (profileData.role === 'ADMIN') {
+                setIsAdmin(true)
+              }
+            }
+          } catch (profileError) {
+            // Fallback to getCurrentUser if profile endpoint fails
+            const userData = await getCurrentUser()
+            const userObj = userData.data?.user
+            setUser(userObj)
+            if (userObj?.role === 'ADMIN') {
+              setIsAdmin(true)
+            }
           }
         } catch (error) {
           // Handle network errors gracefully - don't break the app if backend is down
@@ -215,6 +236,28 @@ const Layout = ({ children }) => {
               {isAuthenticated ? (
                 <>
                   <Link
+                    to="/account"
+                    className="p-1.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
+                    title="My Account"
+                  >
+                    {user?.avatar && getAvatarUrl(user.avatar) ? (
+                      <img
+                        src={getAvatarUrl(user.avatar)}
+                        alt={user.name || 'User'}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          if (e.target.nextSibling && e.target.nextSibling.style) {
+                            e.target.nextSibling.style.display = 'flex'
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-sm font-semibold ${user?.avatar && getAvatarUrl(user.avatar) ? 'hidden' : ''}`}>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
+                    </div>
+                  </Link>
+                  <Link
                     to="/cart"
                     className="relative p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
                   >
@@ -276,18 +319,32 @@ const Layout = ({ children }) => {
                 )
               })}
               {isAuthenticated && (
-                <Link
-                  to="/prescriptions"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
-                    isActive('/prescriptions')
-                      ? 'text-primary-600 bg-primary-50 shadow-sm'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <FileText size={20} />
-                  <span>{t('common.prescriptions')}</span>
-                </Link>
+                <>
+                  <Link
+                    to="/account"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                      isActive('/account')
+                        ? 'text-primary-600 bg-primary-50 shadow-sm'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <User size={20} />
+                    <span>My Account</span>
+                  </Link>
+                  <Link
+                    to="/prescriptions"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                      isActive('/prescriptions')
+                        ? 'text-primary-600 bg-primary-50 shadow-sm'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <FileText size={20} />
+                    <span>{t('common.prescriptions')}</span>
+                  </Link>
+                </>
               )}
             </div>
           </div>

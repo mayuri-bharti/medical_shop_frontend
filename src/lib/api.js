@@ -159,6 +159,26 @@ export const loginWithGoogle = async (idToken) => {
 }
 
 /**
+ * Login with Facebook OAuth
+ */
+export const loginWithFacebook = async (accessToken) => {
+  const result = await apiCall('/auth/facebook', {
+    method: 'POST',
+    body: JSON.stringify({ accessToken })
+  })
+  
+  // Store tokens if present
+  if (result.data?.accessToken) {
+    setAccessToken(result.data.accessToken)
+  }
+  if (result.data?.refreshToken) {
+    setRefreshToken(result.data.refreshToken)
+  }
+  
+  return result
+}
+
+/**
  * Login admin with password (phone/email/username/name + password)
  */
 export const loginAdminWithPassword = async (identifier, password) => {

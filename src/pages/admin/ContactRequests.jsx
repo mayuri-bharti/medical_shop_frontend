@@ -73,14 +73,34 @@ const AdminContactRequests = () => {
 
   const handleStatusUpdate = async (status) => {
     if (!selectedRequest) return
+    
+    // If admin reply is provided, validate it
+    if (selectedRequest.adminReply && selectedRequest.adminReply.trim().length < 10) {
+      toast.error('Reply must be at least 10 characters')
+      return
+    }
+    
     setUpdating(true)
     try {
-      await api.patch(`/admin/contact/${selectedRequest._id}`, {
+      const updateData = {
         status,
         resolutionNotes: selectedRequest.resolutionNotes,
         priority: selectedRequest.priority
-      })
-      toast.success('Contact request updated')
+      }
+      
+      // Include admin reply if provided
+      if (selectedRequest.adminReply && selectedRequest.adminReply.trim()) {
+        updateData.adminReply = selectedRequest.adminReply.trim()
+      }
+      
+      await api.patch(`/admin/contact/${selectedRequest._id}`, updateData)
+      
+      if (updateData.adminReply) {
+        toast.success('Reply sent successfully! User has been notified via email and SMS.')
+      } else {
+        toast.success('Contact request updated')
+      }
+      
       setShowModal(false)
       setSelectedRequest(null)
       fetchRequests()
@@ -352,13 +372,36 @@ const AdminContactRequests = () => {
                 </div>
               </div>
 
-              {/* Resolution Notes */}
+              {/* Admin Reply (Visible to User) */}
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block">Resolution Notes</label>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Reply to User <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-                  rows={4}
-                  value={selectedRequest.resolutionNotes}
+                  rows={5}
+                  value={selectedRequest.adminReply || ''}
+                  onChange={(e) => setSelectedRequest({ ...selectedRequest, adminReply: e.target.value })}
+                  placeholder="Type your reply to the user. This will be sent via email and SMS..."
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This reply will be sent to the user via email and SMS notification
+                </p>
+                {selectedRequest.adminReply && selectedRequest.repliedAt && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Replied on {formatDate(selectedRequest.repliedAt)}
+                  </p>
+                )}
+              </div>
+
+              {/* Resolution Notes (Internal) */}
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Resolution Notes (Internal)</label>
+                <textarea
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+                  rows={3}
+                  value={selectedRequest.resolutionNotes || ''}
                   onChange={(e) => setSelectedRequest({ ...selectedRequest, resolutionNotes: e.target.value })}
                   placeholder="Add internal notes, action items, or resolution steps..."
                 />

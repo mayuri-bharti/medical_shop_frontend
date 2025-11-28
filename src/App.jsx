@@ -21,6 +21,9 @@ const Returns = lazy(() => import('./pages/Returns'))
 const OrderTracking = lazy(() => import('./pages/OrderTracking'))
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'))
 const Prescriptions = lazy(() => import('./pages/Prescriptions'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Account = lazy(() => import('./pages/Account'))
+const ContactMessages = lazy(() => import('./pages/ContactMessages'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const Subcategory = lazy(() => import('./pages/Subcategory'))
 const ProductDetails = lazy(() => import('./pages/ProductDetails'))
@@ -212,7 +215,21 @@ function App() {
               <Prescriptions />
             </ProtectedRoute>
           } />
-          <Route path="/profile" element={<Navigate to="/" replace />} />
+          <Route path="/account" element={
+            <ProtectedRoute>
+              <Account />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/contact-messages" element={
+            <ProtectedRoute>
+              <ContactMessages />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/products" element={
             <ProtectedRoute>
               <AdminProducts />

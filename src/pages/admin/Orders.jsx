@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ShoppingBag, Filter, Calendar, User, ExternalLink } from 'lucide-react'
+import { ShoppingBag, Filter, Calendar, User, ExternalLink, FileText, Download, Eye } from 'lucide-react'
 import { getOrders, updateOrderStatus } from '../../lib/api'
+import { getAdminToken, getAccessToken } from '../../lib/api'
 import toast from 'react-hot-toast'
 
 const statusOptions = ['processing', 'out for delivery', 'delivered', 'cancelled']
@@ -90,6 +91,45 @@ const AdminOrders = () => {
       style: 'currency',
       currency: 'INR'
     }).format(amount)
+
+  const handleDownloadPrescription = async (prescriptionId, originalName) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const token = getAdminToken() || getAccessToken()
+      
+      if (!token) {
+        toast.error('Authentication required to download files.')
+        return
+      }
+
+      const downloadUrl = `${apiBaseUrl}/admin/prescriptions/${prescriptionId}/download?token=${encodeURIComponent(token)}`
+      
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to download file.')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = originalName || `prescription_${prescriptionId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Prescription downloaded successfully!')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error(error.message || 'Failed to download prescription.')
+    }
+  }
 
   return (
     <div className="px-6 sm:px-8 py-6 max-w-screen-xl mx-auto w-full space-y-6 pb-10">
@@ -197,7 +237,33 @@ const AdminOrders = () => {
                       <Calendar size={16} className="text-gray-400" />
                       <span>{formatDate(order.createdAt)}</span>
                     </div>
-                    {order.prescriptionUrl && (
+                    {order.prescription && (
+                      <div className="inline-flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
+                        <FileText size={14} className="text-blue-600" />
+                        <span className="text-sm font-medium text-blue-700">
+                          {order.prescription.originalName || 'Prescription'}
+                        </span>
+                        {order.prescription.fileUrl && (
+                          <a
+                            href={order.prescription.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                            title="View prescription"
+                          >
+                            <Eye size={14} />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleDownloadPrescription(order.prescription._id, order.prescription.originalName)}
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                          title="Download prescription"
+                        >
+                          <Download size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {order.prescriptionUrl && !order.prescription && (
                       <a
                         href={order.prescriptionUrl}
                         target="_blank"
@@ -251,6 +317,71 @@ const AdminOrders = () => {
                       Cancelled on {formatDate(order.cancellation.cancelledAt || order.updatedAt)} by{' '}
                       {order.user?.name || order.user?.phone || 'User'}
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {order.prescription && (
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                      <FileText size={16} className="text-gray-400" />
+                      Prescription Details
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {order.prescription.fileUrl && (
+                        <a
+                          href={order.prescription.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                          <Eye size={16} />
+                          View
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDownloadPrescription(order.prescription._id, order.prescription.originalName)}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Download size={16} />
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {order.prescription.originalName || 'Prescription File'}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Uploaded: {formatDate(order.prescription.createdAt)}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        order.prescription.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.prescription.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        order.prescription.status === 'fulfilled' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {order.prescription.status || 'Pending'}
+                      </span>
+                    </div>
+                    {order.prescription.fileUrl && (
+                      <div className="flex items-center gap-3 pt-2 border-t border-blue-200">
+                        <a
+                          href={order.prescription.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium"
+                        >
+                          <Eye size={12} />
+                          View in New Tab
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

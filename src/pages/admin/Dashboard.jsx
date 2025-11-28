@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Menu } from 'lucide-react'
+import { Menu, LogOut } from 'lucide-react'
 import Sidebar from '../../components/admin/Sidebar'
+import { removeAccessToken } from '../../lib/api'
+import toast from 'react-hot-toast'
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    // Remove all tokens (removeAccessToken handles admin tokens too)
+    removeAccessToken()
+    
+    toast.success('Logged out successfully')
+    navigate('/admin/login')
+  }
 
   const navItems = [
     { name: 'Dashboard', href: '/admin/dashboard' },
@@ -75,6 +86,17 @@ const AdminDashboard = () => {
               )
             })}
           </nav>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200 hover:border-red-300"
+              title="Logout"
+            >
+              <LogOut size={18} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
         </div>
       </header>
 

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth Verification</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <h1>Google OAuth Configuration Test</h1>
+    <div id="google-signin-button"></div>
+    <div id="status"></div>
+    
+    <script>
+        // Replace with your actual client ID
+        const CLIENT_ID = prompt('Enter your Google Client ID:') || '';
+        
+        if (!CLIENT_ID) {
+            document.getElementById('status').innerHTML = '<p style="color: red;">No client ID provided</p>';
+        } else {
+            function initializeGoogleSignIn() {
+                if (window.google && window.google.accounts) {
+                    try {
+                        window.google.accounts.id.initialize({
+                            client_id: CLIENT_ID,
+                            callback: (response) => {
+                                document.getElementById('status').innerHTML = 
+                                    '<p style="color: green;">✅ Success! Token received: ' + 
+                                    response.credential.substring(0, 50) + '...</p>';
+                            },
+                            auto_select: false,
+                            cancel_on_tap_outside: true
+                        });
+
+                        window.google.accounts.id.renderButton(
+                            document.getElementById('google-signin-button'),
+                            {
+                                theme: 'outline',
+                                size: 'large',
+                                width: '100%',
+                                text: 'signin_with'
+                            }
+                        );
+                        
+                        document.getElementById('status').innerHTML = 
+                            '<p style="color: blue;">✅ Google Sign-In initialized. Current origin: ' + 
+                            window.location.origin + '</p>';
+                    } catch (error) {
+                        document.getElementById('status').innerHTML = 
+                            '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+                    }
+                } else {
+                    setTimeout(initializeGoogleSignIn, 100);
+                }
+            }
+            
+            // Wait for Google script to load
+            if (window.google && window.google.accounts) {
+                initializeGoogleSignIn();
+            } else {
+                window.addEventListener('load', () => {
+                    setTimeout(initializeGoogleSignIn, 1000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+
+
