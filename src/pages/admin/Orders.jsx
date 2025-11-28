@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ShoppingBag, Filter, Calendar, User, ExternalLink, FileText, Download, Eye } from 'lucide-react'
+import { ShoppingBag, Filter, Calendar, User, ExternalLink, FileText, Download, Eye, Truck, X } from 'lucide-react'
 import { getOrders, updateOrderStatus } from '../../lib/api'
 import { getAdminToken, getAccessToken } from '../../lib/api'
+import { api } from '../../services/api'
 import toast from 'react-hot-toast'
 
 const statusOptions = ['processing', 'out for delivery', 'delivered', 'cancelled']
@@ -25,7 +26,21 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders({ startDate: startDateParam, endDate: endDateParam })
+    fetchDeliveryBoys()
   }, [statusFilter, startDateParam, endDateParam])
+
+  const fetchDeliveryBoys = async () => {
+    try {
+      const response = await api.get('/admin/delivery-boys', {
+        params: { limit: 100, isActive: true }
+      })
+      if (response.data.success) {
+        setDeliveryBoys(response.data.deliveryBoys || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch delivery boys:', error)
+    }
+  }
 
   const fetchOrders = async ({ startDate, endDate } = {}) => {
     setLoading(true)
@@ -67,14 +82,35 @@ const AdminOrders = () => {
     try {
       await updateOrderStatus(orderId, newStatus)
       toast.success('Status updated')
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === orderId ? { ...order, status: newStatus } : order
-        )
-      )
+      fetchOrders({ startDate: startDateParam, endDate: endDateParam })
     } catch (error) {
       toast.error(error.message || 'Failed to update status')
     }
+  }
+
+  const handleAssignDeliveryBoy = async (orderId, deliveryBoyId) => {
+    setAssigning(true)
+    try {
+      const response = await api.patch(`/admin/orders/${orderId}/assign-delivery-boy`, {
+        deliveryBoyId
+      })
+      
+      if (response.data.success) {
+        toast.success('Delivery boy assigned successfully!')
+        setShowAssignModal(false)
+        setSelectedOrder(null)
+        fetchOrders({ startDate: startDateParam, endDate: endDateParam })
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to assign delivery boy')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  const openAssignModal = (order) => {
+    setSelectedOrder(order)
+    setShowAssignModal(true)
   }
 
   const formatDate = (dateString) =>
@@ -225,6 +261,24 @@ const AdminOrders = () => {
                         </option>
                       ))}
                     </select>
+                    {order.status === 'processing' && !order.deliveryBoy && (
+                      <button
+                        onClick={() => openAssignModal(order)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-md transition-colors"
+                        title="Assign Delivery Boy"
+                      >
+                        <Truck size={14} />
+                        Assign
+                      </button>
+                    )}
+                    {order.deliveryBoy && (
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
+                        <Truck size={14} className="text-green-600" />
+                        <span className="text-xs font-medium text-green-700">
+                          {order.deliveryBoy.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm md:text-base text-gray-600 mt-2">
                     <div className="flex items-center space-x-2">
@@ -398,6 +452,69 @@ const AdminOrders = () => {
             </article>
           ))}
       </section>
+
+      {/* Assign Delivery Boy Modal */}
+      {showAssignModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Assign Delivery Boy</h2>
+              <button
+                onClick={() => {
+                  setShowAssignModal(false)
+                  setSelectedOrder(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Order: <span className="font-semibold">#{selectedOrder.orderNumber || selectedOrder._id.slice(-8)}</span>
+              </p>
+              <p className="text-sm text-gray-600">
+                Customer: <span className="font-semibold">{selectedOrder.user?.name || selectedOrder.user?.phone}</span>
+              </p>
+            </div>
+            {deliveryBoys.length === 0 ? (
+              <div className="text-center py-8">
+                <Truck className="mx-auto text-gray-400 mb-2" size={48} />
+                <p className="text-gray-600">No active delivery boys available</p>
+                <a href="/admin/dashboard/delivery-boys" className="text-primary-600 hover:text-primary-700 mt-2 inline-block">
+                  Create Delivery Boy
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {deliveryBoys.map((db) => (
+                  <button
+                    key={db._id}
+                    onClick={() => handleAssignDeliveryBoy(selectedOrder._id, db._id)}
+                    disabled={assigning}
+                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors disabled:opacity-50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-900">{db.name}</p>
+                        <p className="text-sm text-gray-600">{db.phone}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {db.vehicleType} {db.vehicleNumber && `- ${db.vehicleNumber}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">
+                          Completed: {db.stats?.completedDeliveries || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

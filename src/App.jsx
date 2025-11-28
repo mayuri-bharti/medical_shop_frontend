@@ -49,6 +49,9 @@ const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
 const AdminDoctorManagement = lazy(() => import('./pages/admin/DoctorManagement'))
 const AdminAppointmentManagement = lazy(() => import('./pages/admin/AppointmentManagement'))
 const AdminContactRequests = lazy(() => import('./pages/admin/ContactRequests'))
+const AdminDeliveryBoys = lazy(() => import('./pages/admin/DeliveryBoys'))
+const DeliveryBoyLogin = lazy(() => import('./pages/delivery-boy/Login'))
+const DeliveryBoyDashboard = lazy(() => import('./pages/delivery-boy/Dashboard'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -253,8 +256,17 @@ function App() {
             <Route path="add-product" element={<AdminAddProduct />} />
             <Route path="manage-products" element={<AdminManageProducts />} />
             <Route path="edit-product/:id" element={<AdminEditProduct />} />
-            <Route path="contact-requests" element={<AdminContactRequests />} />
-          </Route>
+                <Route path="contact-requests" element={<AdminContactRequests />} />
+                <Route path="delivery-boys" element={<AdminDeliveryBoys />} />
+              </Route>
+
+              {/* Delivery Boy Routes */}
+              <Route path="/delivery-boy/login" element={<DeliveryBoyLogin />} />
+              <Route path="/delivery-boy/dashboard" element={
+                <ProtectedRoute>
+                  <DeliveryBoyDashboard />
+                </ProtectedRoute>
+              } />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -10,7 +10,8 @@ import {
   FileText,
   LogOut,
   Home,
-  Stethoscope
+  Stethoscope,
+  Truck
 } from 'lucide-react'
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 import { api } from '../services/api'
@@ -468,6 +469,12 @@ const Layout = ({ children }) => {
                 <li>
                   <Link to="/admin/login" className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors">
                     Admin Login →
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/delivery-boy/login" className="text-sm text-orange-600 hover:text-orange-700 font-semibold transition-colors flex items-center gap-1">
+                    <Truck size={16} />
+                    Delivery Boy Login →
                   </Link>
                 </li>
               </ul>
