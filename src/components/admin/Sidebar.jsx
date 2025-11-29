@@ -14,7 +14,8 @@ import {
   Stethoscope,
   CalendarClock,
   RefreshCw,
-  MessageCircle
+  MessageCircle,
+  AlertTriangle
 } from 'lucide-react'
 import { removeAccessToken } from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
@@ -43,6 +44,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Users', href: '/admin/dashboard/users', icon: Users },
     { name: 'Orders', href: '/admin/dashboard/orders', icon: ShoppingBag },
     { name: 'Returns', href: '/admin/dashboard/returns', icon: RefreshCw },
+    { name: 'Claims', href: '/admin/dashboard/claims', icon: AlertTriangle },
     { name: 'Contact Requests', href: '/admin/dashboard/contact-requests', icon: MessageCircle },
     { name: 'Prescriptions', href: '/admin/dashboard/prescriptions', icon: FileText },
     { name: 'Doctors', href: '/admin/dashboard/doctors', icon: Stethoscope },

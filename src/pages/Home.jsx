@@ -310,51 +310,51 @@ const Home = () => {
       </section>
 
       {/* Featured Products - Trending Medicines */}
-      <section className="py-6 md:py-16 bg-white">
+      <section className="py-4 sm:py-6 md:py-12 lg:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="mb-4 md:mb-10 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-[#1A1A1A] mb-1 md:mb-3">
+          <div className="mb-3 sm:mb-4 md:mb-6 lg:mb-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex-1">
+              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#1A1A1A] mb-1 md:mb-2 lg:mb-3">
                 {t('home.trendingMedicines')}
               </h2>
-              <p className="text-xs md:text-base text-[#6B7280] mt-1 md:mt-2">{t('home.mostPopular')}</p>
+              <p className="text-[10px] sm:text-xs md:text-sm lg:text-base text-[#6B7280] mt-0.5 sm:mt-1 md:mt-2">{t('home.mostPopular')}</p>
             </div>
             <Link
               to="/products"
-              className="hidden md:flex items-center space-x-2 px-6 py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200"
+              className="hidden sm:flex items-center space-x-2 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200 text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
               <span>{t('home.viewAll')}</span>
-              <ArrowRight size={18} />
+              <ArrowRight size={16} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
             </Link>
           </div>
         {isPopularError && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-3 sm:mb-4 rounded-lg sm:rounded-xl border border-red-200 bg-red-50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-red-700">
             {t('home.unableToLoad')}
           </div>
         )}
         {isPopularLoading ? (
-          <div className="grid grid-cols-2 gap-2 md:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-5">
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 // eslint-disable-next-line react/no-array-index-key
                 key={index}
-                className="flex h-full flex-col rounded-lg md:rounded-2xl border border-slate-200 bg-white p-2 md:p-4 shadow-sm"
+                className="flex h-full flex-col rounded-lg sm:rounded-xl md:rounded-2xl border border-slate-200 bg-white p-2 sm:p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col gap-2 md:gap-3 animate-pulse">
-                  <div className="ml-auto h-4 w-4 md:h-5 md:w-5 rounded-full bg-slate-200" />
-                  <div className="h-20 md:h-32 w-full rounded-lg bg-slate-200" />
-                  <div className="h-3 md:h-4 w-3/4 rounded bg-slate-200" />
-                  <div className="h-3 md:h-4 w-1/2 rounded bg-slate-200" />
-                  <div className="h-2 md:h-3 w-2/3 rounded bg-slate-200" />
-                  <div className="mt-1 md:mt-2 flex gap-1 md:gap-2">
-                    <div className="h-7 md:h-9 flex-1 rounded-full bg-slate-200" />
+                <div className="flex flex-col gap-2 sm:gap-2.5 md:gap-3 animate-pulse">
+                  <div className="ml-auto h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 rounded-full bg-slate-200" />
+                  <div className="h-16 sm:h-20 md:h-28 lg:h-32 w-full rounded-lg bg-slate-200" />
+                  <div className="h-2.5 sm:h-3 md:h-3.5 lg:h-4 w-3/4 rounded bg-slate-200" />
+                  <div className="h-2.5 sm:h-3 md:h-3.5 lg:h-4 w-1/2 rounded bg-slate-200" />
+                  <div className="h-2 sm:h-2.5 md:h-3 w-2/3 rounded bg-slate-200" />
+                  <div className="mt-1 sm:mt-1.5 md:mt-2 flex gap-1 sm:gap-1.5 md:gap-2">
+                    <div className="h-6 sm:h-7 md:h-8 lg:h-9 flex-1 rounded-full bg-slate-200" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 md:gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-5">
             {featuredProducts.map((product) => {
               const discount = product.mrp && product.mrp !== product.price 
                 ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -363,7 +363,7 @@ const Home = () => {
               return (
                 <div
                   key={product.id ?? product.name}
-                  className="medicine-card group cursor-pointer"
+                  className="medicine-card group cursor-pointer relative flex flex-col h-full rounded-lg sm:rounded-xl md:rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                   onClick={() => {
                     if (product.id) {
                       navigate(`/product/${product.id}`)
@@ -385,57 +385,62 @@ const Home = () => {
                 >
                   {/* Discount Badge */}
                   {discount > 0 && (
-                    <div className="absolute top-1 right-1 md:top-3 md:right-3 z-10">
-                      <span className="badge badge-error text-[8px] md:text-xs px-1 md:px-2 py-0.5 md:py-1">
+                    <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 md:top-3 md:right-3 z-10">
+                      <span className="inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] sm:text-[10px] md:text-xs font-bold px-1.5 sm:px-2 md:px-2.5 py-0.5 sm:py-1 shadow-md">
                         {discount}% OFF
                       </span>
                     </div>
                   )}
                   
                   {/* Product Image */}
-                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-2 md:p-6 flex items-center justify-center min-h-[100px] md:min-h-[180px]">
+                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-2 sm:p-3 md:p-4 lg:p-6 flex items-center justify-center min-h-[90px] sm:min-h-[110px] md:min-h-[140px] lg:min-h-[180px] xl:min-h-[200px]">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-20 md:h-32 w-full object-contain transition-transform duration-300 md:group-hover:scale-110"
+                      className="h-16 sm:h-20 md:h-24 lg:h-32 xl:h-36 w-full object-contain transition-transform duration-300 group-hover:scale-110"
                       loading="lazy"
+                      onError={(e) => {
+                        e.target.src = '/placeholder-medicine.jpg'
+                      }}
                     />
                   </div>
                   
                   {/* Product Info */}
-                  <div className="p-2 md:p-5 flex flex-1 flex-col">
-                    <h3 className="text-[10px] md:text-sm font-bold text-gray-900 line-clamp-2 mb-1 md:mb-3 min-h-[28px] md:min-h-[40px] leading-tight">
+                  <div className="p-2 sm:p-3 md:p-4 lg:p-5 flex flex-1 flex-col">
+                    <h3 className="text-[10px] sm:text-[11px] md:text-xs lg:text-sm font-bold text-gray-900 line-clamp-2 mb-1 sm:mb-1.5 md:mb-2 lg:mb-3 min-h-[28px] sm:min-h-[32px] md:min-h-[36px] lg:min-h-[40px] leading-tight">
                       {product.name}
                     </h3>
                     
                     {/* Price */}
-                    <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
-                      <span className="text-xs md:text-lg font-bold text-apollo-700">
+                    <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5 md:mb-2 flex-wrap">
+                      <span className="text-[11px] sm:text-xs md:text-sm lg:text-base xl:text-lg font-bold text-apollo-700">
                         ₹{Number(product.price ?? 0).toLocaleString()}
                       </span>
                       {product.mrp && product.mrp !== product.price && (
-                        <>
-                          <span className="text-[8px] md:text-xs text-gray-500 line-through">
-                            ₹{Number(product.mrp ?? 0).toLocaleString()}
-                          </span>
-                        </>
+                        <span className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 line-through">
+                          ₹{Number(product.mrp ?? 0).toLocaleString()}
+                        </span>
                       )}
                     </div>
                     
-                    {/* Stock Status - Hidden on mobile */}
-                    <div className="hidden md:flex items-center gap-2 mb-4">
-                      <span className={`inline-flex h-2.5 w-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <p className="text-xs text-gray-600">
+                    {/* Stock Status - Responsive */}
+                    <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 md:mb-4">
+                      <span className={`inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <p className="text-[10px] sm:text-xs text-gray-600 truncate">
                         {product.inStock ? product.delivery : t('home.outOfStock')}
                       </p>
                     </div>
                     
                     {/* Action Buttons */}
-                    <div className="mt-auto flex items-center gap-1 md:gap-2">
+                    <div className="mt-auto flex items-center gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-2">
                       <button
                         type="button"
                         disabled={!product.inStock}
-                        className={`flex-1 rounded-lg md:rounded-xl px-2 md:px-4 py-1.5 md:py-2.5 text-[9px] md:text-xs font-bold transition-all ${
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Add to cart functionality here
+                        }}
+                        className={`flex-1 rounded-lg sm:rounded-xl md:rounded-xl px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 text-[9px] sm:text-[10px] md:text-xs font-bold transition-all active:scale-95 ${
                           product.inStock
                             ? 'bg-apollo-700 text-white hover:bg-apollo-800 shadow-md hover:shadow-lg'
                             : 'cursor-not-allowed bg-gray-100 text-gray-400'
@@ -452,13 +457,13 @@ const Home = () => {
         )}
         
           {/* View All Link for Mobile */}
-          <div className="mt-4 md:mt-8 text-center md:hidden">
+          <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8 text-center sm:hidden">
             <Link
               to="/products"
-              className="inline-flex items-center space-x-1 px-4 py-2 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200 text-sm"
+              className="inline-flex items-center space-x-1.5 px-4 sm:px-5 py-2 sm:py-2.5 border-2 border-apollo-700 text-apollo-700 hover:bg-apollo-50 font-semibold rounded-full transition-all duration-200 text-xs sm:text-sm active:scale-95"
             >
               <span>{t('home.viewAllProducts')}</span>
-              <ArrowRight size={14} />
+              <ArrowRight size={14} className="sm:w-4 sm:h-4" />
             </Link>
           </div>
         </div>

@@ -59,12 +59,17 @@ const Cart = () => {
   }
 
   const handleQuantityChange = async (productId, newQuantity) => {
-    if (newQuantity < 1) return
+    if (newQuantity < 1 || !cart || !cart.items) return
     
     // For now, just update locally
     // TODO: Implement API call to update quantity
     const updatedCart = { ...cart }
-    const item = updatedCart.items.find((item) => getProductId(item.product) === productId)
+    const item = updatedCart.items.find((item) => {
+      if (!item) return false
+      const product = item.product || item.medicine
+      if (!product) return false
+      return getProductId(product) === productId
+    })
     if (item) {
       item.quantity = newQuantity
     }
@@ -109,7 +114,11 @@ const Cart = () => {
   const handleSelectAll = (checked) => {
     if (!cart?.items?.length) return
     if (checked) {
-      setSelectedProductIds(new Set(cart.items.map((item) => getProductId(item.product))))
+      setSelectedProductIds(new Set(
+        cart.items
+          .filter(item => item && (item.product || item.medicine))
+          .map((item) => getProductId(item.product || item.medicine))
+      ))
     } else {
       setSelectedProductIds(new Set())
     }
@@ -118,7 +127,12 @@ const Cart = () => {
   const selectedItems = useMemo(() => {
     if (!cart?.items?.length) return []
     if (!selectedProductIds.size) return []
-    return cart.items.filter((item) => selectedProductIds.has(getProductId(item.product)))
+    return cart.items.filter((item) => {
+      if (!item) return false
+      const product = item.product || item.medicine
+      if (!product) return false
+      return selectedProductIds.has(getProductId(product))
+    })
   }, [cart, selectedProductIds])
 
   const selectionSummary = useMemo(() => {
@@ -143,7 +157,7 @@ const Cart = () => {
     )
   }
 
-  if (!cart || cart.items.length === 0) {
+  if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div className="text-center max-w-md">
@@ -209,18 +223,25 @@ const Cart = () => {
                 <input
                   type="checkbox"
                   className="h-4 w-4 text-medical-600"
-                  checked={selectedProductIds.size === cart.items.length}
+                  checked={selectedProductIds.size > 0 && selectedProductIds.size === (cart.items || []).filter(item => item && (item.product || item.medicine)).length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
                 <span className="text-sm font-medium text-gray-700">{t('cart.selectAll')}</span>
               </div>
               <span className="text-sm text-gray-500">
-                {selectedItems.length} {t('common.of')} {cart.items.length} {t('cart.selected')}
+                {selectedItems.length} {t('common.of')} {(cart.items || []).filter(item => item && (item.product || item.medicine)).length} {t('cart.selected')}
               </span>
             </div>
-            {cart.items.map((item) => {
-              const productId = getProductId(item.product)
+            {(cart.items || []).filter(item => item && (item.product || item.medicine)).map((item) => {
+              const product = item.product || item.medicine || {}
+              const productId = getProductId(product) || item._id
               const isSelected = selectedProductIds.has(productId)
+              
+              // Skip rendering if product is invalid
+              if (!product || (!product._id && !product.id && !item._id)) {
+                return null
+              }
+              
               return (
                 <div
                   key={productId}
@@ -238,32 +259,35 @@ const Cart = () => {
                       />
                       <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <img
-                          src={item.product.image || '/placeholder-medicine.jpg'}
-                          alt={item.product.name}
+                          src={product.image || product.imageUrl || '/placeholder-medicine.jpg'}
+                          alt={product.name || 'Product'}
                           className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.src = '/placeholder-medicine.jpg'
+                          }}
                         />
                       </div>
                     </div>
                     
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">
-                        {item.product.name}
+                        {product.name || item.name || 'Unknown Product'}
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        {item.product.brand}
+                        {product.brand || product.manufacturer || ''}
                       </p>
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => handleQuantityChange(productId, item.quantity - 1)}
+                            onClick={() => handleQuantityChange(productId, (item.quantity || 1) - 1)}
                             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                           >
                             <Minus size={16} />
                           </button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <span className="w-8 text-center font-medium">{item.quantity || 1}</span>
                           <button
-                            onClick={() => handleQuantityChange(productId, item.quantity + 1)}
+                            onClick={() => handleQuantityChange(productId, (item.quantity || 1) + 1)}
                             className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
                           >
                             <Plus size={16} />
@@ -272,10 +296,10 @@ const Cart = () => {
                         
                         <div className="text-right">
                           <p className="font-semibold text-gray-900">
-                            ₹{(item.price * item.quantity).toLocaleString()}
+                            ₹{((item.price || 0) * (item.quantity || 1)).toLocaleString()}
                           </p>
                           <p className="text-sm text-gray-600">
-                            ₹{item.price.toLocaleString()} {t('common.each')}
+                            ₹{(item.price || 0).toLocaleString()} {t('common.each')}
                           </p>
                         </div>
                         

@@ -25,6 +25,7 @@ const AdminDashboard = () => {
     { name: 'Users', href: '/admin/dashboard/users' },
     { name: 'Orders', href: '/admin/dashboard/orders' },
     { name: 'Returns', href: '/admin/dashboard/returns' },
+    { name: 'Claims', href: '/admin/dashboard/claims' },
     { name: 'Contact', href: '/admin/dashboard/contact-requests' },
     { name: 'Prescriptions', href: '/admin/dashboard/prescriptions' },
     { name: 'Delivery Boys', href: '/admin/dashboard/delivery-boys' },

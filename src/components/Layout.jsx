@@ -430,6 +430,11 @@ const Layout = ({ children }) => {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/claims" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
+                    My Claims
+                  </Link>
+                </li>
+                <li>
                   <Link to="/faq" className="text-sm text-gray-600 hover:text-primary-600 transition-colors font-medium">
                     FAQ
                   </Link>

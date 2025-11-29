@@ -15,7 +15,8 @@ import {
   Mail,
   Edit2,
   CheckCircle,
-  Clock
+  Clock,
+  AlertTriangle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -315,6 +316,20 @@ const Account = () => {
                     >
                       <MessageCircle size={24} className="text-primary-600" />
                       <span className="text-sm font-medium text-gray-700">Messages</span>
+                    </Link>
+                    <Link
+                      to="/claims"
+                      className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                    >
+                      <AlertTriangle size={24} className="text-primary-600" />
+                      <span className="text-sm font-medium text-gray-700">My Claims</span>
+                    </Link>
+                    <Link
+                      to="/returns"
+                      className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                    >
+                      <Package size={24} className="text-primary-600" />
+                      <span className="text-sm font-medium text-gray-700">Returns</span>
                     </Link>
                   </div>
                 </div>

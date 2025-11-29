@@ -17,7 +17,21 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const requestUrl = config.url || ''
-    const isAdminRequest = requestUrl.startsWith('/admin/') || requestUrl.includes('/admin/')
+    // Check if URL starts with /admin/
+    const isAdminUrl = requestUrl.startsWith('/admin/') || requestUrl.includes('/admin/')
+    
+    // Check if current route is an admin route
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+    const isAdminRoute = currentPath.startsWith('/admin/')
+    
+    // Routes that need admin auth when accessed from admin pages
+    const adminOnlyRoutes = ['/claims']
+    const isAdminOnlyRoute = adminOnlyRoutes.some(route => requestUrl.startsWith(route))
+    
+    // Use admin token if:
+    // 1. URL starts with /admin/
+    // 2. OR current route is admin AND request is to admin-only route (like /claims)
+    const isAdminRequest = isAdminUrl || (isAdminRoute && isAdminOnlyRoute)
 
     const token = isAdminRequest ? getAdminToken() : getAccessToken()
     if (token) {

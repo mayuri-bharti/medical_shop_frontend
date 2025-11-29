@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useTranslation } from 'react-i18next'
-import { Package, FileText, ExternalLink, MapPin, RefreshCw, XCircle } from 'lucide-react'
+import { Package, FileText, ExternalLink, MapPin, RefreshCw, XCircle, AlertTriangle } from 'lucide-react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import ReturnRequestForm from '../components/ReturnRequestForm'
+import ClaimModal from '../components/ClaimModal'
 
 const statusStyles = {
   processing: 'bg-purple-100 text-purple-800',
@@ -39,6 +40,8 @@ const Orders = () => {
   const navigate = useNavigate()
   const [showReturnForm, setShowReturnForm] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [showClaimModal, setShowClaimModal] = useState(false)
+  const [claimOrder, setClaimOrder] = useState(null)
   const [cancelOrderTarget, setCancelOrderTarget] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [isCancelling, setIsCancelling] = useState(false)
@@ -81,6 +84,16 @@ const Orders = () => {
     }
   )
 
+  const { data: claimsData } = useQuery(
+    ['my-claims-summary'],
+    async () => {
+      const response = await api.get('/claims/my-claims')
+      return response.data?.data || []
+    },
+    {
+      refetchOnWindowFocus: false
+    }
+  )
 
   const returnsByOrder = useMemo(() => {
     if (!returnsData) return {}
@@ -93,6 +106,25 @@ const Orders = () => {
     })
     return map
   }, [returnsData])
+
+  const claimsByOrder = useMemo(() => {
+    if (!claimsData) return {}
+    const map = {}
+    claimsData.forEach((claim) => {
+      const orderRef = claim.order?._id || claim.order
+      if (orderRef) {
+        map[orderRef.toString()] = claim
+      }
+    })
+    return map
+  }, [claimsData])
+
+  const claimStatusConfig = {
+    pending: { label: t('orders.claimPending') || 'Claim Pending', color: 'bg-yellow-100 text-yellow-800' },
+    approved: { label: t('orders.claimApproved') || 'Claim Approved', color: 'bg-green-100 text-green-800' },
+    rejected: { label: t('orders.claimRejected') || 'Claim Rejected', color: 'bg-red-100 text-red-800' },
+    resolved: { label: t('orders.claimResolved') || 'Claim Resolved', color: 'bg-blue-100 text-blue-800' }
+  }
 
   if (isLoading) {
     return (
@@ -131,7 +163,9 @@ const Orders = () => {
         {data.map((order) => {
           const orderKey = order._id?.toString?.() || order._id
           const associatedReturn = orderKey ? returnsByOrder[orderKey] : null
+          const associatedClaim = orderKey ? claimsByOrder[orderKey] : null
           const returnStatus = associatedReturn ? (returnStatusConfig[associatedReturn.status] || returnStatusConfig.pending) : null
+          const claimStatus = associatedClaim ? (claimStatusConfig[associatedClaim.status] || claimStatusConfig.pending) : null
 
           return (
           <div
@@ -200,6 +234,41 @@ const Orders = () => {
               </div>
             )}
 
+            {associatedClaim && (
+              <div className="border border-dashed border-orange-200 rounded-lg p-4 bg-orange-50">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Claim Request</p>
+                    <p className="text-xs text-gray-500">
+                      Reason: {associatedClaim.reason} • Requested on{' '}
+                      {new Date(associatedClaim.createdAt).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    {associatedClaim.adminNote && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-orange-200">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">Admin Reply:</p>
+                        <p className="text-sm text-gray-900">{associatedClaim.adminNote}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${claimStatus?.color}`}>
+                      {claimStatus?.label}
+                    </span>
+                    <button
+                      onClick={() => navigate(`/claims/${associatedClaim._id}`)}
+                      className="text-xs text-orange-600 hover:text-orange-700 font-medium underline"
+                    >
+                      View Details →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-gray-200 pt-4 space-y-3">
               {order.items?.map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
@@ -227,17 +296,29 @@ const Orders = () => {
                   <MapPin size={18} />
                   {t('orders.trackOrder')}
                 </button>
-                {order.status === 'delivered' && (
-                  <button
-                    onClick={() => {
-                      setSelectedOrder(order)
-                      setShowReturnForm(true)
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                  >
-                    <RefreshCw size={18} />
-                    {t('orders.returnRefund')}
-                  </button>
+                {order.status === 'delivered' && !associatedClaim && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setClaimOrder(order)
+                        setShowClaimModal(true)
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      <AlertTriangle size={18} />
+                      Raise a Claim
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order)
+                        setShowReturnForm(true)
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      <RefreshCw size={18} />
+                      {t('orders.returnRefund')}
+                    </button>
+                  </>
                 )}
                 {cancellableStatuses.includes(order.status?.toLowerCase()) && (
                   <button
@@ -286,6 +367,19 @@ const Orders = () => {
           onClose={() => {
             setShowReturnForm(false)
             setSelectedOrder(null)
+          }}
+        />
+      )}
+
+      {showClaimModal && claimOrder && (
+        <ClaimModal
+          order={claimOrder}
+          onClose={() => {
+            setShowClaimModal(false)
+            setClaimOrder(null)
+          }}
+          onSuccess={() => {
+            refetch()
           }}
         />
       )}
