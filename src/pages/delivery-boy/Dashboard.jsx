@@ -9,6 +9,9 @@ const DeliveryBoyDashboard = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null)
+  const [statusNote, setStatusNote] = useState('')
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -63,10 +66,19 @@ const DeliveryBoyDashboard = () => {
   }
 
   const handleStatusUpdate = async (orderId, newStatus) => {
+    setSelectedOrderForStatus({ orderId, newStatus })
+    setStatusNote('')
+  }
+
+  const confirmStatusUpdate = async () => {
+    if (!selectedOrderForStatus) return
+    
+    setUpdatingStatus(true)
     try {
       const token = localStorage.getItem('deliveryBoyToken') || sessionStorage.getItem('deliveryBoyToken')
-      const response = await api.patch(`/delivery-boy/orders/${orderId}/status`, {
-        status: newStatus
+      const response = await api.patch(`/delivery-boy/orders/${selectedOrderForStatus.orderId}/status`, {
+        status: selectedOrderForStatus.newStatus,
+        note: statusNote.trim() || undefined
       }, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -75,10 +87,15 @@ const DeliveryBoyDashboard = () => {
 
       if (response.data.success) {
         toast.success('Order status updated successfully!')
+        setSelectedOrderForStatus(null)
+        setStatusNote('')
         fetchOrders()
+        fetchProfile() // Refresh stats
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update order status')
+    } finally {
+      setUpdatingStatus(false)
     }
   }
 
@@ -268,9 +285,23 @@ const DeliveryBoyDashboard = () => {
                           {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
                         </p>
                         {order.shippingAddress.phoneNumber && (
-                          <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                            <Phone size={14} />
-                            <span>{order.shippingAddress.phoneNumber}</span>
+                          <div className="flex items-center gap-2 mt-2">
+                            <a 
+                              href={`tel:${order.shippingAddress.phoneNumber}`}
+                              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              <Phone size={14} />
+                              {order.shippingAddress.phoneNumber}
+                            </a>
+                            {order.user?.phone && order.user.phone !== order.shippingAddress.phoneNumber && (
+                              <a 
+                                href={`tel:${order.user.phone}`}
+                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                              >
+                                <User size={14} />
+                                {order.user.phone}
+                              </a>
+                            )}
                           </div>
                         )}
                       </div>
@@ -312,6 +343,53 @@ const DeliveryBoyDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Status Update Modal */}
+      {selectedOrderForStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              Update Order Status
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Change status to: <span className="font-semibold text-gray-900">
+                {selectedOrderForStatus.newStatus}
+              </span>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Note (Optional)
+              </label>
+              <textarea
+                value={statusNote}
+                onChange={(e) => setStatusNote(e.target.value)}
+                placeholder="Add a note about the status update..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedOrderForStatus(null)
+                  setStatusNote('')
+                }}
+                disabled={updatingStatus}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusUpdate}
+                disabled={updatingStatus}
+                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {updatingStatus ? 'Updating...' : 'Confirm Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -21,6 +21,10 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [deliveryBoys, setDeliveryBoys] = useState([])
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [assigning, setAssigning] = useState(false)
   const startDateParam = searchParams.get('startDate')
   const endDateParam = searchParams.get('endDate')
 
@@ -46,7 +50,9 @@ const AdminOrders = () => {
     setLoading(true)
     try {
       const params = {}
-      if (statusFilter && statusFilter !== 'all') {
+      if (statusFilter === 'need-assignment') {
+        params.needAssignment = 'true'
+      } else if (statusFilter && statusFilter !== 'all') {
         params.status = statusFilter
       }
       
@@ -111,6 +117,26 @@ const AdminOrders = () => {
   const openAssignModal = (order) => {
     setSelectedOrder(order)
     setShowAssignModal(true)
+  }
+
+  const handleUnassignDeliveryBoy = async (orderId) => {
+    if (!confirm('Are you sure you want to unassign the delivery boy from this order?')) {
+      return
+    }
+
+    setAssigning(true)
+    try {
+      const response = await api.patch(`/admin/orders/${orderId}/unassign-delivery-boy`)
+      
+      if (response.data.success) {
+        toast.success('Delivery boy unassigned successfully!')
+        fetchOrders({ startDate: startDateParam, endDate: endDateParam })
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to unassign delivery boy')
+    } finally {
+      setAssigning(false)
+    }
   }
 
   const formatDate = (dateString) =>
@@ -213,6 +239,7 @@ const AdminOrders = () => {
               className="flex-1 sm:flex-none px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white hover:border-gray-400 transition-colors"
             >
               <option value="all">All Orders</option>
+              <option value="need-assignment">Need Assignment</option>
               {statusOptions.map((status) => (
                 <option key={status} value={status}>
                   {formatStatus(status)}
@@ -272,11 +299,20 @@ const AdminOrders = () => {
                       </button>
                     )}
                     {order.deliveryBoy && (
-                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
+                      <div className="inline-flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
                         <Truck size={14} className="text-green-600" />
                         <span className="text-xs font-medium text-green-700">
                           {order.deliveryBoy.name}
                         </span>
+                        {(order.status === 'processing' || order.status === 'out for delivery') && (
+                          <button
+                            onClick={() => handleUnassignDeliveryBoy(order._id)}
+                            className="text-red-600 hover:text-red-800 text-xs font-medium"
+                            title="Unassign Delivery Boy"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
