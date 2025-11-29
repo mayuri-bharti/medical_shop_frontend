@@ -9,6 +9,7 @@ const LanguageSelector = () => {
   const [isClicked, setIsClicked] = useState(false)
   const dropdownRef = useRef(null)
   const buttonRef = useRef(null)
+  const portalRef = useRef(null)
   const hoverTimeoutRef = useRef(null)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 })
 
@@ -94,18 +95,26 @@ const LanguageSelector = () => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
+    if (!isOpen) return
+
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      const target = event.target
+      const isClickOnButton = buttonRef.current?.contains(target)
+      const isClickOnDropdown = portalRef.current?.contains(target)
+      
+      if (!isClickOnButton && !isClickOnDropdown) {
         setIsOpen(false)
         setIsClicked(false)
       }
     }
 
-    if (isOpen) {
+    // Add event listener after a small delay to avoid immediate closure on click
+    const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside)
-    }
+    }, 10)
 
     return () => {
+      clearTimeout(timeoutId)
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isOpen])
@@ -133,6 +142,7 @@ const LanguageSelector = () => {
 
       {isOpen && typeof document !== 'undefined' && createPortal(
         <div 
+          ref={portalRef}
           className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200"
           style={{ 
             zIndex: 99999,
