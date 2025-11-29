@@ -595,7 +595,7 @@ const CategoryBar = () => {
                   </button>
 
                   <div
-                    className={`pointer-events-auto absolute left-1/2 top-full mt-3 hidden w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out sm:w-[min(30rem,90vw)] md:block md:p-6 ${isActive ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-2 opacity-0'}`}
+                    className={`pointer-events-auto absolute left-1/2 top-full mt-3 hidden w-[min(26rem,90vw)] -translate-x-1/2 rounded-xl bg-white p-5 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.35)] ring-1 ring-slate-200 transition-all duration-200 ease-out sm:w-[min(30rem,90vw)] md:block md:p-6 z-40 ${isActive ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-2 opacity-0'}`}
                     onMouseEnter={() => handleMouseEnter(idx)}
                     onMouseLeave={handleMouseLeave}
                   >

@@ -181,8 +181,8 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Mobile-First Responsive Design */}
-      <header className="fixed top-0 left-0 right-0 w-full bg-white shadow-sm border-b border-gray-100 z-[100] backdrop-blur-sm bg-white/95 max-w-full overflow-hidden">
-        <div className="w-full max-w-full px-3 sm:px-4 md:px-6 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 w-full bg-white shadow-sm border-b border-gray-100 z-[9998] backdrop-blur-sm bg-white/95 max-w-full overflow-hidden">
+        <div className="relative w-full max-w-full px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-2 sm:gap-3 md:gap-4">
             {/* Logo - Responsive Sizing */}
             <Link 
@@ -238,9 +238,9 @@ const Layout = ({ children }) => {
             </nav>
 
             {/* Right side - User Actions & Menu - Properly Aligned */}
-            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
-              {/* Language Selector - Hidden on very small screens */}
-              <div className="hidden sm:block">
+            <div className="relative flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0 z-[9999]">
+              {/* Language Selector - Always visible */}
+              <div className="relative">
                 <LanguageSelector />
               </div>
               
