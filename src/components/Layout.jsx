@@ -180,72 +180,84 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Premium Healthcare Design */}
-      <header className="bg-white shadow-soft border-b border-gray-100 sticky top-0 z-[100] backdrop-blur-sm bg-white/95">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo - HealthPlus Branding */}
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-medical-500 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105">
-                <span className="text-white font-bold text-2xl">+</span>
+      {/* Header - Mobile-First Responsive Design */}
+      <header className="fixed top-0 left-0 right-0 w-full bg-white shadow-sm border-b border-gray-100 z-[100] backdrop-blur-sm bg-white/95 max-w-full overflow-hidden">
+        <div className="w-full max-w-full px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-2 sm:gap-3 md:gap-4">
+            {/* Logo - Responsive Sizing */}
+            <Link 
+              to="/" 
+              className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0 min-w-0 group"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary-500 to-medical-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105 flex-shrink-0">
+                <span className="text-white font-bold text-lg sm:text-xl md:text-2xl">+</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-medical-600 bg-clip-text text-transparent">
+              <div className="flex flex-col min-w-0">
+                <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary-600 to-medical-600 bg-clip-text text-transparent leading-tight truncate">
                   HealthPlus
                 </span>
-                <span className="text-xs text-gray-500 -mt-1">Your Health Partner</span>
+                <span className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 leading-tight hidden sm:block">
+                  Your Health Partner
+                </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation - Clean & Modern */}
-            <nav className="hidden md:flex items-center space-x-2">
+            {/* Desktop Navigation - Hidden on Mobile */}
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2 flex-1 justify-center max-w-2xl">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                       isActive(item.href)
                         ? 'text-primary-600 bg-primary-50 shadow-sm'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span>{item.name}</span>
+                    <Icon size={16} className="lg:w-[18px] lg:h-[18px]" />
+                    <span className="hidden lg:inline">{item.name}</span>
                   </Link>
                 )
               })}
               {isAuthenticated && (
                 <Link
                   to="/prescriptions"
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg lg:rounded-xl text-xs lg:text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                     isActive('/prescriptions')
                       ? 'text-primary-600 bg-primary-50 shadow-sm'
                       : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   }`}
                 >
-                  <FileText size={18} />
-                  <span>{t('common.prescriptions')}</span>
+                  <FileText size={16} className="lg:w-[18px] lg:h-[18px]" />
+                  <span className="hidden lg:inline">{t('common.prescriptions')}</span>
                 </Link>
               )}
             </nav>
 
-            {/* Right side - User Actions */}
-            <div className="flex items-center space-x-3" style={{ zIndex: 1000 }}>
-              <LanguageSelector />
+            {/* Right side - User Actions & Menu - Properly Aligned */}
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
+              {/* Language Selector - Hidden on very small screens */}
+              <div className="hidden sm:block">
+                <LanguageSelector />
+              </div>
+              
               {isAuthenticated ? (
                 <>
+                  {/* User Avatar - Smaller on mobile */}
                   <Link
                     to="/account"
-                    className="p-1.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
+                    className="p-1 sm:p-1.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 flex-shrink-0"
                     title="My Account"
+                    onClick={() => setIsMenuOpen(false)}
                   >
                     {user?.avatar && getAvatarUrl(user.avatar) ? (
                       <img
                         src={getAvatarUrl(user.avatar)}
                         alt={user.name || 'User'}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                        className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full object-cover border-2 border-gray-200"
                         onError={(e) => {
                           e.target.style.display = 'none'
                           if (e.target.nextSibling && e.target.nextSibling.style) {
@@ -254,53 +266,62 @@ const Layout = ({ children }) => {
                         }}
                       />
                     ) : null}
-                    <div className={`w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-sm font-semibold ${user?.avatar && getAvatarUrl(user.avatar) ? 'hidden' : ''}`}>
-                      {user?.name ? user.name.charAt(0).toUpperCase() : <User size={18} />}
+                    <div className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-xs sm:text-sm font-semibold flex-shrink-0 ${user?.avatar && getAvatarUrl(user.avatar) ? 'hidden' : ''}`}>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]" />}
                     </div>
                   </Link>
+                  
+                  {/* Cart - Smaller on mobile */}
                   <Link
                     to="/cart"
-                    className="relative p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
+                    className="relative p-1.5 sm:p-2 md:p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 flex-shrink-0"
+                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <ShoppingCart size={22} />
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {Math.min(cartCount, 99)}
-                    </span>
+                    <ShoppingCart size={18} className="sm:w-5 sm:h-5 md:w-[22px] md:h-[22px]" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 sm:top-0 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-primary-500 text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                        {Math.min(cartCount, 99)}
+                      </span>
+                    )}
                   </Link>
 
+                  {/* Logout - Icon only on mobile */}
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 font-medium"
+                    className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 font-medium whitespace-nowrap flex-shrink-0"
+                    title={t('common.logout')}
                   >
-                    <LogOut size={18} />
-                    <span className="hidden md:block">{t('common.logout')}</span>
+                    <LogOut size={16} className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]" />
+                    <span className="hidden md:inline">{t('common.logout')}</span>
                   </button>
                 </>
               ) : (
                 <Link
                   to="/login"
-                  className="btn-primary-sm flex items-center space-x-2"
+                  className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-primary-700 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  <User size={18} />
+                  <User size={16} className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]" />
                   <span>{t('common.login')}</span>
                 </Link>
               )}
 
-              {/* Mobile menu button */}
+              {/* Mobile menu button - Always visible on mobile */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200"
+                className="sm:ml-0 md:hidden p-1.5 sm:p-2 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 flex-shrink-0"
+                aria-label="Toggle menu"
               >
-                {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                {isMenuOpen ? <X size={20} className="sm:w-5 sm:h-5" /> : <Menu size={20} className="sm:w-5 sm:h-5" />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation - Enhanced */}
+        {/* Mobile Navigation Drawer - Enhanced */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
-            <div className="px-4 pt-4 pb-6 space-y-2">
+          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg max-w-full overflow-y-auto">
+            <div className="px-4 py-3 sm:py-4 space-y-1 sm:space-y-2 max-h-[calc(100vh-4rem)] overflow-y-auto">
               {navigation.map((item) => {
                 const Icon = item.icon
                 return (
@@ -308,13 +329,13 @@ const Layout = ({ children }) => {
                     key={item.name}
                     to={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 w-full ${
                       isActive(item.href)
                         ? 'text-primary-600 bg-primary-50 shadow-sm'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon size={20} />
+                    <Icon size={20} className="flex-shrink-0" />
                     <span>{item.name}</span>
                   </Link>
                 )
@@ -324,36 +345,62 @@ const Layout = ({ children }) => {
                   <Link
                     to="/account"
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 w-full ${
                       isActive('/account')
                         ? 'text-primary-600 bg-primary-50 shadow-sm'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
-                    <User size={20} />
+                    <User size={20} className="flex-shrink-0" />
                     <span>My Account</span>
                   </Link>
                   <Link
                     to="/prescriptions"
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                    className={`flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 w-full ${
                       isActive('/prescriptions')
                         ? 'text-primary-600 bg-primary-50 shadow-sm'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                     }`}
                   >
-                    <FileText size={20} />
+                    <FileText size={20} className="flex-shrink-0" />
                     <span>{t('common.prescriptions')}</span>
                   </Link>
+                  <div className="pt-2 border-t border-gray-200 sm:hidden">
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setIsMenuOpen(false)
+                      }}
+                      className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold text-red-600 hover:bg-red-50 transition-all duration-200 w-full"
+                    >
+                      <LogOut size={20} className="flex-shrink-0" />
+                      <span>{t('common.logout')}</span>
+                    </button>
+                  </div>
                 </>
               )}
+              {!isAuthenticated && (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-all duration-200 w-full justify-center"
+                >
+                  <User size={20} className="flex-shrink-0" />
+                  <span>{t('common.login')}</span>
+                </Link>
+              )}
+              {/* Language Selector in Mobile Menu */}
+              <div className="pt-2 border-t border-gray-200 sm:hidden">
+                <LanguageSelector />
+              </div>
             </div>
           </div>
         )}
       </header>
 
-      {/* Main Content */}
-      <main>
+      {/* Main Content - Add top padding for fixed header */}
+      <main className="pt-14 sm:pt-16 md:pt-20">
         {children}
       </main>
 

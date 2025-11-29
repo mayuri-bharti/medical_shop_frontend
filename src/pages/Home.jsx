@@ -484,7 +484,7 @@ const Home = () => {
             {[
               { name: 'Immunity Booster Pack', price: '₹1,299', originalPrice: '₹1,599', savings: 'Save ₹300', query: 'immunity' },
               { name: 'Diabetes Care Package', price: '₹2,499', originalPrice: '₹2,999', savings: 'Save ₹500', query: 'diabetes' },
-              { name: 'Senior Wellness Kit', price: '₹1,999', originalPrice: '₹2,399', savings: 'Save ₹400', query: 'senior wellness' },
+              { name: 'Senior Wellness Kit', price: '₹1,999', originalPrice: '₹2,399', savings: 'Save ₹400', query: 'senior wellness'},
             ].map((pkg, index) => (
               <div key={index} className="bg-white rounded-2xl p-6 shadow-soft text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <div className="w-16 h-16 bg-apollo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
