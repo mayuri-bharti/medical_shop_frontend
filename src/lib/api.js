@@ -385,6 +385,109 @@ export const deleteProduct = async (productId) => {
 }
 
 /**
+ * Get all banners (public)
+ */
+export const getBanners = async () => {
+  return await apiCall('/banners', {
+    method: 'GET'
+  })
+}
+
+/**
+ * Get all banners (admin only)
+ */
+export const getAdminBanners = async () => {
+  return await apiCall('/admin/banners', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Create banner (admin only)
+ */
+export const createBanner = async (formData) => {
+  const token = getAdminToken()
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+
+  const url = `${API_BASE_URL}/admin/banners`
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to create banner')
+  }
+  
+  return data
+}
+
+/**
+ * Update banner (admin only)
+ */
+export const updateBanner = async (bannerId, formData) => {
+  const token = getAdminToken()
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+
+  const url = `${API_BASE_URL}/admin/banners/${bannerId}`
+  
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to update banner')
+  }
+  
+  return data
+}
+
+/**
+ * Reorder banners (admin only)
+ */
+export const reorderBanners = async (bannerIds) => {
+  return await apiCall('/admin/banners/reorder', {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ bannerIds })
+  })
+}
+
+/**
+ * Delete banner (admin only)
+ */
+export const deleteBanner = async (bannerId) => {
+  return await apiCall(`/admin/banners/${bannerId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
  * Refresh access token using refresh token
  */
 const refreshAccessToken = async () => {

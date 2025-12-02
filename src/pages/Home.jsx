@@ -4,15 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Package } from 'lucide-react'
 import { api } from '../services/api'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay, Pagination } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/pagination'
 // Apollo Pharmacy Components
 import HeroSection from '../components/home/HeroSection'
 import CategoryNav from '../components/home/CategoryNav'
 import FeatureCards from '../components/home/FeatureCards'
 import HealthConditions from '../components/home/HealthConditions'
+import BannerSlider from '../components/BannerSlider'
 
 const Home = () => {
   const { t } = useTranslation()
@@ -161,109 +158,8 @@ const Home = () => {
       {/* Apollo Pharmacy Hero Section */}
       <HeroSection />
 
-      {/* Small Banner Image - now with autoplay slider */}
-      <section className="bg-[#F4F8F7] py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Swiper
-            modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 2500, disableOnInteraction: false }}
-            loop
-            spaceBetween={16}
-            pagination={{ clickable: true }}
-            breakpoints={{
-              0: { slidesPerView: 1.1 },
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-              1280: { slidesPerView: 4 }
-            }}
-          >
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Sofy"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://tse1.mm.bing.net/th/id/OIP.54KllwoEr_s7xUYhlicD_gHaJQ?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3"
-                  alt="SOFY AntiBacteria - Women Care"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 1%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Horlicks"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://th.bing.com/th/id/R.a2173d0a6e347b4bcf0227962f510733?rik=%2fJXunw6MAnSwoQ&riu=http%3a%2f%2fronnysequeira.com%2fwp-content%2fuploads%2f2018%2f03%2fadvt-21_2.jpg&ehk=dryQeZxZ1%2fN0O%2fP1eFFNfL5o4V9Ygj7lnYZBH3ORPAQ%3d&risl=&pid=ImgRaw&r=0"
-                  alt="Horlicks - Nutritional Supplements"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 15%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Zandu"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://tse1.mm.bing.net/th/id/OIP.zbW_3E12MQHzqxD2XsqGlQHaHa?cb=ucfimg2ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3"
-                  alt="Horlicks - Nutritional Supplements"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 50%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Happy"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://i.pinimg.com/736x/41/54/83/4154838ba89dfb6f5993d476433930ae.jpg"
-                  alt="Horlicks - Nutritional Supplements"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 30%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Dog"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://www.grabon.in/indulge/wp-content/uploads/2022/04/Best-Dog-Food-Brands.jpg"
-                  alt="Best Dog Food Brands - Pet Care"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 15%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-            <SwiperSlide>
-              <Link 
-                to="/products?brand=Parfum"
-                className="block w-72 h-56 overflow-hidden rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <img
-                  src="https://denverformen.com/cdn/shop/files/AcneClearcopy_7bf7ea06-bcdc-4674-80bb-0a144f9ee874_800x.jpg?v=1718790397"
-                  alt="DENVER Face Wash - Personal Care"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 45%' }}
-                  loading="lazy"
-                />
-              </Link>
-            </SwiperSlide>
-          </Swiper>
-        </div>
-      </section>
+      {/* Dynamic Banner Slider */}
+      <BannerSlider />
 
       {/* Apollo Pharmacy Feature Cards */}
       <FeatureCards />

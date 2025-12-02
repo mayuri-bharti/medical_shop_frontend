@@ -46,6 +46,7 @@ const AdminReturns = lazy(() => import('./pages/admin/Returns'))
 const AdminPrescriptions = lazy(() => import('./pages/admin/Prescriptions'))
 const AdminAddProduct = lazy(() => import('./pages/admin/AddProduct'))
 const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
+const AdminManageBanners = lazy(() => import('./pages/admin/ManageBanners'))
 const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
 const AdminDoctorManagement = lazy(() => import('./pages/admin/DoctorManagement'))
 const AdminAppointmentManagement = lazy(() => import('./pages/admin/AppointmentManagement'))
@@ -267,6 +268,7 @@ function App() {
             <Route path="appointments" element={<AdminAppointmentManagement />} />
             <Route path="add-product" element={<AdminAddProduct />} />
             <Route path="manage-products" element={<AdminManageProducts />} />
+            <Route path="manage-banners" element={<AdminManageBanners />} />
             <Route path="edit-product/:id" element={<AdminEditProduct />} />
                 <Route path="contact-requests" element={<AdminContactRequests />} />
                 <Route path="delivery-boys" element={<AdminDeliveryBoys />} />

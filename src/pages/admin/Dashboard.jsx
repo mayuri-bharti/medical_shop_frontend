@@ -32,7 +32,8 @@ const AdminDashboard = () => {
     { name: 'Doctors', href: '/admin/dashboard/doctors' },
     { name: 'Appointments', href: '/admin/dashboard/appointments' },
     { name: 'Add Product', href: '/admin/dashboard/add-product' },
-    { name: 'Products', href: '/admin/dashboard/manage-products' }
+    { name: 'Products', href: '/admin/dashboard/manage-products' },
+    { name: 'Banners', href: '/admin/dashboard/manage-banners' }
   ]
 
   useEffect(() => {

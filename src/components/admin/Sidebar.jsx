@@ -15,7 +15,8 @@ import {
   CalendarClock,
   RefreshCw,
   MessageCircle,
-  AlertTriangle
+  AlertTriangle,
+  Image as ImageIcon
 } from 'lucide-react'
 import { removeAccessToken } from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
@@ -51,6 +52,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Appointments', href: '/admin/dashboard/appointments', icon: CalendarClock },
     { name: 'Add Product', href: '/admin/dashboard/add-product', icon: PackagePlus },
     { name: 'Manage Products', href: '/admin/dashboard/manage-products', icon: Package },
+    { name: 'Manage Banners', href: '/admin/dashboard/manage-banners', icon: ImageIcon },
   ]
 
   const isActive = (path) => location.pathname === path

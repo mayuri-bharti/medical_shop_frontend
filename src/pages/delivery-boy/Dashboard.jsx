@@ -22,6 +22,10 @@ const DeliveryBoyDashboard = () => {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('deliveryBoyToken') || sessionStorage.getItem('deliveryBoyToken')
+      if (!token) {
+        handleLogout()
+        return
+      }
       const response = await api.get('/delivery-boy/auth/me', {
         params: { token }
       })
@@ -29,7 +33,8 @@ const DeliveryBoyDashboard = () => {
         setDeliveryBoy(response.data.data.deliveryBoy)
       }
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        toast.error(error.response?.data?.message || 'Session expired. Please login again.')
         handleLogout()
       }
     }
@@ -39,6 +44,12 @@ const DeliveryBoyDashboard = () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('deliveryBoyToken') || sessionStorage.getItem('deliveryBoyToken')
+      if (!token) {
+        handleLogout()
+        setLoading(false)
+        return
+      }
+      
       const params = {}
       if (statusFilter !== 'all') {
         params.status = statusFilter
@@ -55,10 +66,11 @@ const DeliveryBoyDashboard = () => {
         setOrders(response.data.data || [])
       }
     } catch (error) {
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        toast.error(error.response?.data?.message || 'Session expired. Please login again.')
         handleLogout()
       } else {
-        toast.error('Failed to fetch orders')
+        toast.error(error.response?.data?.message || 'Failed to fetch orders')
       }
     } finally {
       setLoading(false)
