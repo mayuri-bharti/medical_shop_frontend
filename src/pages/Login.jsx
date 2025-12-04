@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Phone, Send, Shield, ArrowRight, CheckCircle, AlertCircle, Lock, User, Eye, EyeOff, Mail, X } from 'lucide-react'
 import { sendOtp, verifyOtp, setAccessToken, getAccessToken, loginWithPassword, registerUser, loginWithGoogle, loginWithFacebook } from '../lib/api'
+import { getGuestCart, clearGuestCart } from '../lib/guestCart'
 import toast from 'react-hot-toast'
 
 
@@ -32,9 +33,43 @@ const Login = () => {
     return redirectUrl ? decodeURIComponent(redirectUrl) : '/'
   }, [redirectUrl])
 
-  const handleLoginSuccess = useCallback((accessToken) => {
+  const handleLoginSuccess = useCallback(async (accessToken) => {
     if (!accessToken) return
     setAccessToken(accessToken)
+    
+    // Merge guest cart if exists
+    const guestCart = getGuestCart()
+    if (guestCart.items.length > 0) {
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+        // Merge guest cart items into user cart
+        for (const item of guestCart.items) {
+          const itemType = item.itemType || (item.productId ? 'product' : 'medicine')
+          const productId = item.productId
+          const medicineId = item.medicineId
+          const quantity = item.quantity || 1
+
+          const body = itemType === 'medicine'
+            ? { medicineId, quantity }
+            : { productId, quantity }
+
+          await fetch(`${API_BASE}/cart/items`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify(body)
+          })
+        }
+        // Clear guest cart after merging
+        clearGuestCart()
+      } catch (mergeError) {
+        console.error('Failed to merge guest cart:', mergeError)
+        // Continue anyway - user can manually add items
+      }
+    }
+    
     const target = getRedirectTarget()
     sessionStorage.setItem('loginSuccess', '1')
     sessionStorage.setItem('redirectAfterSuccess', target)

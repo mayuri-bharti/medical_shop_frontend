@@ -16,7 +16,9 @@ import {
   RefreshCw,
   MessageCircle,
   AlertTriangle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Layout,
+  FileImage
 } from 'lucide-react'
 import { removeAccessToken } from '../../lib/api'
 import { useNavigate } from 'react-router-dom'
@@ -52,6 +54,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Appointments', href: '/admin/dashboard/appointments', icon: CalendarClock },
     { name: 'Add Product', href: '/admin/dashboard/add-product', icon: PackagePlus },
     { name: 'Manage Products', href: '/admin/dashboard/manage-products', icon: Package },
+    { name: 'Homepage Banner 1', href: '/admin/dashboard/manage-homepage-banner', icon: FileImage },
+    { name: 'Homepage Banner 2', href: '/admin/dashboard/manage-homepage-banner-2', icon: FileImage },
     { name: 'Manage Banners', href: '/admin/dashboard/manage-banners', icon: ImageIcon },
   ]
 
@@ -102,7 +106,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         variants={sidebarVariants}
         initial="closed"
         animate={(isOpen || isDesktop) ? 'open' : 'closed'}
-        className="fixed top-0 left-0 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 md:static md:z-auto shadow-lg md:shadow-none flex flex-col"
+        className="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-50 w-64 md:w-56 lg:w-64 md:static md:z-auto shadow-lg md:shadow-none flex flex-col"
       >
         <div className="p-5 lg:p-6 flex-1 flex flex-col overflow-hidden">
           {/* Logo with Close Button (Mobile) */}

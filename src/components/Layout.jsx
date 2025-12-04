@@ -16,6 +16,7 @@ import {
 import { getAccessToken, getCurrentUser, removeAccessToken } from '../lib/api'
 import { api } from '../services/api'
 import { CART_UPDATED_EVENT, normalizeCartData, calculateCartItemCount } from '../lib/cartEvents'
+import { getGuestCartItemCount } from '../lib/guestCart'
 import LanguageSelector from './LanguageSelector'
 
 // Helper to get full avatar URL
@@ -96,11 +97,6 @@ const Layout = ({ children }) => {
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setCartCount(0)
-      return
-    }
-
     let isMounted = true
 
     const updateCountFromPayload = (payload) => {
@@ -115,7 +111,11 @@ const Layout = ({ children }) => {
       try {
         const token = getAccessToken()
         if (!token) {
-          setCartCount(0)
+          // Check guest cart
+          const guestCount = getGuestCartItemCount()
+          if (isMounted) {
+            setCartCount(guestCount)
+          }
           return
         }
         const response = await api.get('/cart')
@@ -123,6 +123,13 @@ const Layout = ({ children }) => {
       } catch (error) {
         if (import.meta.env.DEV) {
           console.warn('Failed to fetch cart count', error?.message || error)
+        }
+        // Fallback to guest cart if API fails
+        if (!getAccessToken()) {
+          const guestCount = getGuestCartItemCount()
+          if (isMounted) {
+            setCartCount(guestCount)
+          }
         }
       }
     }
@@ -174,8 +181,36 @@ const Layout = ({ children }) => {
                   location.pathname === '/verify' || 
                   location.pathname.startsWith('/admin')
 
+  // Show only logo on delivery boy login page
+  const isDeliveryBoyLogin = location.pathname === '/delivery-boy/login'
+
   if (hideNav) {
     return <>{children}</>
+  }
+
+  if (isDeliveryBoyLogin) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header with only logo - centered */}
+        <header className="bg-white shadow-sm border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-center">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-medical-500 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-xl">+</span>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-medical-600 bg-clip-text text-transparent">
+                  HealthPlus
+                </span>
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main>
+          {children}
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -244,6 +279,21 @@ const Layout = ({ children }) => {
                 <LanguageSelector />
               </div>
               
+              {/* Cart - Always visible for both logged-in and guest users */}
+              <Link
+                to="/cart"
+                className="relative p-1.5 sm:p-2 md:p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 flex-shrink-0"
+                onClick={() => setIsMenuOpen(false)}
+                title="Cart"
+              >
+                <ShoppingCart size={18} className="sm:w-5 sm:h-5 md:w-[22px] md:h-[22px]" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 sm:top-0 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-primary-500 text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                    {Math.min(cartCount, 99)}
+                  </span>
+                )}
+              </Link>
+              
               {isAuthenticated ? (
                 <>
                   {/* User Avatar - Smaller on mobile */}
@@ -269,20 +319,6 @@ const Layout = ({ children }) => {
                     <div className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-xs sm:text-sm font-semibold flex-shrink-0 ${user?.avatar && getAvatarUrl(user.avatar) ? 'hidden' : ''}`}>
                       {user?.name ? user.name.charAt(0).toUpperCase() : <User size={14} className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]" />}
                     </div>
-                  </Link>
-                  
-                  {/* Cart - Smaller on mobile */}
-                  <Link
-                    to="/cart"
-                    className="relative p-1.5 sm:p-2 md:p-2.5 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 flex-shrink-0"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <ShoppingCart size={18} className="sm:w-5 sm:h-5 md:w-[22px] md:h-[22px]" />
-                    {cartCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 sm:top-0 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 bg-primary-500 text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                        {Math.min(cartCount, 99)}
-                      </span>
-                    )}
                   </Link>
 
                   {/* Logout - Icon only on mobile */}
@@ -340,6 +376,26 @@ const Layout = ({ children }) => {
                   </Link>
                 )
               })}
+              
+              {/* Cart - Always visible in mobile menu */}
+              <Link
+                to="/cart"
+                onClick={() => setIsMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 w-full ${
+                  isActive('/cart')
+                    ? 'text-primary-600 bg-primary-50 shadow-sm'
+                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                }`}
+              >
+                <ShoppingCart size={20} className="flex-shrink-0" />
+                <span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="ml-auto bg-primary-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                    {Math.min(cartCount, 99)}
+                  </span>
+                )}
+              </Link>
+              
               {isAuthenticated && (
                 <>
                   <Link

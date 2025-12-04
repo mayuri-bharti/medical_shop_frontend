@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAccessToken } from '../lib/api'
 import { broadcastCartUpdate } from '../lib/cartEvents'
+import { addToGuestCart, getGuestCartItemCount } from '../lib/guestCart'
 import toast from 'react-hot-toast'
 
 const ProductCard = memo(({ product }) => {
@@ -33,58 +34,73 @@ const ProductCard = memo(({ product }) => {
 
   const handleAddToCart = useCallback(async () => {
     const token = getAccessToken()
-    if (!token) {
-      navigate(`/login?redirect=${encodeURIComponent('/products')}`)
+    
+    // Validate product ID before sending
+    const productId = product._id || product.id
+    if (!productId) {
+      toast.error(t('cart.invalidProduct'))
+      return
+    }
+
+    // Check if this is a demo product (IDs starting with 'demo-' are not valid MongoDB ObjectIds)
+    const isDemoProduct = typeof productId === 'string' && (
+      productId.startsWith('demo-') || 
+      !productId.match(/^[0-9a-fA-F]{24}$/)
+    )
+
+    if (isDemoProduct) {
+      toast.error(t('cart.demoProductMessage') || 'This is a demo product. Please search for the actual product in our catalog to add it to cart.')
       return
     }
 
     setAdding(true)
+    
     try {
-      // Validate product ID before sending
-      const productId = product._id || product.id
-      if (!productId) {
-        toast.error(t('cart.invalidProduct'))
-        setAdding(false)
-        return
-      }
-
-      // Check if this is a demo product (IDs starting with 'demo-' are not valid MongoDB ObjectIds)
-      const isDemoProduct = typeof productId === 'string' && (
-        productId.startsWith('demo-') || 
-        !productId.match(/^[0-9a-fA-F]{24}$/)
-      )
-
-      if (isDemoProduct) {
-        toast.error(t('cart.demoProductMessage') || 'This is a demo product. Please search for the actual product in our catalog to add it to cart.')
-        setAdding(false)
-        return
-      }
-
-      const response = await fetch(`${API_BASE}/cart/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
+      if (!token) {
+        // User not logged in - use guest cart
+        const price = Number(product.price) || 0
+        const image = product.images?.[0] || product.image || ''
+        
+        const guestCart = addToGuestCart({
+          itemType: 'product',
           productId: productId,
-          quantity: 1
+          quantity: 1,
+          price: price,
+          name: product.name,
+          image: image
         })
-      })
+        
+        toast.success(`${product.name} ${t('common.addedToCart')}`)
+        // Broadcast cart update with guest cart data
+        broadcastCartUpdate(guestCart, getGuestCartItemCount())
+      } else {
+        // User logged in - use API
+        const response = await fetch(`${API_BASE}/cart/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            productId: productId,
+            quantity: 1
+          })
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok || data?.success === false) {
-        // Extract detailed error message from validation errors
-        let errorMessage = data?.message || 'Failed to add to cart'
-        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-          errorMessage = data.errors.map(err => err.msg || err.message).join(', ') || errorMessage
+        if (!response.ok || data?.success === false) {
+          // Extract detailed error message from validation errors
+          let errorMessage = data?.message || 'Failed to add to cart'
+          if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            errorMessage = data.errors.map(err => err.msg || err.message).join(', ') || errorMessage
+          }
+          throw new Error(errorMessage)
         }
-        throw new Error(errorMessage)
-      }
 
-      toast.success(`${product.name} ${t('common.addedToCart')}`)
-      broadcastCartUpdate(data?.data || data)
+        toast.success(`${product.name} ${t('common.addedToCart')}`)
+        broadcastCartUpdate(data?.data || data)
+      }
     } catch (error) {
       // Show user-friendly error message
       const errorMsg = error?.response?.data?.message || 
@@ -95,7 +111,7 @@ const ProductCard = memo(({ product }) => {
     } finally {
       setAdding(false)
     }
-  }, [API_BASE, product._id, product.id, product.name, navigate, t])
+  }, [API_BASE, product._id, product.id, product.name, product.price, product.images, product.image, t])
 
   const handleBuyNow = useCallback(async () => {
     // Check if user is authenticated

@@ -55,53 +55,82 @@ const MedicineDetails = () => {
 
   const handleAddToCart = useCallback(async () => {
     const token = getAccessToken()
-    if (!token) {
-      const returnUrl = encodeURIComponent(`/medicine/${id}`)
-      navigate(`/login?redirect=${returnUrl}`)
-      return
-    }
+    setAdding(true)
+    
     try {
-      setAdding(true)
-      // If mapped to a product, add product to cart; else add as medicine item
-      if (medicine?.productRef) {
-        const resp = await api.post('/cart/items', {
-          productId: medicine.productRef,
-          quantity: qty
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (resp?.data?.success === false) {
-          let errorMessage = resp?.data?.message || 'Failed to add to cart'
-          if (resp?.data?.errors && Array.isArray(resp.data.errors) && resp.data.errors.length > 0) {
-            const errorMessages = resp.data.errors.map(err => err.msg || err.message).filter(Boolean)
-            if (errorMessages.length > 0) {
-              errorMessage = errorMessages.join(', ')
-            }
-          }
-          throw new Error(errorMessage)
+      if (!token) {
+        // User not logged in - use guest cart
+        const { addToGuestCart, getGuestCartItemCount } = await import('../lib/guestCart')
+        const price = computedPrice || 0
+        const image = medicine?.images?.[0] || medicine?.image || ''
+        
+        if (medicine?.productRef) {
+          // Add as product
+          const guestCart = addToGuestCart({
+            itemType: 'product',
+            productId: medicine.productRef,
+            quantity: qty,
+            price: price,
+            name: medicine?.name || '',
+            image: image
+          })
+          toast.success('Added to cart')
+          broadcastCartUpdate(guestCart, getGuestCartItemCount())
+        } else {
+          // Add as medicine
+          const guestCart = addToGuestCart({
+            itemType: 'medicine',
+            medicineId: id,
+            quantity: qty,
+            price: price,
+            name: medicine?.name || '',
+            image: image
+          })
+          toast.success('Added to cart')
+          broadcastCartUpdate(guestCart, getGuestCartItemCount())
         }
-        toast.success('Added to cart')
-        broadcastCartUpdate(resp?.data)
       } else {
-        const resp = await api.post('/cart/items', {
-          itemType: 'medicine',
-          medicineId: id,
-          quantity: qty
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (resp?.data?.success === false) {
-          let errorMessage = resp?.data?.message || 'Failed to add to cart'
-          if (resp?.data?.errors && Array.isArray(resp.data.errors) && resp.data.errors.length > 0) {
-            const errorMessages = resp.data.errors.map(err => err.msg || err.message).filter(Boolean)
-            if (errorMessages.length > 0) {
-              errorMessage = errorMessages.join(', ')
+        // User logged in - use API
+        if (medicine?.productRef) {
+          const resp = await api.post('/cart/items', {
+            productId: medicine.productRef,
+            quantity: qty
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (resp?.data?.success === false) {
+            let errorMessage = resp?.data?.message || 'Failed to add to cart'
+            if (resp?.data?.errors && Array.isArray(resp.data.errors) && resp.data.errors.length > 0) {
+              const errorMessages = resp.data.errors.map(err => err.msg || err.message).filter(Boolean)
+              if (errorMessages.length > 0) {
+                errorMessage = errorMessages.join(', ')
+              }
             }
+            throw new Error(errorMessage)
           }
-          throw new Error(errorMessage)
+          toast.success('Added to cart')
+          broadcastCartUpdate(resp?.data)
+        } else {
+          const resp = await api.post('/cart/items', {
+            itemType: 'medicine',
+            medicineId: id,
+            quantity: qty
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (resp?.data?.success === false) {
+            let errorMessage = resp?.data?.message || 'Failed to add to cart'
+            if (resp?.data?.errors && Array.isArray(resp.data.errors) && resp.data.errors.length > 0) {
+              const errorMessages = resp.data.errors.map(err => err.msg || err.message).filter(Boolean)
+              if (errorMessages.length > 0) {
+                errorMessage = errorMessages.join(', ')
+              }
+            }
+            throw new Error(errorMessage)
+          }
+          toast.success('Added to cart')
+          broadcastCartUpdate(resp?.data)
         }
-        toast.success('Added to cart')
-        broadcastCartUpdate(resp?.data)
       }
     } catch (e) {
       const errorMsg = e?.response?.data?.message || 
@@ -112,7 +141,7 @@ const MedicineDetails = () => {
     } finally {
       setAdding(false)
     }
-  }, [id, qty, navigate, medicine?.productRef])
+  }, [id, qty, medicine, computedPrice])
 
   const handleBuyNow = useCallback(async () => {
     const token = getAccessToken()

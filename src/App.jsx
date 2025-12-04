@@ -47,6 +47,8 @@ const AdminPrescriptions = lazy(() => import('./pages/admin/Prescriptions'))
 const AdminAddProduct = lazy(() => import('./pages/admin/AddProduct'))
 const AdminManageProducts = lazy(() => import('./pages/admin/ManageProducts'))
 const AdminManageBanners = lazy(() => import('./pages/admin/ManageBanners'))
+const AdminManageHomepageBanner = lazy(() => import('./pages/admin/ManageHomepageBanner'))
+const AdminManageHomepageBanner2 = lazy(() => import('./pages/admin/ManageHomepageBanner2'))
 const AdminEditProduct = lazy(() => import('./pages/admin/EditProduct'))
 const AdminDoctorManagement = lazy(() => import('./pages/admin/DoctorManagement'))
 const AdminAppointmentManagement = lazy(() => import('./pages/admin/AppointmentManagement'))
@@ -191,11 +193,7 @@ function App() {
               <Navigate to="/" replace />
             </ProtectedRoute>
           } />
-          <Route path="/cart" element={
-            <ProtectedRoute>
-              <Cart />
-            </ProtectedRoute>
-          } />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/orders" element={
             <ProtectedRoute>
               <Orders />
@@ -269,6 +267,8 @@ function App() {
             <Route path="add-product" element={<AdminAddProduct />} />
             <Route path="manage-products" element={<AdminManageProducts />} />
             <Route path="manage-banners" element={<AdminManageBanners />} />
+            <Route path="manage-homepage-banner" element={<AdminManageHomepageBanner bannerType="banner1" />} />
+            <Route path="manage-homepage-banner-2" element={<AdminManageHomepageBanner2 bannerType="banner2" />} />
             <Route path="edit-product/:id" element={<AdminEditProduct />} />
                 <Route path="contact-requests" element={<AdminContactRequests />} />
                 <Route path="delivery-boys" element={<AdminDeliveryBoys />} />

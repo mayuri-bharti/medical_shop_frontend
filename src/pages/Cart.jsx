@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Minus, Plus, Trash2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { getAccessToken } from '../lib/api'
-import { broadcastCartUpdate, normalizeCartData } from '../lib/cartEvents'
+import { broadcastCartUpdate, normalizeCartData, CART_UPDATED_EVENT } from '../lib/cartEvents'
+import { getGuestCart, updateGuestCartItem, removeFromGuestCart } from '../lib/guestCart'
 import PageCarousel from '../components/PageCarousel'
 import toast from 'react-hot-toast'
 
@@ -18,38 +19,102 @@ const Cart = () => {
 
   useEffect(() => {
     fetchCart()
+    
+    // Listen for cart updates (when items are added from other pages)
+    const handleCartUpdate = () => {
+      fetchCart()
+    }
+    
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdate)
+    
+    return () => {
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdate)
+    }
   }, [])
 
   const fetchCart = async () => {
     try {
       const token = getAccessToken()
-      const response = await fetch(`${API_BASE}/cart`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      
+      if (!token) {
+        // User not logged in - use guest cart
+        const guestCart = getGuestCart()
+        // Transform guest cart to match API format
+        // For guest cart, preserve all item data (name, image, price) directly on item
+        const normalizedCart = {
+          items: guestCart.items.map(item => ({
+            ...item,
+            // Keep item data for display (name, image, price are on item itself)
+            product: item.productId ? { 
+              _id: item.productId,
+              name: item.name,
+              image: item.image,
+              imageUrl: item.image,
+              price: item.price
+            } : null,
+            medicine: item.medicineId ? { 
+              _id: item.medicineId,
+              name: item.name,
+              image: item.image,
+              imageUrl: item.image,
+              price: item.price
+            } : null
+          })),
+          subtotal: guestCart.subtotal,
+          deliveryFee: guestCart.deliveryFee,
+          taxes: guestCart.taxes,
+          total: guestCart.total
         }
-      })
-      const data = await response.json()
-      if (!response.ok || data?.success === false) {
-        throw new Error(data?.message || 'Failed to fetch cart')
-      }
-      const normalized = normalizeCartData(data?.data || data)
-      setCart(normalized)
-      broadcastCartUpdate(normalized)
-      setSelectedProductIds((prev) => {
-        const productIds = new Set(
-          normalized?.items?.map((item) => getProductId(item?.product)) || []
-        )
-        if (!prev.size) {
-          return productIds
-        }
-        const preserved = new Set()
-        productIds.forEach((id) => {
-          if (prev.has(id)) {
-            preserved.add(id)
+        setCart(normalizedCart)
+        broadcastCartUpdate(normalizedCart)
+        setSelectedProductIds((prev) => {
+          const productIds = new Set(
+            normalizedCart?.items?.map((item) => {
+              // Use productId or medicineId directly for guest cart
+              return item.productId || item.medicineId || getProductId(item?.product || item?.medicine)
+            }).filter(Boolean) || []
+          )
+          if (!prev.size) {
+            return productIds
+          }
+          const preserved = new Set()
+          productIds.forEach((id) => {
+            if (prev.has(id)) {
+              preserved.add(id)
+            }
+          })
+          return preserved.size ? preserved : productIds
+        })
+      } else {
+        // User logged in - fetch from API
+        const response = await fetch(`${API_BASE}/cart`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
         })
-        return preserved.size ? preserved : productIds
-      })
+        const data = await response.json()
+        if (!response.ok || data?.success === false) {
+          throw new Error(data?.message || 'Failed to fetch cart')
+        }
+        const normalized = normalizeCartData(data?.data || data)
+        setCart(normalized)
+        broadcastCartUpdate(normalized)
+        setSelectedProductIds((prev) => {
+          const productIds = new Set(
+            normalized?.items?.map((item) => getProductId(item?.product || item?.medicine)) || []
+          )
+          if (!prev.size) {
+            return productIds
+          }
+          const preserved = new Set()
+          productIds.forEach((id) => {
+            if (prev.has(id)) {
+              preserved.add(id)
+            }
+          })
+          return preserved.size ? preserved : productIds
+        })
+      }
     } catch (error) {
       console.error('Failed to fetch cart:', error)
       toast.error(t('cart.failedToLoad'))
@@ -61,37 +126,160 @@ const Cart = () => {
   const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity < 1 || !cart || !cart.items) return
     
-    // For now, just update locally
-    // TODO: Implement API call to update quantity
-    const updatedCart = { ...cart }
-    const item = updatedCart.items.find((item) => {
-      if (!item) return false
-      const product = item.product || item.medicine
-      if (!product) return false
-      return getProductId(product) === productId
-    })
-    if (item) {
-      item.quantity = newQuantity
+    const token = getAccessToken()
+    
+      if (!token) {
+        // Guest cart - update in localStorage
+        const item = cart.items.find((item) => {
+          // Check both productId/medicineId (guest cart) and product._id/medicine._id (transformed)
+          const itemId = item.productId || item.medicineId || getProductId(item.product || item.medicine)
+          return itemId === productId
+        })
+        
+        if (item) {
+          const itemType = item.itemType || (item.productId ? 'product' : 'medicine')
+          const productIdValue = item.productId || item.product?._id
+          const medicineIdValue = item.medicineId || item.medicine?._id
+          
+          const updatedCart = updateGuestCartItem({
+            itemType,
+            productId: productIdValue,
+            medicineId: medicineIdValue,
+            quantity: newQuantity
+          })
+          
+          // Transform to match API format, preserving all item data
+          const normalizedCart = {
+            items: updatedCart.items.map(item => ({
+              ...item,
+              product: item.productId ? { 
+                _id: item.productId,
+                name: item.name,
+                image: item.image,
+                imageUrl: item.image,
+                price: item.price
+              } : null,
+              medicine: item.medicineId ? { 
+                _id: item.medicineId,
+                name: item.name,
+                image: item.image,
+                imageUrl: item.image,
+                price: item.price
+              } : null
+            })),
+            subtotal: updatedCart.subtotal,
+            deliveryFee: updatedCart.deliveryFee,
+            taxes: updatedCart.taxes,
+            total: updatedCart.total
+          }
+          setCart(normalizedCart)
+          broadcastCartUpdate(normalizedCart)
+        }
+    } else {
+      // Logged in - update via API
+      const item = cart.items.find((item) => {
+        const product = item.product || item.medicine
+        if (!product) return false
+        return getProductId(product) === productId
+      })
+      
+      if (item) {
+        try {
+          const itemType = item.itemType || (item.product ? 'product' : 'medicine')
+          const productIdValue = item.productId || item.product?._id
+          const medicineIdValue = item.medicineId || item.medicine?._id
+          
+          const url = itemType === 'medicine' 
+            ? `${API_BASE}/cart/items/${medicineIdValue}`
+            : `${API_BASE}/cart/items/${productIdValue}`
+          
+          const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ quantity: newQuantity })
+          })
+          
+          if (response.ok) {
+            fetchCart()
+          } else {
+            throw new Error('Failed to update quantity')
+          }
+        } catch (error) {
+          toast.error(t('cart.failedToUpdate'))
+        }
+      }
     }
-    setCart(updatedCart)
-    broadcastCartUpdate(updatedCart)
   }
 
   const handleRemoveItem = async (productId) => {
     try {
       const token = getAccessToken()
-      const response = await fetch(`${API_BASE}/cart/items/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
       
-      if (response.ok) {
-        toast.success(t('cart.itemRemoved'))
-        fetchCart()
+      if (!token) {
+        // Guest cart - remove from localStorage
+        const item = cart.items.find((item) => {
+          // Check both productId/medicineId (guest cart) and product._id/medicine._id (transformed)
+          const itemId = item.productId || item.medicineId || getProductId(item.product || item.medicine)
+          return itemId === productId
+        })
+        
+        if (item) {
+          const itemType = item.itemType || (item.productId ? 'product' : 'medicine')
+          const productIdValue = item.productId || item.product?._id
+          const medicineIdValue = item.medicineId || item.medicine?._id
+          
+          const updatedCart = removeFromGuestCart({
+            itemType,
+            productId: productIdValue,
+            medicineId: medicineIdValue
+          })
+          
+          // Transform to match API format, preserving all item data
+          const normalizedCart = {
+            items: updatedCart.items.map(item => ({
+              ...item,
+              product: item.productId ? { 
+                _id: item.productId,
+                name: item.name,
+                image: item.image,
+                imageUrl: item.image,
+                price: item.price
+              } : null,
+              medicine: item.medicineId ? { 
+                _id: item.medicineId,
+                name: item.name,
+                image: item.image,
+                imageUrl: item.image,
+                price: item.price
+              } : null
+            })),
+            subtotal: updatedCart.subtotal,
+            deliveryFee: updatedCart.deliveryFee,
+            taxes: updatedCart.taxes,
+            total: updatedCart.total
+          }
+          setCart(normalizedCart)
+          broadcastCartUpdate(normalizedCart)
+          toast.success(t('cart.itemRemoved'))
+        }
       } else {
-        throw new Error(t('cart.failedToRemove'))
+        // Logged in - remove via API
+        const response = await fetch(`${API_BASE}/cart/items/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          toast.success(t('cart.itemRemoved'))
+          fetchCart()
+        } else {
+          throw new Error(t('cart.failedToRemove'))
+        }
       }
     } catch (error) {
       console.error('Remove item error:', error)
@@ -116,8 +304,16 @@ const Cart = () => {
     if (checked) {
       setSelectedProductIds(new Set(
         cart.items
-          .filter(item => item && (item.product || item.medicine))
-          .map((item) => getProductId(item.product || item.medicine))
+          .filter(item => {
+            if (!item) return false
+            // Include items with product/medicine (logged-in) or productId/medicineId (guest)
+            return item.product || item.medicine || item.productId || item.medicineId || item.name
+          })
+          .map((item) => {
+            // Use productId/medicineId for guest cart, or getProductId for logged-in
+            return item.productId || item.medicineId || getProductId(item.product || item.medicine) || item._id
+          })
+          .filter(Boolean)
       ))
     } else {
       setSelectedProductIds(new Set())
@@ -157,7 +353,17 @@ const Cart = () => {
     )
   }
 
-  if (!cart || !cart.items || cart.items.length === 0) {
+  // Check if cart is empty - consider both logged-in and guest cart structures
+  const hasItems = cart && cart.items && cart.items.length > 0 && cart.items.some(item => {
+    if (!item) return false
+    // Check for logged-in cart structure
+    if (item.product || item.medicine) return true
+    // Check for guest cart structure
+    if (item.productId || item.medicineId || item.name) return true
+    return false
+  })
+
+  if (!hasItems) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <div className="text-center max-w-md">
@@ -223,24 +429,46 @@ const Cart = () => {
                 <input
                   type="checkbox"
                   className="h-4 w-4 text-medical-600"
-                  checked={selectedProductIds.size > 0 && selectedProductIds.size === (cart.items || []).filter(item => item && (item.product || item.medicine)).length}
+                  checked={selectedProductIds.size > 0 && selectedProductIds.size === (cart.items || []).filter(item => {
+                    if (!item) return false
+                    return item.product || item.medicine || item.productId || item.medicineId || item.name
+                  }).length}
                   onChange={(e) => handleSelectAll(e.target.checked)}
                 />
                 <span className="text-sm font-medium text-gray-700">{t('cart.selectAll')}</span>
               </div>
               <span className="text-sm text-gray-500">
-                {selectedItems.length} {t('common.of')} {(cart.items || []).filter(item => item && (item.product || item.medicine)).length} {t('cart.selected')}
+                {selectedItems.length} {t('common.of')} {(cart.items || []).filter(item => {
+                  if (!item) return false
+                  return item.product || item.medicine || item.productId || item.medicineId || item.name
+                }).length} {t('cart.selected')}
               </span>
             </div>
-            {(cart.items || []).filter(item => item && (item.product || item.medicine)).map((item) => {
+            {(cart.items || []).filter(item => {
+              // For guest cart, check if item has productId or medicineId
+              // For logged in cart, check if item has product or medicine
+              if (!item) return false
+              // Check for logged-in cart structure
+              if (item.product || item.medicine) return true
+              // Check for guest cart structure
+              if (item.productId || item.medicineId) return true
+              // Also check if item has name (guest cart items have name directly)
+              if (item.name) return true
+              return false
+            }).map((item, index) => {
+              // Get product data - either from nested product/medicine or from item itself (guest cart)
               const product = item.product || item.medicine || {}
-              const productId = getProductId(product) || item._id
+              // For guest cart, use productId/medicineId directly; for logged-in, use product._id
+              const productId = item.productId || item.medicineId || getProductId(product) || item._id || `item-${index}`
               const isSelected = selectedProductIds.has(productId)
               
-              // Skip rendering if product is invalid
-              if (!product || (!product._id && !product.id && !item._id)) {
-                return null
-              }
+              // Get display data - prefer product object, fallback to item data (for guest cart)
+              const displayName = product.name || item.name || 'Unknown Product'
+              const displayImage = product.image || product.imageUrl || item.image || '/placeholder-medicine.jpg'
+              const displayBrand = product.brand || product.manufacturer || ''
+              const displayPrice = item.price || product.price || 0
+              
+              // Don't skip - render all items that passed the filter
               
               return (
                 <div
@@ -259,8 +487,8 @@ const Cart = () => {
                       />
                       <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <img
-                          src={product.image || product.imageUrl || '/placeholder-medicine.jpg'}
-                          alt={product.name || 'Product'}
+                          src={displayImage}
+                          alt={displayName}
                           className="w-full h-full object-cover rounded-lg"
                           onError={(e) => {
                             e.target.src = '/placeholder-medicine.jpg'
@@ -271,11 +499,13 @@ const Cart = () => {
                     
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">
-                        {product.name || item.name || 'Unknown Product'}
+                        {displayName}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {product.brand || product.manufacturer || ''}
-                      </p>
+                      {displayBrand && (
+                        <p className="text-sm text-gray-600 mb-2">
+                          {displayBrand}
+                        </p>
+                      )}
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
@@ -296,10 +526,10 @@ const Cart = () => {
                         
                         <div className="text-right">
                           <p className="font-semibold text-gray-900">
-                            ₹{((item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                            ₹{(displayPrice * (item.quantity || 1)).toLocaleString()}
                           </p>
                           <p className="text-sm text-gray-600">
-                            ₹{(item.price || 0).toLocaleString()} {t('common.each')}
+                            ₹{displayPrice.toLocaleString()} {t('common.each')}
                           </p>
                         </div>
                         

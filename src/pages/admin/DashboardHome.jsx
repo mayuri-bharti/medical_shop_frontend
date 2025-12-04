@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, ShoppingBag, Package, TrendingUp, DollarSign, UserPlus, Shield, Calendar } from 'lucide-react'
-import { getUsers, getOrders, getAdminProducts } from '../../lib/api'
+import { 
+  Users, ShoppingBag, Package, TrendingUp, DollarSign, UserPlus, Shield, Calendar,
+  LayoutDashboard, RefreshCw, AlertTriangle, MessageCircle, FileText, Stethoscope,
+  CalendarClock, PackagePlus, FileImage, Image as ImageIcon, Home, LogOut
+} from 'lucide-react'
+import { removeAccessToken, getUsers, getOrders, getAdminProducts } from '../../lib/api'
 import { api } from '../../services/api'
 import toast from 'react-hot-toast'
 
@@ -247,13 +251,33 @@ const AdminDashboardHome = () => {
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
           <p className="text-gray-500 mt-2 text-sm sm:text-base">Monitor and manage your medical shop operations</p>
         </div>
-        <button
-          onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium text-sm"
-        >
-          <UserPlus size={18} />
-          <span>Create Admin</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium text-sm"
+          >
+            <Home size={18} />
+            <span>Back to Site</span>
+          </Link>
+          <button
+            onClick={() => {
+              removeAccessToken()
+              toast.success('Logged out successfully')
+              navigate('/admin/login')
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors font-medium text-sm border border-red-200 hover:border-red-300"
+          >
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
+          <button
+            onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-medium text-sm"
+          >
+            <UserPlus size={18} />
+            <span>Create Admin</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* Create Admin Form */}
@@ -428,33 +452,49 @@ const AdminDashboardHome = () => {
         </motion.div>
       </div>
 
-      {/* Quick Actions */}
+      {/* All Admin Actions */}
       <motion.div
         variants={cardVariants}
         className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
-            <p className="text-sm text-gray-500 mt-1">Common administrative tasks</p>
+            <h2 className="text-xl font-semibold text-gray-900">Admin Actions</h2>
+            <p className="text-sm text-gray-500 mt-1">All administrative tasks and management options</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[
+            { href: '/admin/dashboard', icon: LayoutDashboard, title: 'Dashboard', desc: 'View dashboard overview and statistics', color: 'blue' },
             { href: '/admin/dashboard/users', icon: Users, title: 'Manage Users', desc: 'View and manage all registered users', color: 'blue' },
             { href: '/admin/dashboard/orders', icon: ShoppingBag, title: 'Manage Orders', desc: 'View, filter, and update order status', color: 'green' },
-            { href: '/admin/dashboard/add-product', icon: Package, title: 'Add Product', desc: 'Create and add new products to inventory', color: 'purple' }
+            { href: '/admin/dashboard/returns', icon: RefreshCw, title: 'Returns', desc: 'Manage product returns and refunds', color: 'orange' },
+            { href: '/admin/dashboard/claims', icon: AlertTriangle, title: 'Claims', desc: 'View and process customer claims', color: 'red' },
+            { href: '/admin/dashboard/contact-requests', icon: MessageCircle, title: 'Contact Requests', desc: 'Manage customer contact inquiries', color: 'indigo' },
+            { href: '/admin/dashboard/prescriptions', icon: FileText, title: 'Prescriptions', desc: 'View and manage prescription uploads', color: 'teal' },
+            { href: '/admin/dashboard/doctors', icon: Stethoscope, title: 'Doctors', desc: 'Manage doctor profiles and information', color: 'cyan' },
+            { href: '/admin/dashboard/appointments', icon: CalendarClock, title: 'Appointments', desc: 'View and manage doctor appointments', color: 'purple' },
+            { href: '/admin/dashboard/add-product', icon: PackagePlus, title: 'Add Product', desc: 'Create and add new products to inventory', color: 'purple' },
+            { href: '/admin/dashboard/manage-products', icon: Package, title: 'Manage Products', desc: 'Edit, update, and manage product inventory', color: 'purple' },
+            { href: '/admin/dashboard/manage-banners', icon: ImageIcon, title: 'Manage Banners', desc: 'View and manage all promotional banners', color: 'pink' }
           ].map((action, index) => {
             const Icon = action.icon
             const colorClasses = {
               blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
               green: 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100',
-              purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+              purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100',
+              orange: 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100',
+              red: 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100',
+              indigo: 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100',
+              teal: 'bg-teal-50 text-teal-600 border-teal-200 hover:bg-teal-100',
+              cyan: 'bg-cyan-50 text-cyan-600 border-cyan-200 hover:bg-cyan-100',
+              pink: 'bg-pink-50 text-pink-600 border-pink-200 hover:bg-pink-100'
             }
+            const MotionLink = motion(Link)
             return (
-              <motion.a
+              <MotionLink
                 key={action.href}
-                href={action.href}
+                to={action.href}
                 variants={cardVariants}
                 whileHover={{ 
                   y: -4,
@@ -485,7 +525,7 @@ const AdminDashboardHome = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-              </motion.a>
+              </MotionLink>
             )
           })}
         </div>

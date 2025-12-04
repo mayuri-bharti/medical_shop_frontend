@@ -488,6 +488,79 @@ export const deleteBanner = async (bannerId) => {
 }
 
 /**
+ * Homepage Banner API functions
+ */
+
+/**
+ * Get homepage banner (admin only)
+ * @param {string} bannerType - 'banner1' or 'banner2'
+ */
+export const getAdminHomepageBanner = async (bannerType = 'banner1') => {
+  return await apiCall(`/admin/home-banner?bannerType=${bannerType}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${getAdminToken()}`
+    }
+  })
+}
+
+/**
+ * Create or update homepage banner (admin only)
+ */
+export const saveHomepageBanner = async (formData) => {
+  const token = getAdminToken()
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+
+  const url = `${API_BASE_URL}/admin/home-banner`
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to save homepage banner')
+  }
+  
+  return data
+}
+
+/**
+ * Update homepage banner (admin only)
+ */
+export const updateHomepageBanner = async (bannerId, formData) => {
+  const token = getAdminToken()
+  if (!token) {
+    throw new Error('No admin token found')
+  }
+
+  const url = `${API_BASE_URL}/admin/home-banner/${bannerId}`
+  
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  })
+
+  const data = await response.json()
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to update homepage banner')
+  }
+  
+  return data
+}
+
+/**
  * Refresh access token using refresh token
  */
 const refreshAccessToken = async () => {

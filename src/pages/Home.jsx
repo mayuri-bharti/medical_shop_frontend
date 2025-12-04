@@ -1,19 +1,27 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useQuery } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Package } from 'lucide-react'
 import { api } from '../services/api'
+import { getAccessToken } from '../lib/api'
+import { addToGuestCart, getGuestCartItemCount } from '../lib/guestCart'
+import { broadcastCartUpdate } from '../lib/cartEvents'
+import toast from 'react-hot-toast'
 // Apollo Pharmacy Components
 import HeroSection from '../components/home/HeroSection'
 import CategoryNav from '../components/home/CategoryNav'
 import FeatureCards from '../components/home/FeatureCards'
 import HealthConditions from '../components/home/HealthConditions'
 import BannerSlider from '../components/BannerSlider'
+import HomepageBanner from '../components/HomepageBanner'
 
 const Home = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [addingToCart, setAddingToCart] = useState({})
+  
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
 
   const fallbackFeaturedProducts = useMemo(
     () => [
@@ -170,40 +178,9 @@ const Home = () => {
       {/* Apollo Pharmacy Health Conditions */}
       <HealthConditions />
 
-      {/* Himalaya Product Banner */}
-      <section className="py-6 bg-[#F4F8F7]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link 
-            to="/products?brand=Himalaya"
-            className="block w-full overflow-hidden rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
-          >
-            <img
-              src="https://asset22.ckassets.com/resources/image/staticpage_images/Brand-Himalaya-Desktop-08-12-2017.jpg"
-              alt="Himalaya Products - Ayurvedic Wellness"
-              className="w-full h-48 md:h-56 lg:h-64 object-cover"
-              loading="lazy"
-            />
-          </Link>
-        </div>
-      </section>
-
-      {/* Nivea Soft Product Banner */}
-      <section className="py-6 bg-[#F4F8F7]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link 
-            to="/products?brand=Nivea"
-            className="block w-full overflow-hidden rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
-          >
-            <img
-              src="https://cdn.shopify.com/s/files/1/0481/5621/3409/files/Nivea_Soft_Banner__1___1.jpg?v=1664357408"
-              alt="Nivea Soft - Personal Care"
-              className="w-full h-56 md:h-64 lg:h-72 object-cover"
-              style={{ objectPosition: 'center 28%' }}
-              loading="lazy"
-            />
-          </Link>
-        </div>
-      </section>
+      {/* Dynamic Homepage Banners */}
+      <HomepageBanner bannerType="banner1" />
+      <HomepageBanner bannerType="banner2" />
 
       {/* Featured Products - Trending Medicines */}
       <section className="py-4 sm:py-6 md:py-12 lg:py-16 bg-white">
@@ -289,11 +266,11 @@ const Home = () => {
                   )}
                   
                   {/* Product Image */}
-                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-2 sm:p-3 md:p-4 lg:p-6 flex items-center justify-center min-h-[90px] sm:min-h-[110px] md:min-h-[140px] lg:min-h-[180px] xl:min-h-[200px]">
+                  <div className="relative bg-gradient-to-br from-gray-50 to-white p-2 sm:p-3 md:p-4 lg:p-6 flex items-center justify-center min-h-[90px] sm:min-h-[110px] md:min-h-[140px] lg:min-h-[180px] xl:min-h-[200px] overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="h-16 sm:h-20 md:h-24 lg:h-32 xl:h-36 w-full object-contain transition-transform duration-300 group-hover:scale-110"
+                      className="h-16 sm:h-20 md:h-24 lg:h-32 xl:h-36 w-full object-contain transition-transform duration-500 ease-in-out group-hover:scale-150"
                       loading="lazy"
                       onError={(e) => {
                         e.target.src = '/placeholder-medicine.jpg'
@@ -331,18 +308,98 @@ const Home = () => {
                     <div className="mt-auto flex items-center gap-1 sm:gap-1.5 md:gap-2 pt-1 sm:pt-2">
                       <button
                         type="button"
-                        disabled={!product.inStock}
-                        onClick={(e) => {
+                        disabled={!product.inStock || addingToCart[product.id || product._id]}
+                        onClick={async (e) => {
                           e.stopPropagation()
-                          // Add to cart functionality here
+                          
+                          const productId = product.id || product._id
+                          if (!productId) {
+                            toast.error('Invalid product')
+                            return
+                          }
+
+                          // Check if this is a demo product
+                          const isDemoProduct = typeof productId === 'string' && (
+                            productId.startsWith('demo-') || 
+                            productId.startsWith('fallback-') ||
+                            !productId.match(/^[0-9a-fA-F]{24}$/)
+                          )
+
+                          if (isDemoProduct) {
+                            toast.error('This is a demo product. Please search for the actual product in our catalog to add it to cart.')
+                            return
+                          }
+
+                          setAddingToCart(prev => ({ ...prev, [productId]: true }))
+                          
+                          try {
+                            const token = getAccessToken()
+                            
+                            if (!token) {
+                              // User not logged in - use guest cart
+                              const price = Number(product.price) || 0
+                              const image = product.image || product.images?.[0] || ''
+                              
+                              const guestCart = addToGuestCart({
+                                itemType: 'product',
+                                productId: productId,
+                                quantity: 1,
+                                price: price,
+                                name: product.name,
+                                image: image
+                              })
+                              
+                              toast.success(`${product.name} ${t('common.addedToCart')}`)
+                              broadcastCartUpdate(guestCart, getGuestCartItemCount())
+                            } else {
+                              // User logged in - use API
+                              const response = await fetch(`${API_BASE}/cart/items`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                  productId: productId,
+                                  quantity: 1
+                                })
+                              })
+
+                              const data = await response.json()
+
+                              if (!response.ok || data?.success === false) {
+                                let errorMessage = data?.message || 'Failed to add to cart'
+                                if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                                  errorMessage = data.errors.map(err => err.msg || err.message).join(', ') || errorMessage
+                                }
+                                throw new Error(errorMessage)
+                              }
+
+                              toast.success(`${product.name} ${t('common.addedToCart')}`)
+                              broadcastCartUpdate(data?.data || data)
+                            }
+                          } catch (error) {
+                            const errorMsg = error?.response?.data?.message || 
+                                          error?.response?.data?.errors?.[0]?.msg ||
+                                          error?.message || 
+                                          t('common.failedToAdd')
+                            toast.error(errorMsg)
+                          } finally {
+                            setAddingToCart(prev => ({ ...prev, [productId]: false }))
+                          }
                         }}
                         className={`flex-1 rounded-lg sm:rounded-xl md:rounded-xl px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 text-[9px] sm:text-[10px] md:text-xs font-bold transition-all active:scale-95 ${
-                          product.inStock
+                          product.inStock && !addingToCart[product.id || product._id]
                             ? 'bg-apollo-700 text-white hover:bg-apollo-800 shadow-md hover:shadow-lg'
                             : 'cursor-not-allowed bg-gray-100 text-gray-400'
                         }`}
                       >
-                        {product.inStock ? t('common.addToCart') : t('home.outOfStock')}
+                        {addingToCart[product.id || product._id] 
+                          ? t('common.adding') || 'Adding...'
+                          : product.inStock 
+                            ? t('common.addToCart') 
+                            : t('home.outOfStock')
+                        }
                       </button>
                     </div>
                   </div>

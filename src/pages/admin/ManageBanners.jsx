@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react'
-import { Image, Trash2, Plus, X, Upload, Edit, GripVertical, Eye, EyeOff, Search } from 'lucide-react'
+import { Image, Trash2, Plus, X, Upload, Edit, GripVertical, Eye, EyeOff, Search, FileImage, Layout } from 'lucide-react'
 import { useQuery, useQueryClient } from 'react-query'
 import { getAdminBanners, createBanner, updateBanner, deleteBanner, reorderBanners } from '../../lib/api'
 import { api } from '../../services/api'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
+import { useNavigate, Link } from 'react-router-dom'
 
 const ManageBanners = () => {
+  const navigate = useNavigate()
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingBanner, setEditingBanner] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
+    description: '',
     link: '',
     offerText: '',
     image: null,
     imageUrl: '',
     order: 0,
-    isActive: true
+    priority: 0,
+    isActive: true,
+    startDate: '',
+    endDate: '',
   })
   const [preview, setPreview] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -111,15 +118,28 @@ const ManageBanners = () => {
 
   const handleEdit = (banner) => {
     setEditingBanner(banner)
+    
+    // Format dates for input fields (YYYY-MM-DD format)
+    const formatDateForInput = (date) => {
+      if (!date) return ''
+      const d = new Date(date)
+      if (isNaN(d.getTime())) return ''
+      return d.toISOString().split('T')[0]
+    }
+    
     setFormData({
       title: banner.title || '',
       subtitle: banner.subtitle || '',
+      description: banner.description || '',
       link: banner.link || '',
       offerText: banner.offerText || '',
       image: null,
       imageUrl: banner.imageUrl || '',
       order: banner.order || 0,
-      isActive: banner.isActive !== undefined ? banner.isActive : true
+      priority: banner.priority || 0,
+      isActive: banner.isActive !== undefined ? banner.isActive : true,
+      startDate: formatDateForInput(banner.startDate),
+      endDate: formatDateForInput(banner.endDate),
     })
     setPreview(banner.imageUrl)
     setImageSource(banner.imageUrl && !banner.imageUrl.startsWith('/uploads/') ? 'url' : 'upload')
@@ -129,7 +149,7 @@ const ManageBanners = () => {
   const handleCloseModal = () => {
     setShowAddModal(false)
     setEditingBanner(null)
-    setFormData({ title: '', subtitle: '', link: '', offerText: '', image: null, imageUrl: '', order: 0, isActive: true })
+    setFormData({ title: '', subtitle: '', description: '', link: '', offerText: '', image: null, imageUrl: '', order: 0, priority: 0, isActive: true, startDate: '', endDate: '' })
     setPreview(null)
     setImageSource('upload')
     setProductSearch('')
@@ -198,11 +218,22 @@ const ManageBanners = () => {
       }
     }
 
+    // Validate date range
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate)
+      const end = new Date(formData.endDate)
+      if (start > end) {
+        toast.error('Start date must be before or equal to end date')
+        return
+      }
+    }
+
     setUploading(true)
     try {
       const formDataToSend = new FormData()
       formDataToSend.append('title', formData.title.trim())
       formDataToSend.append('subtitle', formData.subtitle.trim())
+      formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('link', formData.link.trim())
       formDataToSend.append('offerText', formData.offerText.trim())
       
@@ -220,7 +251,20 @@ const ManageBanners = () => {
       }
       
       formDataToSend.append('order', formData.order)
+      formDataToSend.append('priority', formData.priority)
       formDataToSend.append('isActive', formData.isActive)
+      
+      // Append dates if provided
+      if (formData.startDate) {
+        formDataToSend.append('startDate', new Date(formData.startDate).toISOString())
+      } else {
+        formDataToSend.append('startDate', '')
+      }
+      if (formData.endDate) {
+        formDataToSend.append('endDate', new Date(formData.endDate).toISOString())
+      } else {
+        formDataToSend.append('endDate', '')
+      }
 
       let response
       if (editingBanner) {
@@ -322,6 +366,13 @@ const ManageBanners = () => {
     setDraggedIndex(null)
   }
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  }
+
+  const MotionLink = motion(Link)
+
   return (
     <div className="space-y-5 md:space-y-6 lg:space-y-8">
       {/* Header */}
@@ -341,7 +392,126 @@ const ManageBanners = () => {
         </button>
       </div>
 
+      {/* Quick Actions */}
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Banner Management</h2>
+            <p className="text-sm text-gray-500 mt-1">Manage different types of banners</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { 
+              href: '/admin/dashboard/manage-homepage-banner', 
+              icon: FileImage, 
+              title: 'Homepage Banner 1', 
+              desc: 'Manage the first homepage banner (Himalaya)', 
+              color: 'blue' 
+            },
+            { 
+              href: '/admin/dashboard/manage-homepage-banner-2', 
+              icon: FileImage, 
+              title: 'Homepage Banner 2', 
+              desc: 'Manage the second homepage banner (Nivea)', 
+              color: 'green' 
+            },
+            { 
+              href: '#', 
+              icon: Layout, 
+              title: 'All Banners', 
+              desc: 'View and manage all promotional banners', 
+              color: 'purple',
+              onClick: () => {
+                const element = document.getElementById('banners-list')
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' })
+                }
+              }
+            }
+          ].map((action, index) => {
+            const Icon = action.icon
+            const colorClasses = {
+              blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
+              green: 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100',
+              purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+            }
+            
+            if (action.onClick) {
+              return (
+                <motion.button
+                  key={action.title}
+                  onClick={action.onClick}
+                  variants={cardVariants}
+                  whileHover={{ 
+                    y: -4,
+                    scale: 1.02,
+                    transition: { duration: 0.2 }
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`group relative p-6 border-2 rounded-xl transition-all duration-300 hover:shadow-lg block w-full text-left ${colorClasses[action.color]}`}
+                >
+                  <div className="flex items-start gap-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                      className="flex-shrink-0"
+                    >
+                      <div className={`p-3 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow`}>
+                        <Icon size={24} />
+                      </div>
+                    </motion.div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-base mb-1.5 group-hover:text-gray-950">{action.title}</h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">{action.desc}</p>
+                    </div>
+                  </div>
+                </motion.button>
+              )
+            }
+            
+            return (
+              <MotionLink
+                key={action.title}
+                to={action.href}
+                variants={cardVariants}
+                whileHover={{ 
+                  y: -4,
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className={`group relative p-6 border-2 rounded-xl transition-all duration-300 hover:shadow-lg block w-full text-left ${colorClasses[action.color]}`}
+              >
+                <div className="flex items-start gap-4">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                    className="flex-shrink-0"
+                  >
+                    <div className={`p-3 rounded-lg bg-white shadow-sm group-hover:shadow-md transition-shadow`}>
+                      <Icon size={24} />
+                    </div>
+                  </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-base mb-1.5 group-hover:text-gray-950">{action.title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{action.desc}</p>
+                  </div>
+                </div>
+              </MotionLink>
+            )
+          })}
+        </div>
+      </motion.div>
+
       {/* Banners List */}
+      <div id="banners-list">
       <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
         {isLoading ? (
           <div className="p-8 sm:p-12 text-center">
@@ -411,7 +581,20 @@ const ManageBanners = () => {
                   >
                     {banner.link}
                   </a>
-                  <p className="text-xs text-gray-500 mt-1">Order: {banner.order}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-xs text-gray-500">Order: {banner.order}</p>
+                    <p className="text-xs text-gray-500">Priority: {banner.priority || 0}</p>
+                    {banner.startDate && (
+                      <p className="text-xs text-gray-500">
+                        Start: {new Date(banner.startDate).toLocaleDateString()}
+                      </p>
+                    )}
+                    {banner.endDate && (
+                      <p className="text-xs text-gray-500">
+                        End: {new Date(banner.endDate).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -442,6 +625,7 @@ const ManageBanners = () => {
             ))}
           </div>
         )}
+      </div>
       </div>
 
       {/* Add/Edit Banner Modal */}
@@ -484,6 +668,19 @@ const ManageBanners = () => {
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                   placeholder="Enter banner subtitle"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter banner description"
+                  rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
                 />
               </div>
@@ -699,17 +896,65 @@ const ManageBanners = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
+                    Priority
                   </label>
-                  <select
-                    value={formData.isActive ? 'active' : 'inactive'}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'active' })}
+                  <input
+                    type="number"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    min="0"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Higher priority banners appear first
+                  </p>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Banner will be shown from this date
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Banner will be hidden after this date
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={formData.isActive ? 'active' : 'inactive'}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'active' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </div>
 
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">

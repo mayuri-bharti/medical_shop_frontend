@@ -48,42 +48,68 @@ const MedicineCard = memo(({ medicine, onClick }) => {
   const handleAddToCart = useCallback(async (event) => {
     event.stopPropagation()
 
-    // If mapped to a product, add that product; otherwise add medicine directly
-
     const token = getAccessToken()
-    if (!token) {
-      navigate(`/login?redirect=${encodeURIComponent('/all-medicine')}`)
-      return
-    }
-
     setAdding(true)
+    
     try {
-      const payload = medicine?.productRef
-        ? { productId: medicine.productRef, quantity: 1 }
-        : { itemType: 'medicine', medicineId: medicine?._id, quantity: 1 }
-
-      const response = await fetch(`${API_BASE}/cart/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      })
-      const data = await response.json()
-      if (!response.ok || data?.success === false) {
-        // Extract detailed error message from validation errors
-        let errorMessage = data?.message || 'Failed to add to cart'
-        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-          const errorMessages = data.errors.map(err => err.msg || err.message).filter(Boolean)
-          if (errorMessages.length > 0) {
-            errorMessage = errorMessages.join(', ')
-          }
+      if (!token) {
+        // User not logged in - use guest cart
+        const { addToGuestCart, getGuestCartItemCount } = await import('../lib/guestCart')
+        
+        if (medicine?.productRef) {
+          // Add as product
+          const guestCart = addToGuestCart({
+            itemType: 'product',
+            productId: medicine.productRef,
+            quantity: 1,
+            price: computedPrice,
+            name: medicine?.name || '',
+            image: medicine?.images?.[0] || medicine?.image || ''
+          })
+          toast.success('Added to cart')
+          broadcastCartUpdate(guestCart, getGuestCartItemCount())
+        } else {
+          // Add as medicine
+          const guestCart = addToGuestCart({
+            itemType: 'medicine',
+            medicineId: medicine?._id,
+            quantity: 1,
+            price: computedPrice,
+            name: medicine?.name || '',
+            image: medicine?.images?.[0] || medicine?.image || ''
+          })
+          toast.success('Added to cart')
+          broadcastCartUpdate(guestCart, getGuestCartItemCount())
         }
-        throw new Error(errorMessage)
+      } else {
+        // User logged in - use API
+        const payload = medicine?.productRef
+          ? { productId: medicine.productRef, quantity: 1 }
+          : { itemType: 'medicine', medicineId: medicine?._id, quantity: 1 }
+
+        const response = await fetch(`${API_BASE}/cart/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        })
+        const data = await response.json()
+        if (!response.ok || data?.success === false) {
+          // Extract detailed error message from validation errors
+          let errorMessage = data?.message || 'Failed to add to cart'
+          if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            const errorMessages = data.errors.map(err => err.msg || err.message).filter(Boolean)
+            if (errorMessages.length > 0) {
+              errorMessage = errorMessages.join(', ')
+            }
+          }
+          throw new Error(errorMessage)
+        }
+        toast.success('Added to cart')
+        broadcastCartUpdate(data?.data || data)
       }
-      toast.success('Added to cart')
-      broadcastCartUpdate(data?.data || data)
     } catch (err) {
       // Show user-friendly error message
       const errorMsg = err?.response?.data?.message || 
@@ -94,7 +120,7 @@ const MedicineCard = memo(({ medicine, onClick }) => {
     } finally {
       setAdding(false)
     }
-  }, [API_BASE, medicine?.productRef, medicine?.name, navigate])
+  }, [API_BASE, medicine, computedPrice, navigate])
 
   return (
     <div

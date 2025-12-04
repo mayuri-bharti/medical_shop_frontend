@@ -4,6 +4,7 @@ import { MapPin, CreditCard, Smartphone, Wallet, CheckCircle } from 'lucide-reac
 import toast from 'react-hot-toast'
 import { getAccessToken } from '../lib/api'
 import { broadcastCartUpdate, normalizeCartData } from '../lib/cartEvents'
+import { getGuestCart, clearGuestCart } from '../lib/guestCart'
 import AddressList from '../components/checkout/AddressList'
 import AddressModal from '../components/checkout/AddressModal'
 import { api } from '../services/api'
@@ -148,9 +149,55 @@ const Checkout = () => {
     try {
       const currentToken = getAccessToken()
       if (!currentToken) {
-        toast.error('Please login to continue')
-        navigate('/login?redirect=' + encodeURIComponent('/checkout'))
-        return
+        // Check if there's a guest cart
+        const guestCart = getGuestCart()
+        if (guestCart.items.length > 0) {
+          // Redirect to login with guest cart data
+          toast.error('Please login to continue checkout')
+          navigate('/login?redirect=' + encodeURIComponent('/checkout'))
+          return
+        } else {
+          toast.error('Your cart is empty')
+          navigate('/cart')
+          return
+        }
+      }
+
+      // Merge guest cart if exists
+      const guestCart = getGuestCart()
+      if (guestCart.items.length > 0) {
+        try {
+          // Merge guest cart items into user cart
+          for (const item of guestCart.items) {
+            const itemType = item.itemType || (item.productId ? 'product' : 'medicine')
+            const productId = item.productId
+            const medicineId = item.medicineId
+            const quantity = item.quantity || 1
+
+            const url = itemType === 'medicine' 
+              ? `${API_BASE}/cart/items`
+              : `${API_BASE}/cart/items`
+            
+            const body = itemType === 'medicine'
+              ? { medicineId, quantity }
+              : { productId, quantity }
+
+            await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentToken}`
+              },
+              body: JSON.stringify(body)
+            })
+          }
+          // Clear guest cart after merging
+          clearGuestCart()
+          toast.success('Cart items merged successfully')
+        } catch (mergeError) {
+          console.error('Failed to merge guest cart:', mergeError)
+          // Continue anyway - user can manually add items
+        }
       }
 
       const response = await fetch(`${API_BASE}/cart`, {
